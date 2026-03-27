@@ -1,4 +1,4 @@
-# Goo API Tool – Rheinische Post Mediengruppe
+# Goo API Tool
 
 Web-App für alle 11q.co / Goo API Endpunkte, mit Vercel-Proxy (CORS-frei).
 
