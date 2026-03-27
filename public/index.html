@@ -233,6 +233,96 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .events-container { max-height: 400px; overflow-y: auto; }
   .no-events { color: #aaa; font-size: 0.9rem; text-align: center; padding: 30px; }
+  .fullscreen-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0d0d0d;
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .fullscreen-overlay.active { display: flex; }
+  .fullscreen-close {
+    position: absolute;
+    top: 20px;
+    right: 28px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .fullscreen-close:hover { color: #fff; }
+  .fullscreen-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 18px;
+  }
+  .fullscreen-event-type {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 18px;
+    border-radius: 20px;
+    color: #fff;
+    margin-bottom: 32px;
+  }
+  .fullscreen-value {
+    font-size: clamp(3rem, 10vw, 7rem);
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    line-height: 1.1;
+    word-break: break-word;
+    max-width: 90vw;
+  }
+  .fullscreen-sub {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  .fullscreen-sub-field {
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .fullscreen-sub-field .sub-key {
+    font-size: 0.7rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .fullscreen-sub-field .sub-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ddd;
+  }
+  .fullscreen-pulse {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #444;
+    font-size: 0.8rem;
+  }
+  .fullscreen-pulse .pulse { background: #22c55e; }
 </style>
 </head>
 <body>
@@ -349,6 +439,18 @@
     </div>
   </div><!-- end unifiSection -->
 
+  <!-- VOLLBILD OVERLAY -->
+  <div class="fullscreen-overlay" id="fullscreenOverlay">
+    <button class="fullscreen-close" onclick="closeFullscreen()">✕</button>
+    <div class="fullscreen-label" id="fsLabel">Warte auf Events...</div>
+    <div class="fullscreen-event-type" id="fsEventType" style="background:#1a1a2e;"></div>
+    <div class="fullscreen-value" id="fsValue">—</div>
+    <div class="fullscreen-sub" id="fsSub"></div>
+    <div class="fullscreen-pulse" id="fsPulse" style="display:none;">
+      <span class="pulse"></span> Live
+    </div>
+  </div>
+
   <!-- Sende-Button (global, immer sichtbar) -->
   <button class="send-btn" id="sendBtn" onclick="sendRequest()" style="margin-bottom: 0;">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -407,6 +509,53 @@ async function fetchUnifiEvents() {
   } catch(err) {
     document.getElementById('unifiEvents').innerHTML = '<div class="no-events" style="color:#e8002d;">Fehler: ' + err.message + '</div>';
   }
+}
+
+const PRIMARY_FIELDS = {
+  'Unifi Intelligence': 'result',
+  'ELIPS': 'song',
+  'Second Sight': 'description',
+  'Book Test': 'result',
+  'Calculator': 'actual_result',
+  'Poker Chip': 'result',
+  'Dice': 'result',
+  'MindScale': 'result',
+  'Web Messaging': 'result',
+};
+
+let fullscreenActive = false;
+
+function openFullscreen() {
+  fullscreenActive = true;
+  document.getElementById('fullscreenOverlay').classList.add('active');
+  document.getElementById('fsPulse').style.display = unifiTimer ? 'flex' : 'none';
+}
+
+function closeFullscreen() {
+  fullscreenActive = false;
+  document.getElementById('fullscreenOverlay').classList.remove('active');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFullscreen(); });
+
+function updateFullscreen(eventData, color, type) {
+  const primaryField = PRIMARY_FIELDS[type] || Object.keys(eventData).find(k => k !== 'Event') || '';
+  const primaryValue = eventData[primaryField] || '—';
+  document.getElementById('fsLabel').textContent = primaryField.toUpperCase();
+  document.getElementById('fsEventType').textContent = type;
+  document.getElementById('fsEventType').style.background = color;
+  document.getElementById('fsValue').textContent = primaryValue;
+  document.getElementById('fsPulse').style.display = unifiTimer ? 'flex' : 'none';
+  // Subfelder
+  const sub = document.getElementById('fsSub');
+  sub.innerHTML = '';
+  Object.entries(eventData).forEach(([k, v]) => {
+    if (k === 'Event' || k === primaryField || !v) return;
+    const el = document.createElement('div');
+    el.className = 'fullscreen-sub-field';
+    el.innerHTML = '<div class="sub-key">' + k + '</div><div class="sub-val">' + v + '</div>';
+    sub.appendChild(el);
+  });
 }
 
 function renderUnifiEvents(events) {
