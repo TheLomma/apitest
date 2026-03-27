@@ -3,39 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Goo API Tool</title>
+<title>API Tool</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .container { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); padding: 36px 40px; width: 100%; max-width: 760px; }
-  .header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; border-bottom: 2px solid #e8002d; padding-bottom: 18px; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 760px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    border-bottom: 2px solid #e8002d;
+    padding-bottom: 18px;
+  }
   .header h1 { font-size: 1.45rem; color: #1a1a2e; font-weight: 700; }
   .header p { color: #666; font-size: 0.88rem; margin-top: 2px; }
-  label { display: block; font-size: 0.8rem; font-weight: 600; color: #444; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
   .field { margin-bottom: 18px; }
-  input[type="text"], select, textarea { width: 100%; border: 1.5px solid #ddd; border-radius: 8px; padding: 10px 14px; font-size: 0.97rem; color: #222; background: #fafafa; transition: border-color 0.2s; outline: none; }
-  input[type="text"]:focus, select:focus, textarea:focus { border-color: #e8002d; background: #fff; }
+  input[type="text"], select, textarea {
+    width: 100%;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.97rem;
+    color: #222;
+    background: #fafafa;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus {
+    border-color: #e8002d;
+    background: #fff;
+  }
   .row { display: flex; gap: 16px; }
   .row .field { flex: 1; }
   select { cursor: pointer; }
   textarea { min-height: 100px; resize: vertical; font-family: 'Courier New', monospace; font-size: 0.9rem; }
-  .badge { display: inline-block; font-size: 0.68rem; background: #fff3f5; color: #e8002d; border: 1px solid #f5b8c0; border-radius: 4px; padding: 1px 7px; margin-left: 6px; font-weight: 700; text-transform: uppercase; vertical-align: middle; }
-  .send-btn { width: 100%; padding: 13px; background: #e8002d; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    background: #fff3f5;
+    color: #e8002d;
+    border: 1px solid #f5b8c0;
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+  .badge-pro {
+    background: #fefce8;
+    color: #854d0e;
+    border-color: #fde68a;
+  }
+  .send-btn {
+    width: 100%;
+    padding: 13px;
+    background: #e8002d;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
   .send-btn:hover { background: #c0001f; }
   .send-btn:active { transform: scale(0.98); }
   .send-btn:disabled { background: #aaa; cursor: not-allowed; }
-  .response-box { margin-top: 24px; border-radius: 8px; overflow: hidden; border: 1.5px solid #e0e0e0; display: none; }
-  .response-header { background: #1a1a2e; color: #fff; padding: 9px 16px; font-size: 0.82rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .response-box {
+    margin-top: 24px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #e0e0e0;
+    display: none;
+  }
+  .response-header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 9px 16px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
   .status-pill { padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; }
   .status-ok { background: #22c55e; color: #fff; }
   .status-err { background: #e8002d; color: #fff; }
-  .response-body { background: #f8f8f8; padding: 16px; font-family: 'Courier New', monospace; font-size: 0.85rem; color: #222; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  .response-body {
+    background: #f8f8f8;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #222;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .divider { border: none; border-top: 1.5px solid #f0f0f0; margin: 20px 0; }
   .helper { font-size: 0.78rem; color: #999; margin-top: 5px; }
-  .spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .endpoint-desc { background: #f8f8f8; border-left: 3px solid #e8002d; border-radius: 0 6px 6px 0; padding: 10px 14px; font-size: 0.83rem; color: #555; margin-bottom: 18px; line-height: 1.5; }
+  .endpoint-desc {
+    background: #f8f8f8;
+    border-left: 3px solid #e8002d;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: 0.83rem;
+    color: #555;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
   .query-field { display: none; }
-  .live-note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 14px; font-size: 0.8rem; color: #92400e; margin-bottom: 14px; display: none; align-items: center; gap: 8px; }
+  .live-note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.8rem;
+    color: #92400e;
+    margin-bottom: 14px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .api-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #ddd;
+  }
+  .api-tab {
+    flex: 1;
+    padding: 11px;
+    text-align: center;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #fafafa;
+    color: #888;
+    border: none;
+    transition: background 0.2s, color 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .api-tab.active {
+    background: #e8002d;
+    color: #fff;
+  }
+  .api-tab:first-child { border-right: 1.5px solid #ddd; }
 </style>
 </head>
 <body>
@@ -46,11 +201,19 @@
       <path d="M10 18h16M22 13l5 5-5 5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <div>
-      <h1>Goo API Tool</h1>
-      <p>Rheinische Post Mediengruppe &middot; 11q.co API &mdash; Anfragen senden &amp; Antworten anzeigen</p>
+      <h1>API Tool</h1>
+      <p id="headerDesc">11q.co API &mdash; Anfragen senden &amp; Antworten anzeigen</p>
     </div>
   </div>
 
+  <!-- API Auswahl -->
+  <div class="api-tabs">
+    <button class="api-tab active" id="tabGoo" onclick="switchApi('goo')">🔵 Goo</button>
+    <button class="api-tab" id="tabInject" onclick="switchApi('inject')">🟢 Inject</button>
+  </div>
+
+  <!-- GOO Bereich -->
+  <div id="gooSection">
   <div class="row">
     <div class="field">
       <label>Goo ID <span class="badge">Pflicht</span></label>
@@ -76,25 +239,47 @@
   </div>
 
   <div class="endpoint-desc" id="endpointDesc">
-    Sendet eine Suchanfrage (query) für die angegebene Goo ID.
+    Sendet eine Suchanfrage (query) für die angegebene Goo ID. Der query-Wert wird gespeichert und kann später über /last abgerufen werden.
   </div>
 
   <div class="live-note" id="liveNote">
     ⚡ Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.
   </div>
 
+  <!-- Query-Feld (nur für POST thump) -->
   <div class="field query-field" id="queryField">
     <label>Query <span class="badge">Pflicht</span></label>
     <textarea id="queryValue" rows="3" placeholder="Suchanfrage oder URL eingeben…"></textarea>
     <p class="helper">Der Text oder die URL, die gesendet werden soll.</p>
   </div>
 
-  <div class="field">
+  <div id="urlPreview" class="field">
     <label>URL-Vorschau</label>
     <input type="text" id="urlPreviewField" readonly style="background:#f0f0f0;color:#666;font-family:monospace;font-size:0.88rem;" />
   </div>
 
-  <button class="send-btn" id="sendBtn" onclick="sendRequest()">
+  </div><!-- end gooSection -->
+
+  <!-- INJECT Bereich -->
+  <div id="injectSection" style="display:none;">
+    <div class="field">
+      <label>Widget ID <span class="badge">Pflicht</span></label>
+      <input type="text" id="injectId" placeholder="z.B. 12779" />
+      <p class="helper">Die ID aus der URL: https://11z.co/_w/{ID}/selection</p>
+    </div>
+    <div class="field">
+      <label>Value <span class="badge">Pflicht</span></label>
+      <textarea id="injectValue" rows="3" placeholder="Text eingeben, der injiziert werden soll…"></textarea>
+      <p class="helper">Wird als JSON-Body gesendet: { "value": "..." }</p>
+    </div>
+    <div class="field">
+      <label>URL-Vorschau</label>
+      <input type="text" id="injectUrlPreview" readonly style="background:#f0f0f0;color:#666;font-family:monospace;font-size:0.88rem;" value="https://11z.co/_w/{ID}/selection" />
+    </div>
+  </div><!-- end injectSection -->
+
+  <!-- Sende-Button (global, immer sichtbar) -->
+  <button class="send-btn" id="sendBtn" onclick="sendRequest()" style="margin-bottom: 0;">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     <span id="btnLabel">Anfrage senden</span>
     <div class="spinner" id="spinner"></div>
@@ -111,13 +296,37 @@
 
 <script>
 const BASE = 'https://11q.co';
+const INJECT_BASE = 'https://11z.co/_w';
+let currentApi = 'goo';
+
+function switchApi(api) {
+  currentApi = api;
+  document.getElementById('gooSection').style.display = api === 'goo' ? '' : 'none';
+  document.getElementById('injectSection').style.display = api === 'inject' ? '' : 'none';
+  document.getElementById('tabGoo').classList.toggle('active', api === 'goo');
+  document.getElementById('tabInject').classList.toggle('active', api === 'inject');
+  document.getElementById('headerDesc').textContent = api === 'goo'
+    ? '11q.co API — Anfragen senden & Antworten anzeigen'
+    : '11z.co Inject API — Werte in Widgets injizieren';
+  document.getElementById('responseBox').style.display = 'none';
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'injectId') {
+    const id = e.target.value.trim();
+    document.getElementById('injectUrlPreview').value = id
+      ? INJECT_BASE + '/' + id + '/selection'
+      : 'https://11z.co/_w/{ID}/selection';
+  }
+});
+
 const ENDPOINTS = {
-  'get-last':            { method: 'GET',  path: id => `/api/last/${id}`,                desc: 'Ruft die zuletzt gesendete Suchanfrage ab. Gibt query, first-word, last-word und optional redirect_url zurück.', query: false },
-  'post-thump':          { method: 'POST', path: id => `/api/thump/${id}`,               desc: 'Sendet eine Suchanfrage (query) für die angegebene Goo ID. Wird gespeichert und kann über /last abgerufen werden.', query: true },
+  'get-last':            { method: 'GET',  path: id => `/api/last/${id}`,                desc: 'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab. Gibt query, first-word, last-word und optional redirect_url zurück.', query: false },
+  'post-thump':          { method: 'POST', path: id => `/api/thump/${id}`,               desc: 'Sendet eine Suchanfrage (query) für die angegebene Goo ID. Der query-Wert wird gespeichert und kann später über /last abgerufen werden.', query: true },
   'pro-last-deleted':    { method: 'GET',  path: id => `/pro-api/${id}/last-deleted`,    desc: '⭐ PRO — Ruft den zuletzt gelöschten Text aus dem Suchfeld ab (getippt, aber wieder gelöscht ohne Absenden).', query: false },
   'pro-autofill':        { method: 'GET',  path: id => `/pro-api/${id}/autofill`,        desc: '⭐ PRO — Ruft die zuletzt per Autofill übermittelten Formulardaten ab: Name, E-Mail, Telefon, Adresse, Geburtstag, Sternzeichen u.v.m.', query: false },
-  'live-text':           { method: 'GET',  path: id => `/api/live-text/${id}`,           desc: '⭐ PRO — Gibt den aktuell getippten Text im Suchfeld in Echtzeit zurück. Empfehlung: alle 300–500ms abfragen.', query: false, live: true },
-  'pro-last-bd':         { method: 'GET',  path: id => `/pro-api/${id}/last-bd`,         desc: '⭐ PRO — Ruft das Geburtsdatum zur letzten Suchanfrage ab (bei Prominentennamen). Gibt Geburtsdatum, Tage am Leben und kombinierten String zurück.', query: false },
+  'live-text':           { method: 'GET',  path: id => `/api/live-text/${id}`,           desc: '⭐ PRO — Gibt den aktuell getippten Text im Suchfeld in Echtzeit zurück. Ideal für Live Peek. Empfehlung: alle 300–500ms abfragen.', query: false, live: true },
+  'pro-last-bd':         { method: 'GET',  path: id => `/pro-api/${id}/last-bd`,         desc: '⭐ PRO — Ruft das Geburtsdatum zur letzten Suchanfrage ab, falls es sich um einen Prominentennamen handelt. Gibt Geburtsdatum, Tage am Leben und kombinierten String zurück.', query: false },
   'pro-last-deleted-bd': { method: 'GET',  path: id => `/pro-api/${id}/last-deleted-bd`, desc: '⭐ PRO — Wie last-bd, aber basierend auf dem zuletzt gelöschten Text. Ideal für Mentalism-Effekte.', query: false },
 };
 
@@ -142,16 +351,58 @@ function onEndpointChange() {
   updateUrlPreview();
 }
 
+// Init
 document.getElementById('gooId').addEventListener('input', updateUrlPreview);
 document.getElementById('endpoint').addEventListener('change', updateUrlPreview);
 onEndpointChange();
 
 async function sendRequest() {
+  if (currentApi === 'inject') { return sendInjectRequest(); }
+  else { return sendGooRequest(); }
+}
+async function sendInjectRequest() {
+  const id = document.getElementById('injectId').value.trim();
+  const value = document.getElementById('injectValue').value.trim();
+  if (!id) { alert('Bitte eine Widget ID eingeben.'); return; }
+  if (!value) { alert('Bitte einen Value eingeben.'); return; }
+  const url = INJECT_BASE + '/' + id + '/selection';
+  const btn = document.getElementById('sendBtn');
+  const spinner = document.getElementById('spinner');
+  const btnLabel = document.getElementById('btnLabel');
+  btn.disabled = true; spinner.style.display = 'block'; btnLabel.textContent = 'Wird gesendet…';
+  const responseBox = document.getElementById('responseBox');
+  const responseBody = document.getElementById('responseBody');
+  const statusPill = document.getElementById('statusPill');
+  responseBox.style.display = 'none';
+  try {
+    const res = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUrl: url, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) })
+    });
+    const data = await res.json();
+    let formatted = data.body;
+    try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
+    statusPill.textContent = data.status + (data.statusText ? ' ' + data.statusText : '');
+    statusPill.className = 'status-pill ' + (data.status < 400 ? 'status-ok' : 'status-err');
+    responseBody.textContent = formatted || '(Leere Antwort)';
+    responseBox.style.display = 'block';
+  } catch (err) {
+    statusPill.textContent = 'Fehler';
+    statusPill.className = 'status-pill status-err';
+    responseBody.textContent = 'Fehler:\n' + err.message;
+    responseBox.style.display = 'block';
+  } finally {
+    btn.disabled = false; spinner.style.display = 'none'; btnLabel.textContent = 'Anfrage senden';
+  }
+}
+async function sendGooRequest() {
   const gooId = getGooId();
   if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
 
   const ep = getEndpoint();
   const url = buildUrl();
+  const method = ep.method;
 
   const btn = document.getElementById('sendBtn');
   const spinner = document.getElementById('spinner');
@@ -166,17 +417,19 @@ async function sendRequest() {
   responseBox.style.display = 'none';
 
   try {
-    const res = await fetch('/api/proxy', {
+    // Proxy-Anfrage an /api/proxy
+    const fetchOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         targetUrl: url,
-        method: ep.method,
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: ep.query ? JSON.stringify({ query: document.getElementById('queryValue').value.trim() }) : null
       })
-    });
+    };
 
+    const res = await fetch('/api/proxy', fetchOptions);
     const data = await res.json();
     let formatted = data.body;
     try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
