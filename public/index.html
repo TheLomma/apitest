@@ -562,6 +562,19 @@ function updateFullscreen(eventData, color, type) {
 function renderUnifiEvents(events) {
   const container = document.getElementById('unifiEvents');
   container.innerHTML = '';
+  // Erstes (neuestes) Event für Vollbild verwenden
+  if (events.length > 0) {
+    let firstData = {};
+    try { firstData = JSON.parse(events[0].Event); } catch {}
+    const firstType = firstData.Event || 'Unbekannt';
+    const colors = {
+      'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
+      'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
+      'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
+    };
+    const firstColor = colors[firstType] || '#1a1a2e';
+    updateFullscreen(firstData, firstColor, firstType);
+  }
   events.forEach(ev => {
     let eventData = {};
     try { eventData = JSON.parse(ev.Event); } catch {}
