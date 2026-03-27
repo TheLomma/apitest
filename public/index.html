@@ -416,7 +416,7 @@
     <div class="unifi-controls">
       <div class="field">
         <label>User ID <span class="badge">Pflicht</span></label>
-        <input type="text" id="unifiUserId" placeholder="z.B. 6265" />
+        <input type="text" id="unifiUserId" placeholder="z.B. 6265" value="10154" />
         <p class="helper">Deine Unifi User ID von thump.buzz</p>
       </div>
       <div class="field" style="max-width:160px;">
@@ -433,6 +433,7 @@
       <button class="toggle-btn start" id="unifiToggleBtn" onclick="toggleUnifiPolling()">▶ Auto-Refresh starten</button>
       <span id="unifiPulse" style="display:none;"><span class="pulse"></span> Live</span>
       <button class="send-btn" style="width:auto;padding:9px 18px;margin-top:0;font-size:0.88rem;" onclick="fetchUnifiEvents()">Einmal abrufen</button>
+      <button class="toggle-btn" style="background:#6366f1;color:#fff;padding:9px 18px;" onclick="openFullscreen()">⛶ Vollbild</button>
     </div>
     <div class="events-container" id="unifiEvents">
       <div class="no-events">Noch keine Events. User ID eingeben und abrufen.</div>
