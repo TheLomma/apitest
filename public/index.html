@@ -191,6 +191,48 @@
     color: #fff;
   }
   .api-tab:first-child { border-right: 1.5px solid #ddd; }
+  .api-tab:not(:last-child) { border-right: 1.5px solid #ddd; }
+  .event-card {
+    background: #f8f8f8;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .event-card:first-child { border-left: 4px solid #e8002d; }
+  .event-type-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: #1a1a2e;
+    color: #fff;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .event-fields { display: flex; flex-direction: column; gap: 4px; }
+  .event-field { font-size: 0.87rem; color: #333; }
+  .event-field strong { color: #1a1a2e; min-width: 140px; display: inline-block; }
+  .unifi-controls { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 18px; }
+  .unifi-controls .field { flex: 1; margin-bottom: 0; }
+  .auto-refresh-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .toggle-btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-btn.start { background: #22c55e; color: #fff; }
+  .toggle-btn.stop { background: #e8002d; color: #fff; }
+  .pulse { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; display: inline-block; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .events-container { max-height: 400px; overflow-y: auto; }
+  .no-events { color: #aaa; font-size: 0.9rem; text-align: center; padding: 30px; }
 </style>
 </head>
 <body>
@@ -210,6 +252,7 @@
   <div class="api-tabs">
     <button class="api-tab active" id="tabGoo" onclick="switchApi('goo')">🔵 Goo</button>
     <button class="api-tab" id="tabInject" onclick="switchApi('inject')">🟢 Inject</button>
+    <button class="api-tab" id="tabUnifi" onclick="switchApi('unifi')">🟣 Unifi</button>
   </div>
 
   <!-- GOO Bereich -->
@@ -278,6 +321,34 @@
     </div>
   </div><!-- end injectSection -->
 
+  <!-- UNIFI Bereich -->
+  <div id="unifiSection" style="display:none;">
+    <div class="unifi-controls">
+      <div class="field">
+        <label>User ID <span class="badge">Pflicht</span></label>
+        <input type="text" id="unifiUserId" placeholder="z.B. 6265" />
+        <p class="helper">Deine Unifi User ID von thump.buzz</p>
+      </div>
+      <div class="field" style="max-width:160px;">
+        <label>Intervall</label>
+        <select id="unifiInterval">
+          <option value="2000">2 Sekunden</option>
+          <option value="5000" selected>5 Sekunden</option>
+          <option value="10000">10 Sekunden</option>
+          <option value="30000">30 Sekunden</option>
+        </select>
+      </div>
+    </div>
+    <div class="auto-refresh-row">
+      <button class="toggle-btn start" id="unifiToggleBtn" onclick="toggleUnifiPolling()">▶ Auto-Refresh starten</button>
+      <span id="unifiPulse" style="display:none;"><span class="pulse"></span> Live</span>
+      <button class="send-btn" style="width:auto;padding:9px 18px;margin-top:0;font-size:0.88rem;" onclick="fetchUnifiEvents()">Einmal abrufen</button>
+    </div>
+    <div class="events-container" id="unifiEvents">
+      <div class="no-events">Noch keine Events. User ID eingeben und abrufen.</div>
+    </div>
+  </div><!-- end unifiSection -->
+
   <!-- Sende-Button (global, immer sichtbar) -->
   <button class="send-btn" id="sendBtn" onclick="sendRequest()" style="margin-bottom: 0;">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -296,10 +367,87 @@
 
 <script>
 const BASE = 'https://11q.co';
+const UNIFI_BASE = 'https://thump.buzz/unifi/getEvent';
+let unifiTimer = null;
+let lastUnifiEventId = null;
+
+function toggleUnifiPolling() {
+  if (unifiTimer) {
+    clearInterval(unifiTimer);
+    unifiTimer = null;
+    document.getElementById('unifiToggleBtn').textContent = '▶ Auto-Refresh starten';
+    document.getElementById('unifiToggleBtn').className = 'toggle-btn start';
+    document.getElementById('unifiPulse').style.display = 'none';
+  } else {
+    fetchUnifiEvents();
+    const interval = parseInt(document.getElementById('unifiInterval').value);
+    unifiTimer = setInterval(fetchUnifiEvents, interval);
+    document.getElementById('unifiToggleBtn').textContent = '⏹ Stop';
+    document.getElementById('unifiToggleBtn').className = 'toggle-btn stop';
+    document.getElementById('unifiPulse').style.display = 'inline-flex';
+    document.getElementById('unifiPulse').style.alignItems = 'center';
+    document.getElementById('unifiPulse').style.gap = '6px';
+  }
+}
+
+async function fetchUnifiEvents() {
+  const userId = document.getElementById('unifiUserId').value.trim();
+  if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
+  try {
+    const res = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUrl: UNIFI_BASE + '?UserId=' + userId, method: 'GET', headers: {}, body: null })
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.body);
+    if (parsed.Event && parsed.Event.length > 0) {
+      renderUnifiEvents(parsed.Event);
+    }
+  } catch(err) {
+    document.getElementById('unifiEvents').innerHTML = '<div class="no-events" style="color:#e8002d;">Fehler: ' + err.message + '</div>';
+  }
+}
+
+function renderUnifiEvents(events) {
+  const container = document.getElementById('unifiEvents');
+  container.innerHTML = '';
+  events.forEach(ev => {
+    let eventData = {};
+    try { eventData = JSON.parse(ev.Event); } catch {}
+    const type = eventData.Event || 'Unbekannt';
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    const colors = {
+      'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
+      'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
+      'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
+    };
+    const color = colors[type] || '#1a1a2e';
+    let fieldsHtml = '<div class="event-fields">';
+    Object.entries(eventData).forEach(([k, v]) => {
+      if (k === 'Event') return;
+      if (v === null || v === undefined || v === '') return;
+      fieldsHtml += '<div class="event-field"><strong>' + k + ':</strong> ' + v + '</div>';
+    });
+    fieldsHtml += '</div>';
+    card.innerHTML = '<div class="event-type-badge" style="background:' + color + '">' + type + '</div><div style="font-size:0.75rem;color:#aaa;margin-bottom:8px;">ID: ' + ev.Id + ' &nbsp;|&nbsp; User: ' + ev.UserId + '</div>' + fieldsHtml;
+    container.appendChild(card);
+  });
+}
 const INJECT_BASE = 'https://11z.co/_w';
 let currentApi = 'goo';
 
 function switchApi(api) {
+  document.getElementById('unifiSection').style.display = api === 'unifi' ? '' : 'none';
+  document.getElementById('tabUnifi').classList.toggle('active', api === 'unifi');
+  if (api !== 'unifi' && unifiTimer) { clearInterval(unifiTimer); unifiTimer = null; }
+  const descs = {
+    goo: '11q.co API — Anfragen senden & Antworten anzeigen',
+    inject: '11z.co Inject API — Werte in Widgets injizieren',
+    unifi: 'thump.buzz Unifi API — Events live empfangen'
+  };
+  document.getElementById('headerDesc').textContent = descs[api] || '';
   currentApi = api;
   document.getElementById('gooSection').style.display = api === 'goo' ? '' : 'none';
   document.getElementById('injectSection').style.display = api === 'inject' ? '' : 'none';
