@@ -1,765 +1,605 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f0f2f5;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .container {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    padding: 36px 40px;
-    width: 100%;
-    max-width: 760px;
-  }
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
-    border-bottom: 2px solid #e8002d;
-    padding-bottom: 18px;
-  }
-  .header h1 { font-size: 1.45rem; color: #1a1a2e; font-weight: 700; }
-  .header p { color: #666; font-size: 0.88rem; margin-top: 2px; }
-  label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .field { margin-bottom: 18px; }
-  input[type="text"], select, textarea {
-    width: 100%;
-    border: 1.5px solid #ddd;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 0.97rem;
-    color: #222;
-    background: #fafafa;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-  input[type="text"]:focus, select:focus, textarea:focus {
-    border-color: #e8002d;
-    background: #fff;
-  }
-  .row { display: flex; gap: 16px; }
-  .row .field { flex: 1; }
-  select { cursor: pointer; }
-  textarea { min-height: 100px; resize: vertical; font-family: 'Courier New', monospace; font-size: 0.9rem; }
-  .badge {
-    display: inline-block;
-    font-size: 0.68rem;
-    background: #fff3f5;
-    color: #e8002d;
-    border: 1px solid #f5b8c0;
-    border-radius: 4px;
-    padding: 1px 7px;
-    margin-left: 6px;
-    font-weight: 700;
-    text-transform: uppercase;
-    vertical-align: middle;
-  }
-  .badge-pro {
-    background: #fefce8;
-    color: #854d0e;
-    border-color: #fde68a;
-  }
-  .send-btn {
-    width: 100%;
-    padding: 13px;
-    background: #e8002d;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  .send-btn:hover { background: #c0001f; }
-  .send-btn:active { transform: scale(0.98); }
-  .send-btn:disabled { background: #aaa; cursor: not-allowed; }
-  .response-box {
-    margin-top: 24px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1.5px solid #e0e0e0;
-    display: none;
-  }
-  .response-header {
-    background: #1a1a2e;
-    color: #fff;
-    padding: 9px 16px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .status-pill { padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; }
-  .status-ok { background: #22c55e; color: #fff; }
-  .status-err { background: #e8002d; color: #fff; }
-  .response-body {
-    background: #f8f8f8;
-    padding: 16px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    color: #222;
-    max-height: 300px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-  .divider { border: none; border-top: 1.5px solid #f0f0f0; margin: 20px 0; }
-  .helper { font-size: 0.78rem; color: #999; margin-top: 5px; }
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2.5px solid rgba(255,255,255,0.4);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .endpoint-desc {
-    background: #f8f8f8;
-    border-left: 3px solid #e8002d;
-    border-radius: 0 6px 6px 0;
-    padding: 10px 14px;
-    font-size: 0.83rem;
-    color: #555;
-    margin-bottom: 18px;
-    line-height: 1.5;
-  }
-  .query-field { display: none; }
-  .live-note {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 9px 14px;
-    font-size: 0.8rem;
-    color: #92400e;
-    margin-bottom: 14px;
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
-  .api-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 24px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1.5px solid #ddd;
-  }
-  .api-tab {
-    flex: 1;
-    padding: 11px;
-    text-align: center;
-    font-size: 0.92rem;
-    font-weight: 700;
-    cursor: pointer;
-    background: #fafafa;
-    color: #888;
-    border: none;
-    transition: background 0.2s, color 0.2s;
-    letter-spacing: 0.02em;
-  }
-  .api-tab.active {
-    background: #e8002d;
-    color: #fff;
-  }
-  .api-tab:first-child { border-right: 1.5px solid #ddd; }
-  .api-tab:not(:last-child) { border-right: 1.5px solid #ddd; }
-  .event-card {
-    background: #f8f8f8;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-  }
-  .event-card:first-child { border-left: 4px solid #e8002d; }
-  .event-type-badge {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 12px;
-    background: #1a1a2e;
-    color: #fff;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .event-fields { display: flex; flex-direction: column; gap: 4px; }
-  .event-field { font-size: 0.87rem; color: #333; }
-  .event-field strong { color: #1a1a2e; min-width: 140px; display: inline-block; }
-  .unifi-controls { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 18px; }
-  .unifi-controls .field { flex: 1; margin-bottom: 0; }
-  .auto-refresh-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-  .toggle-btn {
-    padding: 9px 18px;
-    border-radius: 8px;
-    border: none;
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .toggle-btn.start { background: #22c55e; color: #fff; }
-  .toggle-btn.stop { background: #e8002d; color: #fff; }
-  .pulse { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; display: inline-block; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .events-container { max-height: 400px; overflow-y: auto; }
-  .no-events { color: #aaa; font-size: 0.9rem; text-align: center; padding: 30px; }
-  .fullscreen-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #0d0d0d;
-    z-index: 9999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-  }
-  .fullscreen-overlay.active { display: flex; }
-  .fullscreen-close {
-    position: absolute;
-    top: 20px;
-    right: 28px;
-    background: none;
-    border: none;
-    color: #666;
-    font-size: 2rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
-  }
-  .fullscreen-close:hover { color: #fff; }
-  .fullscreen-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #555;
-    margin-bottom: 18px;
-  }
-  .fullscreen-event-type {
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 4px 18px;
-    border-radius: 20px;
-    color: #fff;
-    margin-bottom: 32px;
-  }
-  .fullscreen-value {
-    font-size: clamp(3rem, 10vw, 7rem);
-    font-weight: 900;
-    color: #fff;
-    text-align: center;
-    line-height: 1.1;
-    word-break: break-word;
-    max-width: 90vw;
-  }
-  .fullscreen-sub {
-    margin-top: 28px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: center;
-  }
-  .fullscreen-sub-field {
-    background: #1a1a1a;
-    border-radius: 8px;
-    padding: 10px 18px;
-    text-align: center;
-    min-width: 120px;
-  }
-  .fullscreen-sub-field .sub-key {
-    font-size: 0.7rem;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
-  }
-  .fullscreen-sub-field .sub-val {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #ddd;
-  }
-  .fullscreen-pulse {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #444;
-    font-size: 0.8rem;
-  }
-  .fullscreen-pulse .pulse { background: #22c55e; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="#e8002d"/>
-      <path d="M10 18h16M22 13l5 5-5 5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div>
-      <h1>API Tool</h1>
-      <p id="headerDesc">11q.co API &mdash; Anfragen senden &amp; Antworten anzeigen</p>
-    </div>
-  </div>
+import { useState, useRef, useEffect, useCallback } from "react";
 
-  <!-- API Auswahl -->
-  <div class="api-tabs">
-    <button class="api-tab active" id="tabGoo" onclick="switchApi('goo')">🔵 Goo</button>
-    <button class="api-tab" id="tabInject" onclick="switchApi('inject')">🟢 Inject</button>
-    <button class="api-tab" id="tabUnifi" onclick="switchApi('unifi')">🟣 Unifi</button>
-  </div>
-
-  <!-- GOO Bereich -->
-  <div id="gooSection">
-  <div class="row">
-    <div class="field">
-      <label>Goo ID <span class="badge">Pflicht</span></label>
-      <input type="text" id="gooId" placeholder="z.B. 12" />
-      <p class="helper">Deine persönliche Goo ID</p>
-    </div>
-    <div class="field">
-      <label>Endpunkt</label>
-      <select id="endpoint" onchange="onEndpointChange()">
-        <optgroup label="Standard APIs">
-          <option value="get-last">GET /api/last/{goo_id} — Letzten Query abrufen</option>
-          <option value="post-thump" selected>POST /api/thump/{goo_id} — Query senden</option>
-        </optgroup>
-        <optgroup label="PRO APIs">
-          <option value="pro-last-deleted">GET /pro-api/{goo_id}/last-deleted ⭐ PRO</option>
-          <option value="pro-autofill">GET /pro-api/{goo_id}/autofill ⭐ PRO</option>
-          <option value="live-text">GET /api/live-text/{goo_id} ⭐ PRO</option>
-          <option value="pro-last-bd">GET /pro-api/{goo_id}/last-bd ⭐ PRO</option>
-          <option value="pro-last-deleted-bd">GET /pro-api/{goo_id}/last-deleted-bd ⭐ PRO</option>
-        </optgroup>
-      </select>
-    </div>
-  </div>
-
-  <div class="endpoint-desc" id="endpointDesc">
-    Sendet eine Suchanfrage (query) für die angegebene Goo ID. Der query-Wert wird gespeichert und kann später über /last abgerufen werden.
-  </div>
-
-  <div class="live-note" id="liveNote">
-    ⚡ Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.
-  </div>
-
-  <!-- Query-Feld (nur für POST thump) -->
-  <div class="field query-field" id="queryField">
-    <label>Query <span class="badge">Pflicht</span></label>
-    <textarea id="queryValue" rows="3" placeholder="Suchanfrage oder URL eingeben…"></textarea>
-    <p class="helper">Der Text oder die URL, die gesendet werden soll.</p>
-  </div>
-
-  <div id="urlPreview" class="field">
-    <label>URL-Vorschau</label>
-    <input type="text" id="urlPreviewField" readonly style="background:#f0f0f0;color:#666;font-family:monospace;font-size:0.88rem;" />
-  </div>
-
-  </div><!-- end gooSection -->
-
-  <!-- INJECT Bereich -->
-  <div id="injectSection" style="display:none;">
-    <div class="field">
-      <label>Widget ID <span class="badge">Pflicht</span></label>
-      <input type="text" id="injectId" placeholder="z.B. 12779" />
-      <p class="helper">Die ID aus der URL: https://11z.co/_w/{ID}/selection</p>
-    </div>
-    <div class="field">
-      <label>Value <span class="badge">Pflicht</span></label>
-      <textarea id="injectValue" rows="3" placeholder="Text eingeben, der injiziert werden soll…"></textarea>
-      <p class="helper">Wird als JSON-Body gesendet: { "value": "..." }</p>
-    </div>
-    <div class="field">
-      <label>URL-Vorschau</label>
-      <input type="text" id="injectUrlPreview" readonly style="background:#f0f0f0;color:#666;font-family:monospace;font-size:0.88rem;" value="https://11z.co/_w/{ID}/selection" />
-    </div>
-  </div><!-- end injectSection -->
-
-  <!-- UNIFI Bereich -->
-  <div id="unifiSection" style="display:none;">
-    <div class="unifi-controls">
-      <div class="field">
-        <label>User ID <span class="badge">Pflicht</span></label>
-        <input type="text" id="unifiUserId" placeholder="z.B. 6265" value="10154" />
-        <p class="helper">Deine Unifi User ID von thump.buzz</p>
-      </div>
-      <div class="field" style="max-width:160px;">
-        <label>Intervall</label>
-        <select id="unifiInterval">
-          <option value="2000">2 Sekunden</option>
-          <option value="5000" selected>5 Sekunden</option>
-          <option value="10000">10 Sekunden</option>
-          <option value="30000">30 Sekunden</option>
-        </select>
-      </div>
-    </div>
-    <div class="auto-refresh-row">
-      <button class="toggle-btn start" id="unifiToggleBtn" onclick="toggleUnifiPolling()">▶ Auto-Refresh starten</button>
-      <span id="unifiPulse" style="display:none;"><span class="pulse"></span> Live</span>
-      <button class="send-btn" style="width:auto;padding:9px 18px;margin-top:0;font-size:0.88rem;" onclick="fetchUnifiEvents()">Einmal abrufen</button>
-      <button class="toggle-btn" style="background:#6366f1;color:#fff;padding:9px 18px;" onclick="openFullscreen()">⛶ Vollbild</button>
-    </div>
-    <div class="events-container" id="unifiEvents">
-      <div class="no-events">Noch keine Events. User ID eingeben und abrufen.</div>
-    </div>
-  </div><!-- end unifiSection -->
-
-  <!-- VOLLBILD OVERLAY -->
-  <div class="fullscreen-overlay" id="fullscreenOverlay">
-    <button class="fullscreen-close" onclick="closeFullscreen()">✕</button>
-    <div class="fullscreen-label" id="fsLabel">Warte auf Events...</div>
-    <div class="fullscreen-event-type" id="fsEventType" style="background:#1a1a2e;"></div>
-    <div class="fullscreen-value" id="fsValue">—</div>
-    <div class="fullscreen-sub" id="fsSub"></div>
-    <div class="fullscreen-pulse" id="fsPulse" style="display:none;">
-      <span class="pulse"></span> Live
-    </div>
-  </div>
-
-  <!-- Sende-Button (global, immer sichtbar) -->
-  <button class="send-btn" id="sendBtn" onclick="sendRequest()" style="margin-bottom: 0;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    <span id="btnLabel">Anfrage senden</span>
-    <div class="spinner" id="spinner"></div>
-  </button>
-
-  <div class="response-box" id="responseBox">
-    <div class="response-header">
-      <span>Antwort</span>
-      <span class="status-pill" id="statusPill"></span>
-    </div>
-    <div class="response-body" id="responseBody"></div>
-  </div>
-</div>
-
-<script>
-const BASE = 'https://11q.co';
-const UNIFI_BASE = 'https://thump.buzz/unifi/getEvent';
-let unifiTimer = null;
-let lastUnifiEventId = null;
-
-function toggleUnifiPolling() {
-  if (unifiTimer) {
-    clearInterval(unifiTimer);
-    unifiTimer = null;
-    document.getElementById('unifiToggleBtn').textContent = '▶ Auto-Refresh starten';
-    document.getElementById('unifiToggleBtn').className = 'toggle-btn start';
-    document.getElementById('unifiPulse').style.display = 'none';
-  } else {
-    fetchUnifiEvents();
-    const interval = parseInt(document.getElementById('unifiInterval').value);
-    unifiTimer = setInterval(fetchUnifiEvents, interval);
-    document.getElementById('unifiToggleBtn').textContent = '⏹ Stop';
-    document.getElementById('unifiToggleBtn').className = 'toggle-btn stop';
-    document.getElementById('unifiPulse').style.display = 'inline-flex';
-    document.getElementById('unifiPulse').style.alignItems = 'center';
-    document.getElementById('unifiPulse').style.gap = '6px';
-  }
-}
-
-async function fetchUnifiEvents() {
-  const userId = document.getElementById('unifiUserId').value.trim();
-  if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
-  try {
-    const res = await fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUrl: UNIFI_BASE + '?UserId=' + userId, method: 'GET', headers: {}, body: null })
-    });
-    const data = await res.json();
-    const parsed = JSON.parse(data.body);
-    if (parsed.Event && parsed.Event.length > 0) {
-      renderUnifiEvents(parsed.Event);
-    }
-  } catch(err) {
-    document.getElementById('unifiEvents').innerHTML = '<div class="no-events" style="color:#e8002d;">Fehler: ' + err.message + '</div>';
-  }
-}
-
-const PRIMARY_FIELDS = {
-  'Unifi Intelligence': 'result',
-  'ELIPS': 'song',
-  'Second Sight': 'description',
-  'Book Test': 'result',
-  'Calculator': 'actual_result',
-  'Poker Chip': 'result',
-  'Dice': 'result',
-  'MindScale': 'result',
-  'Web Messaging': 'result',
-};
-
-let fullscreenActive = false;
-
-function openFullscreen() {
-  fullscreenActive = true;
-  document.getElementById('fullscreenOverlay').classList.add('active');
-  document.getElementById('fsPulse').style.display = unifiTimer ? 'flex' : 'none';
-}
-
-function closeFullscreen() {
-  fullscreenActive = false;
-  document.getElementById('fullscreenOverlay').classList.remove('active');
-}
-
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFullscreen(); });
-
-function updateFullscreen(eventData, color, type) {
-  const primaryField = PRIMARY_FIELDS[type] || Object.keys(eventData).find(k => k !== 'Event') || '';
-  const primaryValue = eventData[primaryField] || '—';
-  document.getElementById('fsLabel').textContent = primaryField.toUpperCase();
-  document.getElementById('fsEventType').textContent = type;
-  document.getElementById('fsEventType').style.background = color;
-  document.getElementById('fsValue').textContent = primaryValue;
-  document.getElementById('fsPulse').style.display = unifiTimer ? 'flex' : 'none';
-  // Subfelder
-  const sub = document.getElementById('fsSub');
-  sub.innerHTML = '';
-  Object.entries(eventData).forEach(([k, v]) => {
-    if (k === 'Event' || k === primaryField || !v) return;
-    const el = document.createElement('div');
-    el.className = 'fullscreen-sub-field';
-    el.innerHTML = '<div class="sub-key">' + k + '</div><div class="sub-val">' + v + '</div>';
-    sub.appendChild(el);
-  });
-}
-
-function renderUnifiEvents(events) {
-  const container = document.getElementById('unifiEvents');
-  container.innerHTML = '';
-  // Erstes (neuestes) Event für Vollbild verwenden
-  if (events.length > 0) {
-    let firstData = {};
-    try { firstData = JSON.parse(events[0].Event); } catch {}
-    const firstType = firstData.Event || 'Unbekannt';
-    const colors = {
-      'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
-      'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
-      'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
-    };
-    const firstColor = colors[firstType] || '#1a1a2e';
-    updateFullscreen(firstData, firstColor, firstType);
-  }
-  events.forEach(ev => {
-    let eventData = {};
-    try { eventData = JSON.parse(ev.Event); } catch {}
-    const type = eventData.Event || 'Unbekannt';
-    const card = document.createElement('div');
-    card.className = 'event-card';
-    const colors = {
-      'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
-      'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
-      'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
-    };
-    const color = colors[type] || '#1a1a2e';
-    let fieldsHtml = '<div class="event-fields">';
-    Object.entries(eventData).forEach(([k, v]) => {
-      if (k === 'Event') return;
-      if (v === null || v === undefined || v === '') return;
-      fieldsHtml += '<div class="event-field"><strong>' + k + ':</strong> ' + v + '</div>';
-    });
-    fieldsHtml += '</div>';
-    card.innerHTML = '<div class="event-type-badge" style="background:' + color + '">' + type + '</div><div style="font-size:0.75rem;color:#aaa;margin-bottom:8px;">ID: ' + ev.Id + ' &nbsp;|&nbsp; User: ' + ev.UserId + '</div>' + fieldsHtml;
-    container.appendChild(card);
-  });
-}
-const INJECT_BASE = 'https://11z.co/_w';
-let currentApi = 'goo';
-
-function switchApi(api) {
-  document.getElementById('unifiSection').style.display = api === 'unifi' ? '' : 'none';
-  document.getElementById('tabUnifi').classList.toggle('active', api === 'unifi');
-  if (api !== 'unifi' && unifiTimer) { clearInterval(unifiTimer); unifiTimer = null; }
-  const descs = {
-    goo: '11q.co API — Anfragen senden & Antworten anzeigen',
-    inject: '11z.co Inject API — Werte in Widgets injizieren',
-    unifi: 'thump.buzz Unifi API — Events live empfangen'
-  };
-  document.getElementById('headerDesc').textContent = descs[api] || '';
-  currentApi = api;
-  document.getElementById('gooSection').style.display = api === 'goo' ? '' : 'none';
-  document.getElementById('injectSection').style.display = api === 'inject' ? '' : 'none';
-  document.getElementById('tabGoo').classList.toggle('active', api === 'goo');
-  document.getElementById('tabInject').classList.toggle('active', api === 'inject');
-  document.getElementById('headerDesc').textContent = api === 'goo'
-    ? '11q.co API — Anfragen senden & Antworten anzeigen'
-    : '11z.co Inject API — Werte in Widgets injizieren';
-  document.getElementById('responseBox').style.display = 'none';
-}
-
-document.addEventListener('input', function(e) {
-  if (e.target.id === 'injectId') {
-    const id = e.target.value.trim();
-    document.getElementById('injectUrlPreview').value = id
-      ? INJECT_BASE + '/' + id + '/selection'
-      : 'https://11z.co/_w/{ID}/selection';
-  }
-});
+const BASE_GOO = "https://11q.co";
+const BASE_INJECT = "https://11z.co/_w";
+const BASE_UNIFI = "https://thump.buzz/unifi/getEvent";
 
 const ENDPOINTS = {
-  'get-last':            { method: 'GET',  path: id => `/api/last/${id}`,                desc: 'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab. Gibt query, first-word, last-word und optional redirect_url zurück.', query: false },
-  'post-thump':          { method: 'POST', path: id => `/api/thump/${id}`,               desc: 'Sendet eine Suchanfrage (query) für die angegebene Goo ID. Der query-Wert wird gespeichert und kann später über /last abgerufen werden.', query: true },
-  'pro-last-deleted':    { method: 'GET',  path: id => `/pro-api/${id}/last-deleted`,    desc: '⭐ PRO — Ruft den zuletzt gelöschten Text aus dem Suchfeld ab (getippt, aber wieder gelöscht ohne Absenden).', query: false },
-  'pro-autofill':        { method: 'GET',  path: id => `/pro-api/${id}/autofill`,        desc: '⭐ PRO — Ruft die zuletzt per Autofill übermittelten Formulardaten ab: Name, E-Mail, Telefon, Adresse, Geburtstag, Sternzeichen u.v.m.', query: false },
-  'live-text':           { method: 'GET',  path: id => `/api/live-text/${id}`,           desc: '⭐ PRO — Gibt den aktuell getippten Text im Suchfeld in Echtzeit zurück. Ideal für Live Peek. Empfehlung: alle 300–500ms abfragen.', query: false, live: true },
-  'pro-last-bd':         { method: 'GET',  path: id => `/pro-api/${id}/last-bd`,         desc: '⭐ PRO — Ruft das Geburtsdatum zur letzten Suchanfrage ab, falls es sich um einen Prominentennamen handelt. Gibt Geburtsdatum, Tage am Leben und kombinierten String zurück.', query: false },
-  'pro-last-deleted-bd': { method: 'GET',  path: id => `/pro-api/${id}/last-deleted-bd`, desc: '⭐ PRO — Wie last-bd, aber basierend auf dem zuletzt gelöschten Text. Ideal für Mentalism-Effekte.', query: false },
+  "get-last":            { method: "GET",  path: id => `/api/last/${id}`,                desc: "Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.", query: false },
+  "post-thump":          { method: "POST", path: id => `/api/thump/${id}`,               desc: "Sendet eine Suchanfrage (query) für die angegebene Goo ID.", query: true },
+  "pro-last-deleted":    { method: "GET",  path: id => `/pro-api/${id}/last-deleted`,    desc: "⭐ PRO — Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.", query: false },
+  "pro-autofill":        { method: "GET",  path: id => `/pro-api/${id}/autofill`,        desc: "⭐ PRO — Ruft per Autofill übermittelte Formulardaten ab.", query: false },
+  "live-text":           { method: "GET",  path: id => `/api/live-text/${id}`,           desc: "⭐ PRO — Gibt den aktuell getippten Text in Echtzeit zurück.", query: false, live: true },
+  "pro-last-bd":         { method: "GET",  path: id => `/pro-api/${id}/last-bd`,         desc: "⭐ PRO — Ruft das Geburtsdatum zur letzten Suchanfrage ab.", query: false },
+  "pro-last-deleted-bd": { method: "GET",  path: id => `/pro-api/${id}/last-deleted-bd`, desc: "⭐ PRO — Wie last-bd, aber basierend auf dem zuletzt gelöschten Text.", query: false },
 };
 
-function getEndpoint() { return ENDPOINTS[document.getElementById('endpoint').value]; }
-function getGooId()    { return document.getElementById('gooId').value.trim(); }
+const UNIFI_COLORS = {
+  "Unifi Intelligence": "#6366f1", "ELIPS": "#f59e0b", "Second Sight": "#8b5cf6",
+  "Book Test": "#0ea5e9", "Calculator": "#10b981", "Poker Chip": "#ef4444",
+  "Dice": "#f97316", "MindScale": "#ec4899", "Web Messaging": "#64748b",
+};
 
-function buildUrl() {
-  const ep = getEndpoint();
-  const id = getGooId() || '{goo_id}';
-  return BASE + ep.path(id);
+const PRIMARY_FIELDS = {
+  "Unifi Intelligence": "result", "ELIPS": "song", "Second Sight": "description",
+  "Book Test": "result", "Calculator": "actual_result", "Poker Chip": "result",
+  "Dice": "result", "MindScale": "result", "Web Messaging": "result",
+};
+
+function FInput({ value, onChange, placeholder, readOnly, mono }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      onFocus={() => setFocus(true)}
+      onBlur={() => setFocus(false)}
+      style={{
+        width: "100%", border: `1.5px solid ${focus ? "#e8002d" : "#ddd"}`, borderRadius: 8,
+        padding: "10px 14px", fontSize: mono ? "0.88rem" : "0.97rem", color: readOnly ? "#666" : "#222",
+        background: readOnly ? "#f0f0f0" : focus ? "#fff" : "#fafafa", outline: "none",
+        boxSizing: "border-box", fontFamily: mono ? "monospace" : "inherit", transition: "border-color 0.2s"
+      }}
+    />
+  );
 }
 
-function updateUrlPreview() {
-  document.getElementById('urlPreviewField').value = buildUrl();
+function FTextarea({ value, onChange, placeholder }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <textarea
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={3}
+      onFocus={() => setFocus(true)}
+      onBlur={() => setFocus(false)}
+      style={{
+        width: "100%", border: `1.5px solid ${focus ? "#e8002d" : "#ddd"}`, borderRadius: 8,
+        padding: "10px 14px", fontSize: "0.9rem", color: "#222",
+        background: focus ? "#fff" : "#fafafa", outline: "none", boxSizing: "border-box",
+        resize: "vertical", minHeight: 90, fontFamily: "'Courier New', monospace", transition: "border-color 0.2s"
+      }}
+    />
+  );
 }
 
-function onEndpointChange() {
-  const ep = getEndpoint();
-  document.getElementById('endpointDesc').textContent = ep.desc;
-  document.getElementById('queryField').style.display = ep.query ? 'block' : 'none';
-  document.getElementById('liveNote').style.display = ep.live ? 'flex' : 'none';
-  updateUrlPreview();
+function Spinner() {
+  return (
+    <span style={{
+      width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)",
+      borderTopColor: "#fff", borderRadius: "50%", display: "inline-block",
+      animation: "spin 0.7s linear infinite"
+    }} />
+  );
 }
 
-// Init
-document.getElementById('gooId').addEventListener('input', updateUrlPreview);
-document.getElementById('endpoint').addEventListener('change', updateUrlPreview);
-onEndpointChange();
-
-async function sendRequest() {
-  if (currentApi === 'inject') { return sendInjectRequest(); }
-  else { return sendGooRequest(); }
+function Label({ children }) {
+  return (
+    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "#444", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+      {children}
+    </label>
+  );
 }
-async function sendInjectRequest() {
-  const id = document.getElementById('injectId').value.trim();
-  const value = document.getElementById('injectValue').value.trim();
-  if (!id) { alert('Bitte eine Widget ID eingeben.'); return; }
-  if (!value) { alert('Bitte einen Value eingeben.'); return; }
-  const url = INJECT_BASE + '/' + id + '/selection';
-  const btn = document.getElementById('sendBtn');
-  const spinner = document.getElementById('spinner');
-  const btnLabel = document.getElementById('btnLabel');
-  btn.disabled = true; spinner.style.display = 'block'; btnLabel.textContent = 'Wird gesendet…';
-  const responseBox = document.getElementById('responseBox');
-  const responseBody = document.getElementById('responseBody');
-  const statusPill = document.getElementById('statusPill');
-  responseBox.style.display = 'none';
-  try {
-    const res = await fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUrl: url, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) })
-    });
-    const data = await res.json();
-    let formatted = data.body;
-    try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
-    statusPill.textContent = data.status + (data.statusText ? ' ' + data.statusText : '');
-    statusPill.className = 'status-pill ' + (data.status < 400 ? 'status-ok' : 'status-err');
-    responseBody.textContent = formatted || '(Leere Antwort)';
-    responseBox.style.display = 'block';
-  } catch (err) {
-    statusPill.textContent = 'Fehler';
-    statusPill.className = 'status-pill status-err';
-    responseBody.textContent = 'Fehler:\n' + err.message;
-    responseBox.style.display = 'block';
-  } finally {
-    btn.disabled = false; spinner.style.display = 'none'; btnLabel.textContent = 'Anfrage senden';
+
+function Badge({ children }) {
+  return (
+    <span style={{ display: "inline-block", fontSize: "0.68rem", background: "#fff3f5", color: "#e8002d", border: "1px solid #f5b8c0", borderRadius: 4, padding: "1px 7px", marginLeft: 6, fontWeight: 700, textTransform: "uppercase", verticalAlign: "middle" }}>
+      {children}
+    </span>
+  );
+}
+
+function Field({ children, style }) {
+  return <div style={{ marginBottom: 18, ...style }}>{children}</div>;
+}
+
+function Helper({ children }) {
+  return <p style={{ fontSize: "0.78rem", color: "#999", marginTop: 5 }}>{children}</p>;
+}
+
+function SendBtn({ loading, onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{
+        width: "100%", padding: 13, background: loading ? "#aaa" : "#e8002d", color: "#fff",
+        border: "none", borderRadius: 8, fontSize: "1rem", fontWeight: 700,
+        cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center",
+        justifyContent: "center", gap: 10, marginTop: 4
+      }}
+    >
+      {loading ? <Spinner /> : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      )}
+      {loading ? "Wird gesendet…" : label}
+    </button>
+  );
+}
+
+function ResponseBox({ result }) {
+  if (!result) return null;
+  const ok = typeof result.status === "number" ? result.status < 400 : result.status !== "ERR";
+  return (
+    <div style={{ marginTop: 24, borderRadius: 8, overflow: "hidden", border: "1.5px solid #e0e0e0" }}>
+      <div style={{ background: "#1a1a2e", color: "#fff", padding: "9px 16px", fontSize: "0.82rem", fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>Antwort</span>
+        <span style={{ padding: "2px 10px", borderRadius: 12, fontSize: "0.78rem", fontWeight: 700, background: ok ? "#22c55e" : "#e8002d", color: "#fff" }}>
+          {result.status}{result.statusText ? " " + result.statusText : ""}
+        </span>
+      </div>
+      <div style={{ background: "#f8f8f8", padding: 16, fontFamily: "'Courier New', monospace", fontSize: "0.85rem", color: "#222", maxHeight: 300, overflowY: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+        {result.body || "(Leere Antwort)"}
+      </div>
+    </div>
+  );
+}
+
+function GooSection({ onResult }) {
+  const [gooId, setGooId] = useState("");
+  const [ep, setEp] = useState("post-thump");
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const epObj = ENDPOINTS[ep];
+  const url = BASE_GOO + epObj.path(gooId || "{goo_id}");
+
+  async function send() {
+    if (!gooId) { alert("Bitte eine Goo ID eingeben."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl: url, method: epObj.method, headers: { "Content-Type": "application/json" }, body: epObj.query ? JSON.stringify({ query }) : null })
+      });
+      const data = await res.json();
+      let formatted = data.body;
+      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
+      onResult({ status: data.status, statusText: data.statusText, body: formatted });
+    } catch (err) {
+      onResult({ status: "ERR", statusText: "", body: "Fehler:\n" + err.message });
+    } finally { setLoading(false); }
   }
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 16 }}>
+        <Field style={{ flex: 1 }}>
+          <Label>Goo ID <Badge>Pflicht</Badge></Label>
+          <FInput value={gooId} onChange={e => setGooId(e.target.value)} placeholder="z.B. 12" />
+          <Helper>Deine persönliche Goo ID</Helper>
+        </Field>
+        <Field style={{ flex: 1 }}>
+          <Label>Endpunkt</Label>
+          <select value={ep} onChange={e => setEp(e.target.value)} style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "10px 14px", fontSize: "0.97rem", color: "#222", background: "#fafafa", outline: "none", cursor: "pointer" }}>
+            <optgroup label="Standard APIs">
+              <option value="get-last">GET /api/last — Letzten Query abrufen</option>
+              <option value="post-thump">POST /api/thump — Query senden</option>
+            </optgroup>
+            <optgroup label="PRO APIs">
+              <option value="pro-last-deleted">GET /pro-api/last-deleted ⭐ PRO</option>
+              <option value="pro-autofill">GET /pro-api/autofill ⭐ PRO</option>
+              <option value="live-text">GET /api/live-text ⭐ PRO</option>
+              <option value="pro-last-bd">GET /pro-api/last-bd ⭐ PRO</option>
+              <option value="pro-last-deleted-bd">GET /pro-api/last-deleted-bd ⭐ PRO</option>
+            </optgroup>
+          </select>
+        </Field>
+      </div>
+      <div style={{ background: "#f8f8f8", borderLeft: "3px solid #e8002d", borderRadius: "0 6px 6px 0", padding: "10px 14px", fontSize: "0.83rem", color: "#555", marginBottom: 18, lineHeight: 1.5 }}>
+        {epObj.desc}
+      </div>
+      {epObj.live && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "9px 14px", fontSize: "0.8rem", color: "#92400e", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+          ⚡ Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.
+        </div>
+      )}
+      {epObj.query && (
+        <Field>
+          <Label>Query <Badge>Pflicht</Badge></Label>
+          <FTextarea value={query} onChange={e => setQuery(e.target.value)} placeholder="Suchanfrage oder URL eingeben…" />
+          <Helper>Der Text oder die URL, die gesendet werden soll.</Helper>
+        </Field>
+      )}
+      <Field>
+        <Label>URL-Vorschau</Label>
+        <FInput value={url} readOnly mono />
+      </Field>
+      <SendBtn loading={loading} onClick={send} label="Anfrage senden" />
+    </>
+  );
 }
-async function sendGooRequest() {
-  const gooId = getGooId();
-  if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
 
-  const ep = getEndpoint();
-  const url = buildUrl();
-  const method = ep.method;
+function InjectSection({ onResult }) {
+  const [id, setId] = useState("");
+  const [value, setValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const previewUrl = id ? `${BASE_INJECT}/${id}/selection` : "https://11z.co/_w/{ID}/selection";
 
-  const btn = document.getElementById('sendBtn');
-  const spinner = document.getElementById('spinner');
-  const btnLabel = document.getElementById('btnLabel');
-  btn.disabled = true;
-  spinner.style.display = 'block';
-  btnLabel.textContent = 'Wird gesendet…';
-
-  const responseBox = document.getElementById('responseBox');
-  const responseBody = document.getElementById('responseBody');
-  const statusPill = document.getElementById('statusPill');
-  responseBox.style.display = 'none';
-
-  try {
-    // Proxy-Anfrage an /api/proxy
-    const fetchOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        targetUrl: url,
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: ep.query ? JSON.stringify({ query: document.getElementById('queryValue').value.trim() }) : null
-      })
-    };
-
-    const res = await fetch('/api/proxy', fetchOptions);
-    const data = await res.json();
-    let formatted = data.body;
-    try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
-
-    statusPill.textContent = data.status + (data.statusText ? ' ' + data.statusText : '');
-    statusPill.className = 'status-pill ' + (data.status < 400 ? 'status-ok' : 'status-err');
-    responseBody.textContent = formatted || '(Leere Antwort)';
-    responseBox.style.display = 'block';
-  } catch (err) {
-    statusPill.textContent = 'Fehler';
-    statusPill.className = 'status-pill status-err';
-    responseBody.textContent = 'Fehler:\n' + err.message;
-    responseBox.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    spinner.style.display = 'none';
-    btnLabel.textContent = 'Anfrage senden';
+  async function send() {
+    if (!id) { alert("Bitte eine Widget ID eingeben."); return; }
+    if (!value) { alert("Bitte einen Value eingeben."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl: previewUrl, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) })
+      });
+      const data = await res.json();
+      let formatted = data.body;
+      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
+      onResult({ status: data.status, statusText: data.statusText, body: formatted });
+    } catch (err) {
+      onResult({ status: "ERR", statusText: "", body: "Fehler:\n" + err.message });
+    } finally { setLoading(false); }
   }
+
+  return (
+    <>
+      <Field>
+        <Label>Widget ID <Badge>Pflicht</Badge></Label>
+        <FInput value={id} onChange={e => setId(e.target.value)} placeholder="z.B. 12779" />
+        <Helper>Die ID aus der URL: https://11z.co/_w/ID/selection</Helper>
+      </Field>
+      <Field>
+        <Label>Value <Badge>Pflicht</Badge></Label>
+        <FTextarea value={value} onChange={e => setValue(e.target.value)} placeholder="Text eingeben, der injiziert werden soll…" />
+        <Helper>Wird als JSON-Body gesendet: value</Helper>
+      </Field>
+      <Field>
+        <Label>URL-Vorschau</Label>
+        <FInput value={previewUrl} readOnly mono />
+      </Field>
+      <SendBtn loading={loading} onClick={send} label="Anfrage senden" />
+    </>
+  );
 }
-</script>
-</body>
-</html>
+
+function FullscreenOverlay({ events, isLive, onClose }) {
+  useEffect(() => {
+    const handler = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  let firstData = {};
+  if (events && events.length > 0) {
+    try { firstData = JSON.parse(events[0].Event); } catch {}
+  }
+  const type = firstData.Event || "Unbekannt";
+  const color = UNIFI_COLORS[type] || "#1a1a2e";
+  const primaryField = PRIMARY_FIELDS[type] || Object.keys(firstData).find(k => k !== "Event") || "";
+  const primaryValue = firstData[primaryField] || "—";
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "#0d0d0d", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <button onClick={onClose} style={{ position: "absolute", top: 20, right: 28, background: "none", border: "none", color: "#666", fontSize: "2rem", cursor: "pointer" }}>✕</button>
+      {events && events.length > 0 ? (
+        <>
+          <div style={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 18 }}>{primaryField.toUpperCase()}</div>
+          <div style={{ fontSize: "1rem", fontWeight: 700, padding: "4px 18px", borderRadius: 20, color: "#fff", background: color, marginBottom: 32, letterSpacing: "0.1em", textTransform: "uppercase" }}>{type}</div>
+          <div style={{ fontSize: "clamp(3rem, 10vw, 7rem)", fontWeight: 900, color: "#fff", textAlign: "center", lineHeight: 1.1, wordBreak: "break-word", maxWidth: "90vw" }}>{primaryValue}</div>
+          <div style={{ marginTop: 28, display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center" }}>
+            {Object.entries(firstData).filter(([k, v]) => k !== "Event" && k !== primaryField && v).map(([k, v]) => (
+              <div key={k} style={{ background: "#1a1a1a", borderRadius: 8, padding: "10px 18px", textAlign: "center", minWidth: 120 }}>
+                <div style={{ fontSize: "0.7rem", color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{k}</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#ddd" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#555", marginBottom: 18 }}>Warte auf Events...</div>
+          <div style={{ fontSize: "5rem", fontWeight: 900, color: "#fff" }}>—</div>
+        </>
+      )}
+      {isLive && (
+        <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, color: "#444", fontSize: "0.8rem" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 1s infinite" }} />
+          Live
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnifiSection() {
+  const [userId, setUserId] = useState("10154");
+  const [intervalVal, setIntervalVal] = useState("5000");
+  const [events, setEvents] = useState([]);
+  const [isLive, setIsLive] = useState(false);
+  const [error, setError] = useState("");
+  const [fsOpen, setFsOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  const fetchEvents = useCallback(async () => {
+    if (!userId) { alert("Bitte eine User ID eingeben."); return; }
+    try {
+      const res = await fetch("/api/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl: BASE_UNIFI + "?UserId=" + userId, method: "GET", headers: {}, body: null })
+      });
+      const data = await res.json();
+      const parsed = JSON.parse(data.body);
+      if (parsed.Event && parsed.Event.length > 0) setEvents(parsed.Event);
+      setError("");
+    } catch (err) { setError(err.message); }
+  }, [userId]);
+
+  function togglePolling() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      setIsLive(false);
+    } else {
+      fetchEvents();
+      timerRef.current = setInterval(fetchEvents, parseInt(intervalVal));
+      setIsLive(true);
+    }
+  }
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
+
+  return (
+    <>
+      {fsOpen && <FullscreenOverlay events={events} isLive={isLive} onClose={() => setFsOpen(false)} />}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 18 }}>
+        <div style={{ flex: 1 }}>
+          <Label>User ID <Badge>Pflicht</Badge></Label>
+          <FInput value={userId} onChange={e => setUserId(e.target.value)} placeholder="z.B. 6265" />
+          <Helper>Deine Unifi User ID von thump.buzz</Helper>
+        </div>
+        <div style={{ maxWidth: 160 }}>
+          <Label>Intervall</Label>
+          <select value={intervalVal} onChange={e => setIntervalVal(e.target.value)} style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "10px 14px", fontSize: "0.97rem", color: "#222", background: "#fafafa", outline: "none", cursor: "pointer" }}>
+            <option value="2000">2 Sekunden</option>
+            <option value="5000">5 Sekunden</option>
+            <option value="10000">10 Sekunden</option>
+            <option value="30000">30 Sekunden</option>
+          </select>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+        <button onClick={togglePolling} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: isLive ? "#e8002d" : "#22c55e", color: "#fff" }}>
+          {isLive ? "⏹ Stop" : "▶ Auto-Refresh starten"}
+        </button>
+        {isLive && (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "#22c55e" }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 1s infinite" }} /> Live
+          </span>
+        )}
+        <button onClick={fetchEvents} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: "#e8002d", color: "#fff" }}>
+          Einmal abrufen
+        </button>
+        <button onClick={() => setFsOpen(true)} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: "#6366f1", color: "#fff" }}>
+          ⛶ Vollbild
+        </button>
+      </div>
+      {error && <div style={{ color: "#e8002d", fontSize: "0.88rem", marginBottom: 12 }}>Fehler: {error}</div>}
+      <div style={{ maxHeight: 400, overflowY: "auto" }}>
+        {events.length === 0 ? (
+          <div style={{ color: "#aaa", fontSize: "0.9rem", textAlign: "center", padding: 30 }}>Noch keine Events. User ID eingeben und abrufen.</div>
+        ) : events.map((ev, i) => {
+          let d = {};
+          try { d = JSON.parse(ev.Event); } catch {}
+          const type = d.Event || "Unbekannt";
+          const color = UNIFI_COLORS[type] || "#1a1a2e";
+          return (
+            <div key={ev.Id || i} style={{ background: "#f8f8f8", border: "1.5px solid #e0e0e0", borderLeft: i === 0 ? "4px solid #e8002d" : "1.5px solid #e0e0e0", borderRadius: 10, padding: "14px 16px", marginBottom: 12 }}>
+              <div style={{ display: "inline-block", fontSize: "0.72rem", fontWeight: 700, padding: "2px 10px", borderRadius: 12, background: color, color: "#fff", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>{type}</div>
+              <div style={{ fontSize: "0.75rem", color: "#aaa", marginBottom: 8 }}>ID: {ev.Id} &nbsp;|&nbsp; User: {ev.UserId}</div>
+              {Object.entries(d).filter(([k, v]) => k !== "Event" && v != null && v !== "").map(([k, v]) => (
+                <div key={k} style={{ fontSize: "0.87rem", color: "#333", marginBottom: 4 }}>
+                  <strong style={{ color: "#1a1a2e", minWidth: 140, display: "inline-block" }}>{k}:</strong> {v}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ── Telegram & Discord Send ─────────────────────────────────────────────────
+async function sendToTelegram(botToken, chatId, text) {
+  if (!botToken || !chatId) throw new Error("Bot Token und Chat ID sind erforderlich.");
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" })
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.description || "Telegram Fehler");
+  return data;
+}
+
+async function sendToDiscord(webhookUrl, content, username = "API Tool") {
+  if (!webhookUrl) throw new Error("Webhook URL ist erforderlich.");
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, username })
+  });
+  if (!res.ok) throw new Error(`Discord Fehler: ${res.status}`);
+  return true;
+}
+
+// ── Share Modal ───────────────────────────────────────────────────────────────
+function ShareModal({ text, onClose }) {
+  const [tab, setTab] = useState("telegram");
+  const [tgToken, setTgToken] = useState("");
+  const [tgChatId, setTgChatId] = useState("");
+  const [dcWebhook, setDcWebhook] = useState("");
+  const [msg, setMsg] = useState(text || "");
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handler = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  async function send() {
+    setLoading(true);
+    setStatus(null);
+    try {
+      if (tab === "telegram") {
+        await sendToTelegram(tgToken, tgChatId, msg);
+        setStatus({ ok: true, text: "✅ Erfolgreich an Telegram gesendet!" });
+      } else {
+        await sendToDiscord(dcWebhook, msg);
+        setStatus({ ok: true, text: "✅ Erfolgreich an Discord gesendet!" });
+      }
+    } catch (err) {
+      setStatus({ ok: false, text: "❌ " + err.message });
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 8px 40px rgba(0,0,0,0.18)", padding: "28px 32px", width: "100%", maxWidth: 480, position: "relative" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 18, background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#999" }}>✕</button>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#1a1a2e", marginBottom: 18 }}>📤 Nachricht senden</h2>
+
+        {/* Platform Tabs */}
+        <div style={{ display: "flex", marginBottom: 20, borderRadius: 8, overflow: "hidden", border: "1.5px solid #ddd" }}>
+          {[{key:"telegram",label:"✈️ Telegram"},{key:"discord",label:"🎮 Discord"}].map((t,i) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{ flex: 1, padding: "9px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer", border: "none", borderRight: i === 0 ? "1.5px solid #ddd" : "none", background: tab === t.key ? (t.key === "telegram" ? "#0088cc" : "#5865F2") : "#fafafa", color: tab === t.key ? "#fff" : "#888", transition: "all 0.2s" }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Telegram Fields */}
+        {tab === "telegram" && (
+          <>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Bot Token <span style={{ color: "#e8002d" }}>*</span></label>
+              <input value={tgToken} onChange={e => setTgToken(e.target.value)} placeholder="123456:ABC-DEF..."
+                style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
+              <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Von @BotFather erhalten</p>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Chat ID <span style={{ color: "#e8002d" }}>*</span></label>
+              <input value={tgChatId} onChange={e => setTgChatId(e.target.value)} placeholder="z.B. -1001234567890"
+                style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
+              <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Gruppen-ID oder User-ID</p>
+            </div>
+          </>
+        )}
+
+        {/* Discord Fields */}
+        {tab === "discord" && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Webhook URL <span style={{ color: "#e8002d" }}>*</span></label>
+            <input value={dcWebhook} onChange={e => setDcWebhook(e.target.value)} placeholder="https://discord.com/api/webhooks/..."
+              style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
+            <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Kanal-Einstellungen → Integrationen → Webhooks</p>
+          </div>
+        )}
+
+        {/* Message */}
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Nachricht</label>
+          <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={4}
+            style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "'Courier New', monospace" }} />
+        </div>
+
+        {/* Status */}
+        {status && (
+          <div style={{ marginBottom: 14, padding: "9px 14px", borderRadius: 8, background: status.ok ? "#f0fdf4" : "#fff5f5", border: `1px solid ${status.ok ? "#86efac" : "#fca5a5"}`, fontSize: "0.88rem", color: status.ok ? "#166534" : "#991b1b" }}>
+            {status.text}
+          </div>
+        )}
+
+        <button onClick={send} disabled={loading}
+          style={{ width: "100%", padding: 12, background: loading ? "#aaa" : (tab === "telegram" ? "#0088cc" : "#5865F2"), color: "#fff", border: "none", borderRadius: 8, fontSize: "0.97rem", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          {loading ? <Spinner /> : (tab === "telegram" ? "✈️ An Telegram senden" : "🎮 An Discord senden")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState("goo");
+  const [shareModal, setShareModal] = useState(null);
+  const [result, setResult] = useState(null);
+
+  const tabs = [
+    { key: "goo",    label: "🔵 Goo" },
+    { key: "inject", label: "🟢 Inject" },
+    { key: "unifi",  label: "🟣 Unifi" },
+  ];
+
+  const descs = {
+    goo:    "11q.co API — Anfragen senden & Antworten anzeigen",
+    inject: "11z.co Inject API — Werte in Widgets injizieren",
+    unifi:  "thump.buzz Unifi API — Events live empfangen",
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; }
+      `}</style>
+      <div style={{ fontFamily: "'Segoe UI', sans-serif", background: "#f0f2f5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.10)", padding: "36px 40px", width: "100%", maxWidth: 780 }}>
+
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, borderBottom: "2px solid #e8002d", paddingBottom: 18 }}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="8" fill="#e8002d"/>
+              <path d="M10 18h16M22 13l5 5-5 5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div>
+              <h1 style={{ fontSize: "1.45rem", color: "#1a1a2e", fontWeight: 700 }}>API Tool</h1>
+              <p style={{ color: "#666", fontSize: "0.88rem", marginTop: 2 }}>{descs[activeTab]}</p>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", marginBottom: 24, borderRadius: 8, overflow: "hidden", border: "1.5px solid #ddd" }}>
+            {tabs.map((t, i) => (
+              <button key={t.key} onClick={() => { setActiveTab(t.key); setResult(null); }}
+                style={{ flex: 1, padding: 11, textAlign: "center", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", background: activeTab === t.key ? "#e8002d" : "#fafafa", color: activeTab === t.key ? "#fff" : "#888", border: "none", borderRight: i < tabs.length - 1 ? "1.5px solid #ddd" : "none", transition: "all 0.2s" }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          {activeTab === "goo"    && <GooSection    onResult={setResult} />}
+          {activeTab === "inject" && <InjectSection onResult={setResult} />}
+          {activeTab === "unifi"  && <UnifiSection />}
+
+          {activeTab !== "unifi" && (
+            <>
+              <ResponseBox result={result} />
+              <button onClick={() => setShareModal(result.body)} style={{ marginTop: 12, width: "100%", padding: "10px", background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8, fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                📤 An Telegram / Discord senden
+              </button>
+            </>
+          )}
+          {shareModal !== null && <ShareModal text={shareModal} onClose={() => setShareModal(null)} />}
+        </div>
+      </div>
+    </>
+  );
+}
