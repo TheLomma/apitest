@@ -61,7 +61,6 @@ const PRIMARY_FIELDS = {
   'Dice': 'result', 'MindScale': 'result', 'Web Messaging': 'result'
 };
 
-/* ── Helpers ── */
 function Spinner() {
   return React.createElement('span', { style: {
     width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
@@ -104,7 +103,6 @@ function FTextarea(props) {
   });
 }
 
-/* ── Response Box ── */
 function ResponseBox(props) {
   var result = props.result;
   if (!result) return null;
@@ -122,7 +120,6 @@ function ResponseBox(props) {
   );
 }
 
-/* ── Fullscreen Overlay ── */
 function FullscreenOverlay(props) {
   var result = props.result, onClose = props.onClose;
   useEffect(function() {
@@ -141,7 +138,6 @@ function FullscreenOverlay(props) {
   );
 }
 
-/* ── Section Shell: wraps every tab with Auto-Refresh + Vollbild + Senden ── */
 function SectionShell(props) {
   var result = props.result, onFetch = props.onFetch, onShare = props.onShare, children = props.children;
   var sr = useState(false); var fsOpen = sr[0], setFsOpen = sr[1];
@@ -181,18 +177,17 @@ function SectionShell(props) {
         'Live'
       ),
       React.createElement('button', { onClick: function() { setFsOpen(true); }, style: Object.assign({}, btnBase, { background: '#6366f1' }) }, 'Vollbild'),
-      React.createElement('button', { onClick: function() { onShare(result ? result.body : ''); }, style: Object.assign({}, btnBase, { background: '#1a1a2e' }) }, 'Senden \u2197')
+      React.createElement('button', { onClick: function() { onShare(result ? result.body : ''); }, style: Object.assign({}, btnBase, { background: '#1a1a2e' }) }, 'Senden ↗')
     ),
     React.createElement(ResponseBox, { result: result })
   );
 }
 
-/* ── Telegram / Discord Modal ── */
 async function sendToTelegram(botToken, chatId, text) {
   if (!botToken || !chatId) throw new Error('Bot Token und Chat ID sind erforderlich.');
   var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
+    body: JSON.stringify({ chat_id: chatId, text: text })
   });
   var data = await res.json();
   if (!data.ok) throw new Error(data.description || 'Telegram Fehler');
@@ -280,7 +275,6 @@ function ShareModal(props) {
   );
 }
 
-/* ── GOO Section ── */
 function GooSection(props) {
   var onShare = props.onShare;
   var s1 = useState('');           var gooId = s1[0], setGooId = s1[1];
@@ -356,7 +350,6 @@ function GooSection(props) {
   return React.createElement(SectionShell, { result: result, onFetch: send, onShare: onShare }, form);
 }
 
-/* ── INJECT Section ── */
 function InjectSection(props) {
   var onShare = props.onShare;
   var s1 = useState('');    var id = s1[0], setId = s1[1];
@@ -410,7 +403,6 @@ function InjectSection(props) {
   return React.createElement(SectionShell, { result: result, onFetch: send, onShare: onShare }, form);
 }
 
-/* ── UNIFI Section ── */
 function UnifiSection(props) {
   var onShare = props.onShare;
   var s1 = useState('10154'); var userId = s1[0], setUserId = s1[1];
@@ -474,7 +466,6 @@ function UnifiSection(props) {
   return React.createElement(SectionShell, { result: result, onFetch: fetchEvents, onShare: onShare }, form);
 }
 
-/* ── App ── */
 function App() {
   var s1 = useState('goo'); var activeTab = s1[0], setActiveTab = s1[1];
   var s2 = useState(null);  var shareModal = s2[0], setShareModal = s2[1];
