@@ -28,7 +28,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v1.5', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v1.6', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -55,7 +55,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v1.5', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v1.6', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Settings', tabHelp: '? Help',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -189,15 +189,34 @@ var state = {
 
 // ── Online check ───────────────────────────────────────────────────────────
 function checkOnline() {
-  fetch('https://11q.co/favicon.ico?_='+Date.now(), { method:'HEAD', mode:'no-cors', cache:'no-store' })
-    .then(function(){ if(!state.online){ state.online=true; updateNavIcons(); } })
-    .catch(function(){ if(state.online){ state.online=false; updateNavIcons(); } });
+  var prev = state.online;
+  if(navigator.onLine === false) {
+    state.online = false;
+    if(prev !== state.online) updateNavIcons();
+    return;
+  }
+  fetch('https://11q.co/api/ping?_='+Date.now(), { method:'GET', cache:'no-store', signal: AbortSignal.timeout(4000) })
+    .then(function(r){
+      state.online = r.ok || r.status < 500;
+      if(prev !== state.online) updateNavIcons();
+    })
+    .catch(function(){
+      // fallback: try image
+      var img = new Image();
+      var done = false;
+      img.onload = function(){ if(!done){ done=true; state.online=true; if(prev!==state.online) updateNavIcons(); } };
+      img.onerror = function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } };
+      setTimeout(function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } }, 4000);
+      img.src = 'https://11q.co/favicon.ico?_='+Date.now();
+    });
 }
 function updateNavIcons() {
   var gooIcons = document.querySelectorAll('.nav-icon-goo');
   gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
 }
-setInterval(checkOnline, 10000);
+window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
+window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
+setInterval(checkOnline, 15000);
 checkOnline();
 
 // ── Render engine ──────────────────────────────────────────────────────────
@@ -837,37 +856,41 @@ function renderSettings(th) {
 
 // ── Help section ───────────────────────────────────────────────────────────
 var HELP_SECTIONS = [
-  { icon:'🔴', title:'Goo', color:'#e8002d', items:[
-    {name:'Goo ID', desc:'Deine persönliche ID für die 11q.co API. Wird in den Einstellungen hinterlegt.'},
-    {name:'Endpunkt', desc:'Wähle den gewünschten API-Endpunkt. Standard: POST /api/thump. PRO-Endpunkte erfordern PRO-Zugang.'},
-    {name:'Query', desc:'Der Text/die Suchanfrage, die an die Goo API gesendet wird. Wird auch an Telegram/Discord weitergeleitet.'},
-    {name:'URL-Vorschau', desc:'Zeigt die vollständige API-URL an, die beim Senden aufgerufen wird.'},
-    {name:'Auto-Refresh', desc:'Sendet die Anfrage automatisch in einem festgelegten Intervall (2s, 5s, 10s, 30s).'},
-    {name:'Vollbild', desc:'Zeigt die API-Antwort groß und zentriert auf dem gesamten Bildschirm an.'},
+  { icon:'🟢', title:'Goo', color:'#e8002d', items:[
+    {name:'Goo ID', desc: lang==='de' ? 'Deine persönliche ID für die 11q.co API. Wird in den Einstellungen hinterlegt und automatisch befüllt.' : 'Your personal ID for the 11q.co API. Set it in Settings and it will be auto-filled.'},
+    {name:'Endpunkt / Endpoint', desc: lang==='de' ? 'Wähle den gewünschten API-Endpunkt. Standard: POST /api/thump. PRO-Endpunkte erfordern PRO-Zugang.' : 'Choose the desired API endpoint. Default: POST /api/thump. PRO endpoints require a PRO account.'},
+    {name:'Query', desc: lang==='de' ? 'Der Text oder die Suchanfrage, die an die Goo API gesendet wird. Wird auch an Telegram/Discord weitergeleitet.' : 'The text or search query sent to the Goo API. Also forwarded to Telegram/Discord if enabled.'},
+    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die vollständige API-URL an, die beim Senden aufgerufen wird.' : 'Shows the full API URL that will be called when sending.'},
+    {name:'Auto-Refresh', desc: lang==='de' ? 'Sendet die Anfrage automatisch in einem festgelegten Intervall (2s, 5s, 10s, 30s).' : 'Automatically sends the request at a set interval (2s, 5s, 10s, 30s).'},
+    {name:'Vollbild / Fullscreen', desc: lang==='de' ? 'Zeigt die API-Antwort groß und zentriert auf dem gesamten Bildschirm an.' : 'Displays the API response large and centered on the full screen.'},
+    {name:'🟢 / 🔴 Online-Status', desc: lang==='de' ? 'Das Icon beim Goo-Tab zeigt den Verbindungsstatus: Grün = online, Rot = offline. Wird beim Start und alle 15 Sekunden geprüft.' : 'The icon on the Goo tab shows connection status: Green = online, Red = offline. Checked on start and every 15 seconds.'},
   ]},
   { icon:'💉', title:'Inject', color:'#6366f1', items:[
-    {name:'Inject ID', desc:'Deine Widget-ID für die 11z.co Inject API. Wird in den Einstellungen hinterlegt.'},
-    {name:'Value', desc:'Der Text, der in das Widget injiziert werden soll.'},
-    {name:'URL-Vorschau', desc:'Zeigt die Ziel-URL der Inject-API an.'},
+    {name:'Inject ID', desc: lang==='de' ? 'Deine Widget-ID für die 11z.co Inject API. Wird in den Einstellungen hinterlegt.' : 'Your widget ID for the 11z.co Inject API. Set it in Settings.'},
+    {name:'Value', desc: lang==='de' ? 'Der Text, der in das Widget injiziert werden soll. Nur dieser Wert wird an Telegram/Discord weitergeleitet.' : 'The text to inject into the widget. Only this value is forwarded to Telegram/Discord.'},
+    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die Ziel-URL der Inject-API an.' : 'Shows the target URL of the Inject API.'},
   ]},
   { icon:'📶', title:'Unifi', color:'#0ea5e9', items:[
-    {name:'Unify ID', desc:'Deine User-ID für die thump.buzz Unifi API. Wird in den Einstellungen hinterlegt.'},
-    {name:'Events', desc:'Nach dem Senden werden die letzten Events farblich nach Event-Typ markiert angezeigt.'},
-    {name:'Auto-Refresh', desc:'Fragt die Unifi API automatisch in regelmäßigen Abständen ab – ideal für Live-Überwachung.'},
+    {name:'Unify ID', desc: lang==='de' ? 'Deine User-ID für die thump.buzz Unifi API. Wird in den Einstellungen hinterlegt.' : 'Your user ID for the thump.buzz Unifi API. Set it in Settings.'},
+    {name:'Events', desc: lang==='de' ? 'Nach dem Senden werden die letzten Events farblich nach Event-Typ markiert angezeigt.' : 'After sending, the latest events are shown, color-coded by event type.'},
+    {name:'Auto-Refresh', desc: lang==='de' ? 'Fragt die Unifi API automatisch in regelmäßigen Abständen ab – ideal für Live-Überwachung.' : 'Queries the Unifi API automatically at regular intervals – ideal for live monitoring.'},
   ]},
   { icon:'✈️', title:'Telegram & Discord', color:'#0088cc', items:[
-    {name:'Checkboxen', desc:'Aktiviere Telegram und/oder Discord direkt über dem Senden-Button.'},
-    {name:'Was wird gesendet?', desc:'Nur der eingegebene Text (Query/Value) wird weitergeleitet – nicht die API-Antwort.'},
-    {name:'Bot Token & Chat ID', desc:'In den Einstellungen hinterlegen. Token von @BotFather, Chat ID von @userinfobot.'},
-    {name:'Discord Webhook', desc:'In den Einstellungen hinterlegen. Webhook unter Servereinstellungen → Integrationen → Webhooks erstellen.'},
+    {name:'Checkboxen / Checkboxes', desc: lang==='de' ? 'Aktiviere Telegram und/oder Discord direkt über dem Senden-Button. Bei aktivierter Checkbox wird die Nachricht gleichzeitig weitergeleitet.' : 'Enable Telegram and/or Discord above the Send button. When checked, the message is forwarded simultaneously.'},
+    {name:'Was wird gesendet? / What is sent?', desc: lang==='de' ? 'Nur der eingegebene Text (Query/Value) wird weitergeleitet – nicht die API-Antwort.' : 'Only the entered text (Query/Value) is forwarded – not the API response.'},
+    {name:'Bot Token & Chat ID', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Token von @BotFather, Chat ID von @userinfobot in Telegram.' : 'Set in Settings. Token from @BotFather, Chat ID from @userinfobot in Telegram.'},
+    {name:'Discord Webhook', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Webhook unter Servereinstellungen → Integrationen → Webhooks erstellen.' : 'Set in Settings. Create webhook under Server Settings → Integrations → Webhooks.'},
   ]},
-  { icon:'⚙️', title:'Einstellungen', color:'#888', items:[
-    {name:'Speichern', desc:'Speichert alle Eingaben lokal im Browser (localStorage).'},
-    {name:'Cache leeren', desc:'Löscht alle gespeicherten Einstellungen und setzt alle Felder zurück.'},
-    {name:'Profil', desc:'Lade vordefinierte Einstellungen für verschiedene Benutzer.'},
+  { icon:'⚙️', title: lang==='de' ? 'Einstellungen' : 'Settings', color:'#888', items:[
+    {name: lang==='de' ? 'Speichern' : 'Save', desc: lang==='de' ? 'Speichert alle Eingaben lokal im Browser (localStorage). Daten bleiben nach dem Schließen erhalten.' : 'Saves all inputs locally in the browser (localStorage). Data persists after closing.'},
+    {name: lang==='de' ? 'Cache leeren' : 'Clear Cache', desc: lang==='de' ? 'Löscht alle gespeicherten Einstellungen und setzt alle Felder zurück.' : 'Deletes all saved settings and resets all fields.'},
+    {name: lang==='de' ? 'Profil laden' : 'Load Profile', desc: lang==='de' ? '5× auf „API Tool" im Header klicken, um das Profil-Menü zu öffnen und vordefinierte Einstellungen zu laden.' : 'Click "API Tool" in the header 5 times to open the profile menu and load predefined settings.'},
   ]},
   { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
-    {name:'Umschalten', desc:'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.'},
+    {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
+  ]},
+  { icon:'🌐', title: lang==='de' ? 'Sprache' : 'Language', color:'#22c55e', items:[
+    {name:'DE / EN', desc: lang==='de' ? 'Mit dem DE/EN-Button oben rechts zwischen Deutsch und Englisch wechseln.' : 'Use the DE/EN button in the top right to switch between German and English.'},
   ]},
 ];
 
