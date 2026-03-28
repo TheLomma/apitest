@@ -468,7 +468,15 @@ function renderHeader(th) {
   left.appendChild(logo);
   var titleWrap = el('div',{});
   var titleRow = el('div',{ style:'display:flex;align-items:baseline;gap:6px;' });
-  titleRow.appendChild(el('div',{ style:'font-size:1rem;font-weight:800;color:'+th.text+';letter-spacing:-0.01em;' }, t('appTitle')));
+  var vClicks=0,vTimer=null;
+  var titleEl = el('div',{ style:'font-size:1rem;font-weight:800;color:'+th.text+';letter-spacing:-0.01em;cursor:default;user-select:none;' }, t('appTitle'));
+  titleEl.onclick = function(){
+    vClicks++;
+    if(vTimer) clearTimeout(vTimer);
+    vTimer = setTimeout(function(){ vClicks=0; },2000);
+    if(vClicks>=5){ vClicks=0; state.profileModal=true; render(); }
+  };
+  titleRow.appendChild(titleEl);
   titleRow.appendChild(el('span',{ style:'font-size:0.78rem;font-weight:400;color:'+th.subtext+';' }, t('appVersion')));
   titleWrap.appendChild(titleRow);
   titleWrap.appendChild(el('div',{ style:'font-size:0.72rem;color:'+th.subtext+';' }, t('appSubtitle')));
