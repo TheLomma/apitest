@@ -3,715 +3,889 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="API Tool">
-<meta name="theme-color" content="#e8002d">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSIzNiIgZmlsbD0iI2U4MDAyZCIvPjxwYXRoIGQ9Ik00NSA5MGg5ME0xMTAgNjVsMjUgMjUtMjUgMjUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<title>API Tool v1.3</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useRef, useEffect, useCallback } = React;
+<div id="app"></div>
+<script>
+(function() {
 
-const BASE_GOO    = 'https://11q.co';
-const BASE_INJECT = 'https://11z.co/_w';
-const BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
-const SETTINGS_KEY = 'apitool_settings_v1';
-const DEFAULT_SETTINGS_DOMINIK = {
-  gooId: '91',
-  injectId: '12779',
-  unifiId: '10154',
-  tgToken: '8556873591:AAEtuYkA6tO3i4W-AGbiQKDRL7mVk6Kah34',
-  tgChatId: '8792112920',
-  dcWebhook: ''
+// ── Constants ──────────────────────────────────────────────────────────────
+var BASE_GOO    = 'https://11q.co';
+var BASE_INJECT = 'https://11z.co/_w';
+var BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
+var SETTINGS_KEY = 'apitool_settings_v1';
+
+// ── Translations ───────────────────────────────────────────────────────────
+var TRANSLATIONS = {
+  de: {
+    appTitle: 'API Tool', appVersion: 'v1.4', appSubtitle: 'Einfaches Testen von APIs',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe',
+    send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
+    telegram: 'Telegram', discord: 'Discord',
+    gooId: 'Goo ID', endpoint: 'Endpunkt', query: 'Query', urlPreview: 'URL-Vorschau',
+    pflicht: 'Pflicht', myGooId: 'Deine persönliche Goo ID',
+    queryHint: 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.',
+    queryPlaceholder: 'Suchanfrage oder URL eingeben...',
+    injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
+    valueHint: 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
+    valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
+    unifyId: 'Unify ID', myUnifyId: 'Deine Unifi User ID',
+    answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
+    error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
+    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
+    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
+    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren',
+    placeholderGooId: 'z.B. XX', placeholderInjectId: 'z.B. 12345', placeholderUnifiId: 'z.B. 12345',
+    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'z.B. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
+    inSettings: 'In Einstellungen hinterlegen', sentOk: 'Gesendet!',
+    liveHint: 'Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.',
+    events: 'Events', noEvents: 'Noch keine Events empfangen.',
+    profileTitle: 'Profil auswählen', profileSubtitle: 'Einstellungen für welchen Nutzer laden?', cancel: 'Abbrechen',
+    darkMode: 'Dark Mode', lightMode: 'Light Mode',
+    helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick',
+  },
+  en: {
+    appTitle: 'API Tool', appVersion: 'v1.4', appSubtitle: 'Simple API Testing',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Settings', tabHelp: '? Help',
+    send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
+    telegram: 'Telegram', discord: 'Discord',
+    gooId: 'Goo ID', endpoint: 'Endpoint', query: 'Query', urlPreview: 'URL Preview',
+    pflicht: 'Required', myGooId: 'Your personal Goo ID',
+    queryHint: 'Sent to Goo. If Telegram/Discord is enabled, only this text is forwarded.',
+    queryPlaceholder: 'Enter search query or URL...',
+    injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
+    valueHint: 'If Telegram/Discord is enabled, only this value is forwarded.',
+    valuePlaceholder: 'Enter text to inject...',
+    unifyId: 'Unify ID', myUnifyId: 'Your Unifi User ID',
+    answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
+    error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
+    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
+    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
+    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache',
+    placeholderGooId: 'e.g. XX', placeholderInjectId: 'e.g. 12345', placeholderUnifiId: 'e.g. 12345',
+    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'e.g. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
+    inSettings: 'Set in Settings', sentOk: 'Sent!',
+    liveHint: 'Live-Text: For best real-time results, query every 300–500ms.',
+    events: 'Events', noEvents: 'No events received yet.',
+    profileTitle: 'Select Profile', profileSubtitle: 'Load settings for which user?', cancel: 'Cancel',
+    darkMode: 'Dark Mode', lightMode: 'Light Mode',
+    helpTitle: 'Guide & Feature Overview', helpSubtitle: 'All sections and their features at a glance',
+  }
 };
 
-const DEFAULT_SETTINGS_JOERN = {
-  gooId: 'XX',
-  injectId: 'XXXXX',
-  unifiId: 'XXXXX',
-  tgToken: 'XXXXX',
-  tgChatId: 'XXXXX',
-  dcWebhook: 'XXXXX'
-};
+var lang = 'de';
+function t(k) { return (TRANSLATIONS[lang]||TRANSLATIONS.de)[k] || k; }
 
-var _memSettings = {};
+// ── Settings ───────────────────────────────────────────────────────────────
+var DEFAULT_DOMINIK = { gooId:'91', injectId:'12779', unifiId:'10154', tgToken:'8556873591:AAEtuYkA6tO3i4W-AGbiQKDRL7mVk6Kah34', tgChatId:'8792112920', dcWebhook:'' };
+var DEFAULT_JOERN   = { gooId:'', injectId:'', unifiId:'', tgToken:'', tgChatId:'', dcWebhook:'' };
+
 function loadSettings() {
-  try {
-    var raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return _memSettings;
+  try { var r = localStorage.getItem(SETTINGS_KEY); if(r) return JSON.parse(r); } catch(e){}
+  return {};
 }
 function saveSettings(s) {
-  _memSettings = s;
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e) {}
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e){}
 }
 
-function epPath(ep, id) {
-  if (ep === 'get-last')            return '/api/last/' + id;
-  if (ep === 'post-thump')          return '/api/thump/' + id;
-  if (ep === 'pro-last-deleted')    return '/pro-api/' + id + '/last-deleted';
-  if (ep === 'pro-autofill')        return '/pro-api/' + id + '/autofill';
-  if (ep === 'live-text')           return '/api/live-text/' + id;
-  if (ep === 'pro-last-bd')         return '/pro-api/' + id + '/last-bd';
-  if (ep === 'pro-last-deleted-bd') return '/pro-api/' + id + '/last-deleted-bd';
+// ── Endpoint helpers ───────────────────────────────────────────────────────
+var ENDPOINTS = [
+  { id:'post-thump',          method:'POST', label:'POST /api/thump – Query senden',          desc:'Sendet eine Query an die Goo API.',                                 query:true,  live:false },
+  { id:'get-last',            method:'GET',  label:'GET /api/last – Letzten Query abrufen',   desc:'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.',         query:false, live:false },
+  { id:'live-text',           method:'GET',  label:'GET /api/live-text – Live Text (PRO)',    desc:'Gibt den aktuell getippten Text in Echtzeit zurück.',               query:false, live:true  },
+  { id:'pro-last-deleted',    method:'GET',  label:'GET /pro-api/last-deleted (PRO)',         desc:'Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.',             query:false, live:false },
+  { id:'pro-autofill',        method:'GET',  label:'GET /pro-api/autofill (PRO)',             desc:'Ruft per Autofill übermittelte Formulardaten ab.',                  query:false, live:false },
+  { id:'pro-last-bd',         method:'GET',  label:'GET /pro-api/last-bd (PRO)',              desc:'Ruft das Geburtsdatum zur letzten Suchanfrage ab.',                 query:false, live:false },
+  { id:'pro-last-deleted-bd', method:'GET',  label:'GET /pro-api/last-deleted-bd (PRO)',     desc:'Wie last-bd, basierend auf dem zuletzt gelöschten Text.',           query:false, live:false },
+];
+
+function epPath(id, gooId) {
+  var g = gooId || '{goo_id}';
+  if(id==='get-last')            return '/api/last/'+g;
+  if(id==='post-thump')          return '/api/thump/'+g;
+  if(id==='pro-last-deleted')    return '/pro-api/'+g+'/last-deleted';
+  if(id==='pro-autofill')        return '/pro-api/'+g+'/autofill';
+  if(id==='live-text')           return '/api/live-text/'+g;
+  if(id==='pro-last-bd')         return '/pro-api/'+g+'/last-bd';
+  if(id==='pro-last-deleted-bd') return '/pro-api/'+g+'/last-deleted-bd';
   return '/';
 }
 
-const ENDPOINTS = {
-  'get-last':            { method: 'GET',  desc: 'Ruft die zuletzt gesendete Suchanfrage fuer die Goo ID ab.', query: false },
-  'post-thump':          { method: 'POST', desc: '', query: true },
-  'pro-last-deleted':    { method: 'GET',  desc: 'PRO - Ruft den zuletzt geloeschten Text aus dem Suchfeld ab.', query: false },
-  'pro-autofill':        { method: 'GET',  desc: 'PRO - Ruft per Autofill uebermittelte Formulardaten ab.', query: false },
-  'live-text':           { method: 'GET',  desc: 'PRO - Gibt den aktuell getippten Text in Echtzeit zurueck.', query: false, live: true },
-  'pro-last-bd':         { method: 'GET',  desc: 'PRO - Ruft das Geburtsdatum zur letzten Suchanfrage ab.', query: false },
-  'pro-last-deleted-bd': { method: 'GET',  desc: 'PRO - Wie last-bd, basierend auf dem zuletzt geloeschten Text.', query: false },
-};
-
-const UNIFI_COLORS = {
-  'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
-  'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
-  'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
-};
-
-function Spinner() {
-  return React.createElement('span', { style: {
-    width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
-    borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
-    animation: 'spin 0.7s linear infinite'
-  }});
-}
-
-function FInput(props) {
-  var theme = App._theme || {};
-
-  var value = props.value, onChange = props.onChange, placeholder = props.placeholder,
-      readOnly = props.readOnly, mono = props.mono, type = props.type || 'text';
-  var fs = useState(false); var focus = fs[0], setFocus = fs[1];
-  return React.createElement('input', {
-    type: type, value: value, onChange: onChange, placeholder: placeholder, readOnly: readOnly,
-    onFocus: function() { setFocus(true); }, onBlur: function() { setFocus(false); },
-    style: {
-      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : (theme.border || '#ddd')), borderRadius: 8,
-      padding: '10px 14px', fontSize: mono ? '0.88rem' : '0.97rem',
-      color: readOnly ? (theme.readonlyText || '#666') : (theme.inputText || '#222'),
-      background: readOnly ? (theme.readonlyBg || '#f0f0f0') : (focus ? (theme.inputBgFocus || '#fff') : (theme.inputBg || '#fafafa')),
-      outline: 'none', boxSizing: 'border-box',
-      fontFamily: mono ? 'monospace' : 'inherit', transition: 'border-color 0.2s'
-    }
-  });
-}
-
-function FTextarea(props) {
-  var theme = App._theme || {};
-
-  var value = props.value, onChange = props.onChange, placeholder = props.placeholder;
-  var fs = useState(false); var focus = fs[0], setFocus = fs[1];
-  return React.createElement('textarea', {
-    value: value, onChange: onChange, placeholder: placeholder, rows: 3,
-    onFocus: function() { setFocus(true); }, onBlur: function() { setFocus(false); },
-    style: {
-      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : (theme.border || '#ddd')), borderRadius: 8,
-      padding: '10px 14px', fontSize: '0.9rem', color: theme.inputText || '#222',
-      background: focus ? (theme.inputBgFocus || '#fff') : (theme.inputBg || '#fafafa'),
-      outline: 'none', boxSizing: 'border-box',
-      resize: 'vertical', minHeight: 90, fontFamily: 'Courier New, monospace',
-      transition: 'border-color 0.2s'
-    }
-  });
-}
-
-function ResponseBox(props) {
-  var theme = App._theme || {};
-
-  var result = props.result;
-  if (!result) return null;
-  var ok = typeof result.status === 'number' ? result.status < 400 : result.status !== 'ERR';
-  return React.createElement('div', { style: { marginTop: 16, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #e0e0e0' } },
-    React.createElement('div', { style: { background: theme.responseHeader || '#1a1a2e', color: '#fff', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-      React.createElement('span', null, 'Antwort'),
-      React.createElement('span', { style: { padding: '2px 10px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 700, background: ok ? '#22c55e' : '#e8002d', color: '#fff' } },
-        result.status + (result.statusText ? ' ' + result.statusText : '')
-      )
-    ),
-    React.createElement('div', { style: { background: theme.responseBg || '#f8f8f8', padding: 16, fontFamily: 'Courier New, monospace', fontSize: '0.85rem', color: theme.responseText || '#222', maxHeight: 260, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
-      result.body || '(Leere Antwort)'
-    )
-  );
-}
-
-function FullscreenOverlay(props) {
-  var result = props.result, onClose = props.onClose;
-  useEffect(function() {
-    function handler(e) { if (e.key === 'Escape') onClose(); }
-    window.addEventListener('keydown', handler);
-    return function() { window.removeEventListener('keydown', handler); };
-  }, [onClose]);
-  var body = result ? (result.body || '(Leere Antwort)') : 'Warte auf Antwort...';
-  var ok = result ? (typeof result.status === 'number' ? result.status < 400 : result.status !== 'ERR') : true;
-  return React.createElement('div', { style: { position: 'fixed', inset: 0, background: '#0d0d0d', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40 } },
-    React.createElement('button', { onClick: onClose, style: { position: 'absolute', top: 20, right: 28, background: 'none', border: 'none', color: '#888', fontSize: '2rem', cursor: 'pointer' } }, 'x'),
-    result && React.createElement('div', { style: { position: 'absolute', top: 22, left: 28, padding: '3px 14px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 700, background: ok ? '#22c55e' : '#e8002d', color: '#fff' } },
-      result.status + (result.statusText ? ' ' + result.statusText : '')
-    ),
-    React.createElement('pre', { style: { color: '#fff', fontSize: '1.4rem', fontWeight: 700, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'Courier New, monospace', lineHeight: 1.6, maxHeight: '85vh', overflowY: 'auto', maxWidth: 900, width: '100%', textAlign: 'center' } }, body)
-  );
-}
-
-async function sendToTelegram(botToken, chatId, text) {
-  if (!botToken || !chatId) throw new Error('Bot Token und Chat ID fehlen (Einstellungen pruefen).');
-  var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: text })
-  });
-  var data = await res.json();
-  if (!data.ok) throw new Error(data.description || 'Telegram Fehler');
-  return data;
-}
-
-async function sendToDiscord(webhookUrl, content) {
-  if (!webhookUrl) throw new Error('Discord Webhook URL fehlt (Einstellungen pruefen).');
-  var res = await fetch(webhookUrl, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: content, username: 'API Tool' })
-  });
-  if (!res.ok) throw new Error('Discord Fehler: ' + res.status);
-  return true;
-}
-
-// Checkboxen + Sende-Button Komponente
-function SendBar(props) {
-  var theme = App._theme || {};
-
-  var loading = props.loading, onSend = props.onSend, settings = props.settings;
-  var sc = useState(false); var sendTg = sc[0], setSendTg = sc[1];
-  var sd = useState(false); var sendDc = sd[0], setSendDc = sd[1];
-  var sr = useState(false); var fsOpen = sr[0], setFsOpen = sr[1];
-  var si = useState('5000'); var intervalVal = si[0], setIntervalVal = si[1];
-  var sl = useState(false); var isLive = sl[0], setIsLive = sl[1];
-  var timerRef = useRef(null);
-  var st = useState(null); var notif = st[0], setNotif = st[1];
-
-  function togglePolling() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current); timerRef.current = null; setIsLive(false);
-    } else {
-      if (props.onFetch) props.onFetch();
-      timerRef.current = setInterval(function() { if (props.onFetch) props.onFetch(); }, parseInt(intervalVal));
-      setIsLive(true);
-    }
+// ── Theme ──────────────────────────────────────────────────────────────────
+var THEMES = {
+  dark: {
+    bg: 'linear-gradient(135deg,#0f0f1e 0%,#1a1a2e 50%,#16213e 100%)',
+    card: 'rgba(255,255,255,0.06)',
+    cardBorder: 'rgba(255,255,255,0.1)',
+    text: '#f0f0ff',
+    subtext: '#aaa',
+    hint: '#888',
+    inputBg: 'rgba(255,255,255,0.07)',
+    inputBgFocus: 'rgba(255,255,255,0.13)',
+    inputText: '#f0f0ff',
+    inputBorder: 'rgba(255,255,255,0.18)',
+    readonlyBg: 'rgba(255,255,255,0.03)',
+    readonlyText: '#777',
+    responseBg: '#111',
+    responseText: '#e0e0e0',
+    responseHeader: '#1a1a2e',
+    border: 'rgba(255,255,255,0.1)',
+    infoBg: 'rgba(255,255,255,0.04)',
+    infoText: '#bbb',
+    sectionTitle: '#e0e0ff',
+    tabActive: 'rgba(232,0,45,0.85)',
+    tabInactive: 'rgba(255,255,255,0.06)',
+    tabBorder: 'rgba(255,255,255,0.1)',
+    headerBg: 'rgba(15,15,30,0.8)',
+    navBg: 'rgba(15,15,30,0.9)',
+  },
+  light: {
+    bg: 'linear-gradient(135deg,#f5f5f5 0%,#ececf5 50%,#e8e8f0 100%)',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: '#e0e0e0',
+    text: '#1a1a2e',
+    subtext: '#555',
+    hint: '#888',
+    inputBg: '#fafafa',
+    inputBgFocus: '#fff',
+    inputText: '#222',
+    inputBorder: '#ddd',
+    readonlyBg: '#f0f0f0',
+    readonlyText: '#666',
+    responseBg: '#f8f8f8',
+    responseText: '#222',
+    responseHeader: '#1a1a2e',
+    border: '#e0e0e0',
+    infoBg: '#f8f8f8',
+    infoText: '#555',
+    sectionTitle: '#1a1a2e',
+    tabActive: '#e8002d',
+    tabInactive: '#f0f0f0',
+    tabBorder: '#e0e0e0',
+    headerBg: 'rgba(255,255,255,0.9)',
+    navBg: 'rgba(255,255,255,0.95)',
   }
-  useEffect(function() {
-    return function() { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+};
 
-  async function handleSend() {
-    var shareText = props.shareText || '';
-    if (onSend) await onSend();
+// ── State ──────────────────────────────────────────────────────────────────
+var state = {
+  theme: 'dark',
+  lang: 'de',
+  tab: 'goo',
+  settings: loadSettings(),
+  profileModal: false,
+};
+
+// ── Render engine ──────────────────────────────────────────────────────────
+var app = document.getElementById('app');
+
+function render() {
+  var th = THEMES[state.theme];
+  lang = state.lang;
+
+  app.innerHTML = '';
+  app.style.cssText = 'min-height:100vh;background:'+th.bg+';display:flex;flex-direction:column;';
+
+  // Profile modal
+  if(state.profileModal) { app.appendChild(renderProfileModal(th)); }
+
+  // Fullscreen
+  if(state.fullscreen) { app.appendChild(renderFullscreen(th)); return; }
+
+  // Header
+  app.appendChild(renderHeader(th));
+
+  // Scrollable content
+  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 80px;' });
+  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 16px;' });
+
+  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:22px 20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
+
+  if(state.tab==='goo')      card.appendChild(renderGoo(th));
+  if(state.tab==='inject')   card.appendChild(renderInject(th));
+  if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
+  if(state.tab==='settings') card.appendChild(renderSettings(th));
+  if(state.tab==='help')     card.appendChild(renderHelp(th));
+
+  wrap.appendChild(card);
+  scroll.appendChild(wrap);
+  app.appendChild(scroll);
+
+  // Bottom nav
+  app.appendChild(renderNav(th));
+}
+
+// ── DOM helpers ────────────────────────────────────────────────────────────
+function el(tag, attrs, children) {
+  var e = document.createElement(tag);
+  if(attrs) {
+    Object.keys(attrs).forEach(function(k) {
+      if(k==='style') e.style.cssText = attrs[k];
+      else if(k==='class') e.className = attrs[k];
+      else if(k.startsWith('on')) e[k] = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    });
+  }
+  if(children) {
+    if(Array.isArray(children)) children.forEach(function(c){ if(c) e.appendChild(typeof c==='string'?txt(c):c); });
+    else if(typeof children==='string') e.appendChild(txt(children));
+    else e.appendChild(children);
+  }
+  return e;
+}
+function txt(s) { return document.createTextNode(s); }
+
+function lbl(text, th) {
+  return el('label',{ style:'display:block;font-size:0.78rem;font-weight:700;color:'+th.subtext+';margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;' }, text);
+}
+function badge(text) {
+  return el('span',{ style:'font-size:0.66rem;background:#fff3f5;color:#e8002d;border:1px solid #f5b8c0;border-radius:4px;padding:1px 7px;margin-left:6px;font-weight:700;text-transform:uppercase;' }, text);
+}
+function hint(text, th) {
+  return el('p',{ style:'font-size:0.78rem;color:'+th.hint+';margin-top:5px;' }, text);
+}
+function makeInput(value, opts, th) {
+  opts = opts||{};
+  var i = el('input',{ type:opts.type||'text', value:value, placeholder:opts.placeholder||'', style:'width:100%;border:1.5px solid '+(opts.readonly?th.inputBorder:'rgba(232,0,45,0.3)')+';border-radius:8px;padding:10px 14px;font-size:'+(opts.mono?'0.88rem':'0.97rem')+';color:'+(opts.readonly?th.readonlyText:th.inputText)+';background:'+(opts.readonly?th.readonlyBg:th.inputBg)+';outline:none;box-sizing:border-box;font-family:'+(opts.mono?'monospace':'inherit')+';transition:all 0.2s;' });
+  if(opts.readonly) i.readOnly = true;
+  if(opts.onchange) i.oninput = opts.onchange;
+  i.onfocus = function(){ if(!opts.readonly){ i.style.background=th.inputBgFocus; i.style.borderColor='#e8002d'; i.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; }};
+  i.onblur  = function(){ if(!opts.readonly){ i.style.background=th.inputBg; i.style.borderColor='rgba(232,0,45,0.3)'; i.style.boxShadow='none'; }};
+  return i;
+}
+function makeTextarea(value, placeholder, onchange, th) {
+  var t2 = el('textarea',{ placeholder:placeholder, style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;box-sizing:border-box;resize:vertical;min-height:90px;font-family:Courier New,monospace;transition:all 0.2s;' });
+  t2.value = value;
+  if(onchange) t2.oninput = onchange;
+  t2.onfocus = function(){ t2.style.background=th.inputBgFocus; t2.style.borderColor='#e8002d'; t2.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; };
+  t2.onblur  = function(){ t2.style.background=th.inputBg; t2.style.borderColor='rgba(232,0,45,0.3)'; t2.style.boxShadow='none'; };
+  return t2;
+}
+function makeSelect(options, value, onchange, th) {
+  var s = el('select',{ style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;cursor:pointer;' });
+  options.forEach(function(o) {
+    var opt = el('option',{ value:o.value }, o.label);
+    if(o.value===value) opt.selected = true;
+    s.appendChild(opt);
+  });
+  if(onchange) s.onchange = onchange;
+  return s;
+}
+function makeBtn(text, onclick, opts) {
+  opts = opts||{};
+  var b = el('button',{ style:'padding:'+(opts.small?'8px 14px':'12px 28px')+';background:'+(opts.bg||'rgba(232,0,45,0.85)')+';color:'+(opts.color||'#fff')+';border:'+(opts.border||'1px solid rgba(255,255,255,0.2)')+';border-radius:12px;font-size:'+(opts.small?'0.84rem':'0.97rem')+';font-weight:700;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(8px);' }, text);
+  b.onclick = onclick;
+  b.onmouseover = function(){ b.style.opacity='0.85'; };
+  b.onmouseout  = function(){ b.style.opacity='1'; };
+  return b;
+}
+
+function responseBox(result, th) {
+  if(!result) return null;
+  var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
+  var wrap = el('div',{ style:'margin-top:16px;border-radius:14px;overflow:hidden;border:1px solid '+th.border+';' });
+  var hdr = el('div',{ style:'background:'+th.responseHeader+';color:#fff;padding:9px 16px;font-size:0.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;' });
+  hdr.appendChild(txt(t('answer')));
+  hdr.appendChild(el('span',{ style:'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:'')));
+  var body = el('div',{ style:'background:'+th.responseBg+';padding:16px;font-family:Courier New,monospace;font-size:0.85rem;color:'+th.responseText+';max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;' });
+  body.textContent = result.body || t('emptyAnswer');
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+// ── Telegram/Discord ───────────────────────────────────────────────────────
+async function sendTelegram(token, chatId2, text2) {
+  if(!token||!chatId2) throw new Error('Bot Token und Chat ID fehlen.');
+  var r = await fetch('https://api.telegram.org/bot'+token+'/sendMessage',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:chatId2,text:text2}) });
+  var d = await r.json();
+  if(!d.ok) throw new Error(d.description||'Telegram Fehler');
+}
+async function sendDiscord(url2, content) {
+  if(!url2) throw new Error('Discord Webhook URL fehlt.');
+  var r = await fetch(url2,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content:content,username:'API Tool'}) });
+  if(!r.ok) throw new Error('Discord Fehler: '+r.status);
+}
+
+// ── SendBar builder ────────────────────────────────────────────────────────
+function buildSendBar(opts, th) {
+  // opts: { onSend, onFetch, getShareText, getResult, showFullscreen }
+  var sendTg = false, sendDc = false, isLive = false, interval = 5000;
+  var timer = null;
+  var container = el('div',{});
+
+  function notify(ok, msg, dur) {
+    var old = container.querySelector('.notif');
+    if(old) old.remove();
+    var n = el('div',{ class:'notif', style:'padding:8px 14px;border-radius:8px;background:'+(ok?'#f0fdf4':'#fff5f5')+';border:1px solid '+(ok?'#86efac':'#fca5a5')+';font-size:0.85rem;color:'+(ok?'#166534':'#991b1b')+';margin-bottom:8px;' }, msg);
+    container.insertBefore(n, container.children[container.children.length > 2 ? 2 : 0]);
+    setTimeout(function(){ if(n.parentNode) n.remove(); }, dur||3000);
+  }
+
+  // Checkboxes row
+  var cbRow = el('div',{ style:'display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;align-items:center;' });
+  function mkCb(labelText, color, getter, setter) {
+    var lb = el('label',{ style:'display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;cursor:pointer;user-select:none;color:'+color+';' });
+    var cb = el('input',{ type:'checkbox', style:'width:16px;height:16px;accent-color:'+color+';cursor:pointer;' });
+    cb.onchange = function(){ setter(cb.checked); };
+    lb.appendChild(cb);
+    lb.appendChild(txt(labelText));
+    return lb;
+  }
+  cbRow.appendChild(mkCb(t('telegram'),'#0088cc',function(){return sendTg;},function(v){sendTg=v;}));
+  cbRow.appendChild(mkCb(t('discord'),'#5865F2',function(){return sendDc;},function(v){sendDc=v;}));
+  container.appendChild(cbRow);
+
+  // Send button
+  var sendBtn = el('button',{ style:'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
+  sendBtn.textContent = t('send');
+  sendBtn.onclick = async function() {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> '+t('sending');
+    sendBtn.style.background = 'rgba(180,180,180,0.3)';
+    if(opts.onSend) await opts.onSend();
+    var shareText = opts.getShareText ? opts.getShareText() : '';
     var errs = [];
-    if (sendTg) {
-      try { await sendToTelegram(settings.tgToken, settings.tgChatId, shareText); }
-      catch(e) { errs.push('Telegram: ' + e.message); }
-    }
-    if (sendDc) {
-      try { await sendToDiscord(settings.dcWebhook, shareText); }
-      catch(e) { errs.push('Discord: ' + e.message); }
-    }
-    if (errs.length > 0) { setNotif({ ok: false, text: errs.join(' | ') }); setTimeout(function(){ setNotif(null); }, 5000); }
-    else if (sendTg || sendDc) { setNotif({ ok: true, text: 'Gesendet!' }); setTimeout(function(){ setNotif(null); }, 3000); }
-  }
-
-  var selStyle = { border: '1.5px solid ' + (theme.border || '#ddd'), borderRadius: 8, padding: '8px 10px', fontSize: '0.85rem', color: theme.inputText || '#222', background: theme.inputBg || '#fafafa', outline: 'none', cursor: 'pointer' };
-  var btnBase = { padding: '8px 14px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', color: '#fff' };
-  var cbStyle = { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, color: '#444', cursor: 'pointer', userSelect: 'none' };
-
-  return React.createElement('div', null,
-    // Checkboxen
-    React.createElement('div', { style: { display: 'flex', gap: 20, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' } },
-      React.createElement('label', { style: cbStyle },
-        React.createElement('input', { type: 'checkbox', checked: sendTg, onChange: function(e){ setSendTg(e.target.checked); }, style: { width: 16, height: 16, accentColor: '#0088cc' } }),
-        React.createElement('span', { style: { color: '#0088cc' } }, 'Telegram')
-      ),
-      React.createElement('label', { style: cbStyle },
-        React.createElement('input', { type: 'checkbox', checked: sendDc, onChange: function(e){ setSendDc(e.target.checked); }, style: { width: 16, height: 16, accentColor: '#5865F2' } }),
-        React.createElement('span', { style: { color: '#5865F2' } }, 'Discord')
-      )
-    ),
-    // Haupt-Senden-Button
-    React.createElement('button', { onClick: handleSend, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 } },
-      loading ? React.createElement(Spinner, null) : null,
-      loading ? 'Wird gesendet...' : 'Senden'
-    ),
-    // Notiz
-    notif && React.createElement('div', { style: { padding: '8px 14px', borderRadius: 8, background: notif.ok ? '#f0fdf4' : '#fff5f5', border: '1px solid ' + (notif.ok ? '#86efac' : '#fca5a5'), fontSize: '0.85rem', color: notif.ok ? '#166534' : '#991b1b', marginBottom: 8 } }, notif.text),
-    // Auto-Refresh + Vollbild
-    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
-      React.createElement('select', { value: intervalVal, onChange: function(e) { setIntervalVal(e.target.value); }, style: selStyle },
-        React.createElement('option', { value: '2000' }, '2s'),
-        React.createElement('option', { value: '5000' }, '5s'),
-        React.createElement('option', { value: '10000' }, '10s'),
-        React.createElement('option', { value: '30000' }, '30s')
-      ),
-      React.createElement('button', { onClick: togglePolling, style: Object.assign({}, btnBase, { background: isLive ? '#e8002d' : '#22c55e' }) }, isLive ? 'Stop' : 'Auto-Refresh'),
-      isLive && React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.85rem', color: '#22c55e' } },
-        React.createElement('span', { style: { width: 9, height: 9, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 1s infinite' } }),
-        'Live'
-      ),
-      React.createElement('button', { onClick: function() { setFsOpen(true); }, style: Object.assign({}, btnBase, { background: '#6366f1' }) }, 'Vollbild')
-    ),
-    fsOpen && React.createElement(FullscreenOverlay, { result: props.result, onClose: function() { setFsOpen(false); } })
-  );
-}
-
-function SettingsSection(props) {
-  var theme = App._theme || {};
-
-  var init = loadSettings();
-  var s1 = useState(init.gooId || '');       var gooId = s1[0], setGooId = s1[1];
-  var s2 = useState(init.injectId || '');    var injectId = s2[0], setInjectId = s2[1];
-  var s3 = useState(init.unifiId || '');     var unifiId = s3[0], setUnifiId = s3[1];
-  var s4 = useState(init.tgToken || '');     var tgToken = s4[0], setTgToken = s4[1];
-  var s5 = useState(init.tgChatId || '');    var tgChatId = s5[0], setTgChatId = s5[1];
-  var s6 = useState(init.dcWebhook || '');   var dcWebhook = s6[0], setDcWebhook = s6[1];
-  var s7 = useState(null);                   var saved = s7[0], setSaved = s7[1];
-
-  useEffect(function() {
-    if (props.secretSaved && typeof props.secretSaved === 'object') {
-      var d = props.secretSaved;
-      setGooId(d.gooId || ''); setInjectId(d.injectId || ''); setUnifiId(d.unifiId || '');
-      setTgToken(d.tgToken || ''); setTgChatId(d.tgChatId || ''); setDcWebhook(d.dcWebhook || '');
-      setSaved(true);
-      setTimeout(function(){ setSaved(false); }, 3000);
-    }
-  }, [props.secretSaved]);
-
-  function save() {
-    var s = { gooId: gooId, injectId: injectId, unifiId: unifiId, tgToken: tgToken, tgChatId: tgChatId, dcWebhook: dcWebhook };
-    saveSettings(s);
-    if (props.onSave) props.onSave(s);
-    setSaved(true);
-    setTimeout(function(){ setSaved(false); }, 3000);
-  }
-
-  var lblStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' };
-  var groupStyle = { marginBottom: 16 };
-  var sectionTitle = { fontSize: '0.9rem', fontWeight: 700, color: theme.sectionTitle || '#1a1a2e', marginBottom: 12, marginTop: 8, paddingBottom: 6, borderBottom: '1.5px solid ' + (theme.border || '#f0f0f0') };
-
-  return React.createElement('div', null,
-    React.createElement('p', { style: { color: theme.subtext || '#666', fontSize: '0.88rem', marginBottom: 20 } }, 'Hier hinterlegte Werte werden automatisch in alle Bereiche uebernommen und lokal gespeichert.'),
-
-    React.createElement('div', { style: sectionTitle }, '🔗 API IDs'),
-    React.createElement('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap' } },
-      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
-        React.createElement('label', { style: lblStyle }, 'Goo ID'),
-        React.createElement(FInput, { value: gooId, onChange: function(e){ setGooId(e.target.value); }, placeholder: 'z.B. XX' })
-      ),
-      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
-        React.createElement('label', { style: lblStyle }, 'Inject ID'),
-        React.createElement(FInput, { value: injectId, onChange: function(e){ setInjectId(e.target.value); }, placeholder: 'z.B. 12345' })
-      ),
-      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
-        React.createElement('label', { style: lblStyle }, 'Unifi User ID'),
-        React.createElement(FInput, { value: unifiId, onChange: function(e){ setUnifiId(e.target.value); }, placeholder: 'z.B. 12345' })
-      )
-    ),
-
-    React.createElement('div', { style: sectionTitle }, '✈️ Telegram'),
-    React.createElement('div', { style: groupStyle },
-      React.createElement('label', { style: lblStyle }, 'Bot Token'),
-      React.createElement(FInput, { value: tgToken, onChange: function(e){ setTgToken(e.target.value); }, placeholder: '123456:ABC-DEF...' })
-    ),
-    React.createElement('div', { style: groupStyle },
-      React.createElement('label', { style: lblStyle }, 'Chat ID'),
-      React.createElement(FInput, { value: tgChatId, onChange: function(e){ setTgChatId(e.target.value); }, placeholder: 'z.B. 123456789' })
-    ),
-
-    React.createElement('div', { style: sectionTitle }, '💬 Discord'),
-    React.createElement('div', { style: groupStyle },
-      React.createElement('label', { style: lblStyle }, 'Webhook URL'),
-      React.createElement(FInput, { value: dcWebhook, onChange: function(e){ setDcWebhook(e.target.value); }, placeholder: 'https://discord.com/api/webhooks/...' })
-    ),
-
-    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 } },
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14 } },
-        React.createElement('button', { onClick: save, style: { padding: '11px 32px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: 'pointer' } }, 'Speichern'),
-        saved && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '8px 16px' } },
-          React.createElement('span', { style: { color: '#16a34a', fontSize: '1rem' } }, '✓'),
-          React.createElement('span', { style: { color: '#16a34a', fontWeight: 600, fontSize: '0.9rem' } }, 'Gespeichert!')
-        )
-      ),
-      React.createElement('button', {
-        onClick: function() {
-          localStorage.removeItem(SETTINGS_KEY);
-          _memSettings = {};
-          setGooId(''); setInjectId(''); setUnifiId('');
-          setTgToken(''); setTgChatId(''); setDcWebhook('');
-          if (props.onSave) props.onSave({});
-          setSaved(false);
-        },
-        style: { padding: '11px 20px', background: 'transparent', color: '#aaa', border: '1.5px solid #ddd', borderRadius: 8, fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer' }
-      }, 'Cache leeren')
-    )
-  );
-}
-
-function GooSection(props) {
-  var theme = App._theme || {};
-
-  var settings = props.settings;
-  var s1 = useState(settings.gooId || '');   var gooId = s1[0], setGooId = s1[1];
-  var s2 = useState('post-thump');            var ep = s2[0], setEp = s2[1];
-  var s3 = useState('');                      var query = s3[0], setQuery = s3[1];
-  var s4 = useState(false);                   var loading = s4[0], setLoading = s4[1];
-  var s5 = useState(null);                    var result = s5[0], setResult = s5[1];
-
-  useEffect(function() { setGooId(settings.gooId || ''); }, [settings.gooId]);
-
-  var epObj = ENDPOINTS[ep];
-  var url = BASE_GOO + epPath(ep, gooId || '{goo_id}');
-
-  async function send() {
-    if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
-    setLoading(true);
-    try {
-      var targetUrl = BASE_GOO + epPath(ep, gooId);
-      var useProxy = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-      var fetchRes;
-      if (useProxy) {
-        fetchRes = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUrl: targetUrl, method: epObj.method, body: epObj.query ? { query: query } : null })
-        });
-      } else {
-        fetchRes = await fetch(targetUrl, {
-          method: epObj.method,
-          headers: { 'Content-Type': 'application/json' },
-          body: epObj.query ? JSON.stringify({ query: query }) : null
-        });
-      }
-      var rawText = await fetchRes.text();
-      var formatted = rawText;
-      try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch(e) {}
-      setResult({ status: fetchRes.status, statusText: fetchRes.statusText, body: formatted });
-    } catch(err) {
-      setResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
-    } finally { setLoading(false); }
-  }
-
-  var selStyle = { width: '100%', border: '1.5px solid ' + (theme.border || '#ddd'), borderRadius: 8, padding: '10px 14px', fontSize: '0.97rem', color: theme.inputText || '#222', background: theme.inputBg || '#fafafa', outline: 'none', cursor: 'pointer' };
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
-  var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
-
-  return React.createElement('div', null,
-    React.createElement('div', { style: { display: 'flex', gap: 16, marginBottom: 18 } },
-      React.createElement('div', { style: { flex: 1 } },
-        React.createElement('label', { style: lblStyle }, 'Goo ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-        React.createElement(FInput, { value: gooId, readOnly: true, placeholder: settings.gooId ? '' : 'In Einstellungen hinterlegen' }),
-        React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine persönliche Goo ID')
-      ),
-      React.createElement('div', { style: { flex: 1 } },
-        React.createElement('label', { style: lblStyle }, 'Endpunkt'),
-        React.createElement('select', { value: ep, onChange: function(e) { setEp(e.target.value); }, style: selStyle },
-          React.createElement('optgroup', { label: 'Standard APIs' },
-            React.createElement('option', { value: 'get-last' }, 'GET /api/last - Letzten Query abrufen'),
-            React.createElement('option', { value: 'post-thump' }, 'POST /api/thump - Query senden')
-          ),
-          React.createElement('optgroup', { label: 'PRO APIs' },
-            React.createElement('option', { value: 'pro-last-deleted' }, 'GET /pro-api/last-deleted (PRO)'),
-            React.createElement('option', { value: 'pro-autofill' }, 'GET /pro-api/autofill (PRO)'),
-            React.createElement('option', { value: 'live-text' }, 'GET /api/live-text (PRO)'),
-            React.createElement('option', { value: 'pro-last-bd' }, 'GET /pro-api/last-bd (PRO)'),
-            React.createElement('option', { value: 'pro-last-deleted-bd' }, 'GET /pro-api/last-deleted-bd (PRO)')
-          )
-        )
-      )
-    ),
-    React.createElement('div', { style: { background: theme.infoBg || '#f8f8f8', borderLeft: '3px solid #e8002d', borderRadius: '0 6px 6px 0', padding: '10px 14px', fontSize: '0.83rem', color: theme.infoText || '#555', marginBottom: 18, lineHeight: 1.5 } }, epObj.desc),
-    epObj.live && React.createElement('div', { style: { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '9px 14px', fontSize: '0.8rem', color: '#92400e', marginBottom: 14 } }, 'Live-Text: Fuer optimale Echtzeit-Nutzung alle 300-500ms abfragen.'),
-    epObj.query && React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'Query', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-      React.createElement(FTextarea, { value: query, onChange: function(e) { setQuery(e.target.value); }, placeholder: 'Suchanfrage oder URL eingeben...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.')
-    ),
-    React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
-      React.createElement(FInput, { value: url, readOnly: true, mono: true })
-    ),
-    React.createElement(SendBar, { loading: loading, onSend: send, onFetch: send, result: result, settings: settings, shareText: epObj.query ? query : '' }),
-    React.createElement(ResponseBox, { result: result })
-  );
-}
-
-function InjectSection(props) {
-  var theme = App._theme || {};
-
-  var settings = props.settings;
-  var s1 = useState(settings.injectId || ''); var id = s1[0], setId = s1[1];
-  var s2 = useState('');                       var value = s2[0], setValue = s2[1];
-  var s3 = useState(false);                    var loading = s3[0], setLoading = s3[1];
-  var s4 = useState(null);                     var result = s4[0], setResult = s4[1];
-
-  useEffect(function() { setId(settings.injectId || ''); }, [settings.injectId]);
-
-  var previewUrl = id ? BASE_INJECT + '/' + id + '/selection' : 'https://11z.co/_w/{ID}/selection';
-
-  async function send() {
-    if (!id) { alert('Bitte eine Widget ID eingeben.'); return; }
-    if (!value) { alert('Bitte einen Value eingeben.'); return; }
-    setLoading(true);
-    try {
-      var fetchRes = await fetch(BASE_INJECT + '/' + id + '/selection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: value })
-      });
-      var rawText = await fetchRes.text();
-      var formatted = rawText;
-      try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch(e) {}
-      setResult({ status: fetchRes.status, statusText: fetchRes.statusText, body: formatted });
-    } catch(err) {
-      setResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
-    } finally { setLoading(false); }
-  }
-
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
-  var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
-
-  return React.createElement('div', null,
-    React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'Inject ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-      React.createElement(FInput, { value: id, readOnly: true, placeholder: settings.injectId ? '' : 'In Einstellungen hinterlegen' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine persönliche Inject ID')
-    ),
-    React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'Value', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
-      React.createElement(FTextarea, { value: value, onChange: function(e) { setValue(e.target.value); }, placeholder: 'Text eingeben, der injiziert werden soll...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.')
-    ),
-    React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
-      React.createElement(FInput, { value: previewUrl, readOnly: true, mono: true })
-    ),
-    React.createElement(SendBar, { loading: loading, onSend: send, onFetch: send, result: result, settings: settings, shareText: value }),
-    React.createElement(ResponseBox, { result: result })
-  );
-}
-
-function UnifiSection(props) {
-  var theme = App._theme || {};
-
-  var settings = props.settings;
-  var s1 = useState(settings.unifiId || ''); var userId = s1[0], setUserId = s1[1];
-  var s2 = useState([]);                           var events = s2[0], setEvents = s2[1];
-  var s3 = useState('');                           var error = s3[0], setError = s3[1];
-  var s4 = useState(false);                        var loading = s4[0], setLoading = s4[1];
-  var s5 = useState(null);                         var result = s5[0], setResult = s5[1];
-
-  useEffect(function() { setUserId(settings.unifiId || ''); }, [settings.unifiId]);
-
-  var fetchEvents = useCallback(async function() {
-    if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
-    setLoading(true);
-    try {
-      var fetchRes = await fetch(BASE_UNIFI + '?UserId=' + userId, { method: 'GET', headers: {} });
-      var data = { status: fetchRes.status, statusText: fetchRes.statusText };
-      var parsed = await fetchRes.json();
-      if (parsed.Event && parsed.Event.length > 0) {
-        setEvents(parsed.Event);
-        setResult({ status: data.status, statusText: data.statusText, body: JSON.stringify(parsed, null, 2) });
-      }
-      setError('');
-    } catch(err) { setError(err.message); }
-    finally { setLoading(false); }
-  }, [userId]);
-
-  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: theme.subtext || '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
-
-  // Letztes Event als Share-Text
-  var lastEventText = '';
-  if (events.length > 0) {
-    try {
-      var d = JSON.parse(events[0].Event);
-      lastEventText = Object.entries(d).map(function(kv){ return kv[0] + ': ' + kv[1]; }).join('\n');
-    } catch(e) { lastEventText = events[0].Event || ''; }
-  }
-
-  return React.createElement('div', null,
-    React.createElement('div', { style: { marginBottom: 18 } },
-      React.createElement('label', { style: lblStyle }, 'User ID'),
-      React.createElement(FInput, { value: userId, readOnly: true, placeholder: settings.unifiId ? '' : 'In Einstellungen hinterlegen' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: theme.hint || '#999', marginTop: 5 } }, 'Deine Unifi User ID')
-    ),
-    error && React.createElement('div', { style: { color: '#e8002d', fontSize: '0.88rem', marginBottom: 12 } }, 'Fehler: ' + error),
-    React.createElement(SendBar, { loading: loading, onSend: fetchEvents, onFetch: fetchEvents, result: result, settings: settings, shareText: lastEventText }),
-    events.length > 0 && React.createElement('div', { style: { maxHeight: 280, overflowY: 'auto', marginTop: 16 } },
-      events.map(function(ev, i) {
-        var d = {};
-        try { d = JSON.parse(ev.Event); } catch(e) {}
-        var type = d.Event || 'Unbekannt';
-        var color = UNIFI_COLORS[type] || '#1a1a2e';
-        return React.createElement('div', { key: ev.Id || i, style: { background: '#f8f8f8', border: '1.5px solid #e0e0e0', borderLeft: i === 0 ? '4px solid #e8002d' : '1.5px solid #e0e0e0', borderRadius: 10, padding: '12px 14px', marginBottom: 10 } },
-          React.createElement('div', { style: { display: 'inline-block', fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 12, background: color, color: '#fff', marginBottom: 6, textTransform: 'uppercase' } }, type),
-          React.createElement('div', { style: { fontSize: '0.75rem', color: '#aaa', marginBottom: 6 } }, 'ID: ' + ev.Id + ' | User: ' + ev.UserId),
-          Object.entries(d).filter(function(kv) { return kv[0] !== 'Event' && kv[1] != null && kv[1] !== ''; }).map(function(kv) {
-            return React.createElement('div', { key: kv[0], style: { fontSize: '0.87rem', color: '#333', marginBottom: 3 } },
-              React.createElement('strong', { style: { color: '#1a1a2e', minWidth: 130, display: 'inline-block' } }, kv[0] + ':'),
-              ' ' + kv[1]
-            );
-          })
-        );
-      })
-    ),
-    React.createElement(ResponseBox, { result: result })
-  );
-}
-
-function App() {
-  var dm = useState(false); var darkMode = dm[0], setDarkMode = dm[1];
-
-  var theme = {
-    bg:        darkMode ? '#0f0f1a' : '#f0f2f5',
-    card:      darkMode ? '#1a1a2e' : '#fff',
-    text:      darkMode ? '#e0e0e0' : '#1a1a2e',
-    subtext:   darkMode ? '#999' : '#666',
-    border:    darkMode ? '#2e2e4a' : '#ddd',
-    inputBg:   darkMode ? '#12121f' : '#fafafa',
-    inputBgFocus: darkMode ? '#1e1e35' : '#fff',
-    inputText: darkMode ? '#e0e0e0' : '#222',
-    readonlyBg: darkMode ? '#1e1e35' : '#f0f0f0',
-    readonlyText: darkMode ? '#888' : '#666',
-    tabInactive: darkMode ? '#12121f' : '#fafafa',
-    tabInactiveText: darkMode ? '#888' : '#888',
-    sectionTitle: darkMode ? '#c0c0d0' : '#1a1a2e',
-    hint:      darkMode ? '#666' : '#999',
-    infoBg:    darkMode ? '#1e1e35' : '#f8f8f8',
-    infoText:  darkMode ? '#aaa' : '#555',
-    responseBg: darkMode ? '#12121f' : '#f8f8f8',
-    responseText: darkMode ? '#e0e0e0' : '#222',
-    responseHeader: darkMode ? '#0a0a15' : '#1a1a2e',
+    var s = state.settings;
+    if(sendTg) { try{ await sendTelegram(s.tgToken,s.tgChatId,shareText); } catch(e){ errs.push('Telegram: '+e.message); } }
+    if(sendDc) { try{ await sendDiscord(s.dcWebhook,shareText); } catch(e){ errs.push('Discord: '+e.message); } }
+    sendBtn.disabled = false;
+    sendBtn.textContent = t('send');
+    sendBtn.style.background = 'rgba(232,0,45,0.85)';
+    if(errs.length) notify(false, errs.join(' | '), 5000);
+    else if(sendTg||sendDc) notify(true, t('sentOk'), 3000);
   };
+  container.appendChild(sendBtn);
 
-  // inject theme into context
-  App._theme = theme;
-  App._dark = darkMode;
+  // Controls row
+  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;' });
 
-  var initSettings = loadSettings();
-  var s1 = useState('goo');         var activeTab = s1[0], setActiveTab = s1[1];
-  var s2 = useState(initSettings);  var settings = s2[0], setSettings = s2[1];
-  var s9 = useState(false);         var secretSaved = s9[0], setSecretSaved = s9[1];
-  var sp = useState(false);         var showProfilePicker = sp[0], setShowProfilePicker = sp[1];
-  var vClickRef = useRef(0);
-  var vTimerRef = useRef(null);
+  // Interval select
+  var selOpts = [{value:'2000',label:'2s'},{value:'5000',label:'5s'},{value:'10000',label:'10s'},{value:'30000',label:'30s'}];
+  var sel = makeSelect(selOpts,'5000',function(){ interval=parseInt(sel.value); },th);
+  sel.style.width = 'auto';
+  sel.style.padding = '8px 10px';
+  ctrlRow.appendChild(sel);
 
-  function handleVersionClick() {
-    vClickRef.current += 1;
-    if (vTimerRef.current) clearTimeout(vTimerRef.current);
-    vTimerRef.current = setTimeout(function() { vClickRef.current = 0; }, 2000);
-    if (vClickRef.current >= 5) {
-      vClickRef.current = 0;
-      setShowProfilePicker(true);
+  // Auto-refresh btn
+  var arBtn = makeBtn(t('autoRefresh'),function(){
+    if(timer) {
+      clearInterval(timer); timer=null; isLive=false;
+      arBtn.textContent=t('autoRefresh'); arBtn.style.background='#22c55e';
+      liveDot.style.display='none';
+    } else {
+      if(opts.onFetch) opts.onFetch();
+      timer=setInterval(function(){ if(opts.onFetch) opts.onFetch(); },interval);
+      isLive=true;
+      arBtn.textContent=t('stop'); arBtn.style.background='#e8002d';
+      liveDot.style.display='flex';
     }
+  },{ small:true, bg:'#22c55e' });
+  ctrlRow.appendChild(arBtn);
+
+  // Live dot
+  var liveDot = el('span',{ style:'display:none;align-items:center;gap:5px;font-size:0.84rem;color:#22c55e;font-weight:600;' });
+  liveDot.appendChild(el('span',{ style:'width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1s infinite;' }));
+  liveDot.appendChild(txt('Live'));
+  ctrlRow.appendChild(liveDot);
+
+  // Fullscreen btn
+  if(opts.showFullscreen!==false) {
+    var fsBtn = makeBtn(t('fullscreen'),function(){
+      state.fullscreen = { result: opts.getResult ? opts.getResult() : null };
+      render();
+    },{ small:true, bg:'#6366f1' });
+    ctrlRow.appendChild(fsBtn);
   }
 
+  container.appendChild(ctrlRow);
+  return container;
+}
+
+// ── Fullscreen ─────────────────────────────────────────────────────────────
+function renderFullscreen(th) {
+  var result = state.fullscreen.result;
+  var body2 = result ? (result.body||t('emptyAnswer')) : t('waitAnswer');
+  var ov = el('div',{ style:'position:fixed;inset:0;background:#0d0d0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;' });
+  var closeBtn = el('button',{ style:'position:absolute;top:20px;right:28px;background:none;border:none;color:#888;font-size:2rem;cursor:pointer;' },'×');
+  closeBtn.onclick = function(){ state.fullscreen=null; render(); };
+  ov.appendChild(closeBtn);
+  if(result) {
+    var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
+    var sb = el('div',{ style:'position:absolute;top:22px;left:28px;padding:3px 14px;border-radius:12px;font-size:0.8rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:''));
+    ov.appendChild(sb);
+  }
+  var pre = el('pre',{ style:'color:#fff;font-size:1.4rem;font-weight:700;white-space:pre-wrap;word-break:break-all;font-family:Courier New,monospace;line-height:1.6;max-height:85vh;overflow-y:auto;max-width:900px;width:100%;text-align:center;' });
+  pre.textContent = body2;
+  ov.appendChild(pre);
+  document.onkeydown = function(e){ if(e.key==='Escape'){ state.fullscreen=null; render(); document.onkeydown=null; } };
+  return ov;
+}
+
+// ── Profile modal ──────────────────────────────────────────────────────────
+function renderProfileModal(th) {
+  var ov = el('div',{ style:'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;display:flex;align-items:center;justify-content:center;padding:24px;' });
+  var box = el('div',{ style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);' });
+  box.appendChild(el('div',{ style:'font-size:1.1rem;font-weight:700;color:'+th.text+';margin-bottom:4px;' }, t('profileTitle')));
+  box.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.subtext+';margin-bottom:20px;' }, t('profileSubtitle')));
+  function mkProfileBtn(name, data) {
+    var b = makeBtn(name, function(){
+      state.settings = Object.assign({}, data);
+      saveSettings(state.settings);
+      state.profileModal = false;
+      render();
+    },{ bg:'rgba(232,0,45,0.85)' });
+    b.style.width='100%'; b.style.marginBottom='10px';
+    box.appendChild(b);
+  }
+  mkProfileBtn('Dominik', DEFAULT_DOMINIK);
+  mkProfileBtn('Jörn', DEFAULT_JOERN);
+  var cancel = makeBtn(t('cancel'), function(){ state.profileModal=false; render(); }, { bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  cancel.style.width='100%';
+  box.appendChild(cancel);
+  ov.appendChild(box);
+  return ov;
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────
+function renderHeader(th) {
+  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
+
+  var left = el('div',{ style:'display:flex;align-items:center;gap:10px;' });
+  // Logo
+  var logo = el('div',{ style:'width:34px;height:34px;border-radius:9px;background:#e8002d;display:flex;align-items:center;justify-content:center;flex-shrink:0;' });
+  logo.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 6l5 4-5 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  left.appendChild(logo);
+  var titleWrap = el('div',{});
+  var titleRow = el('div',{ style:'display:flex;align-items:baseline;gap:6px;' });
+  titleRow.appendChild(el('div',{ style:'font-size:1rem;font-weight:800;color:'+th.text+';letter-spacing:-0.01em;' }, t('appTitle')));
+  titleRow.appendChild(el('span',{ style:'font-size:0.78rem;font-weight:400;color:'+th.subtext+';' }, t('appVersion')));
+  titleWrap.appendChild(titleRow);
+  titleWrap.appendChild(el('div',{ style:'font-size:0.72rem;color:'+th.subtext+';' }, t('appSubtitle')));
+  left.appendChild(titleWrap);
+  hdr.appendChild(left);
+
+  var right = el('div',{ style:'display:flex;align-items:center;gap:8px;' });
+
+  // Lang toggle
+  var langBtn = makeBtn(lang==='de'?'EN':'DE', function(){
+    state.lang = lang==='de'?'en':'de';
+    render();
+  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(langBtn);
+
+  // Profile btn
+  var profBtn = makeBtn('👤', function(){ state.profileModal=true; render(); },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(profBtn);
+
+  // Theme toggle
+  var themeBtn = makeBtn(state.theme==='dark'?'☀':'🌙', function(){
+    state.theme = state.theme==='dark'?'light':'dark';
+    render();
+  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(themeBtn);
+
+  hdr.appendChild(right);
+  return hdr;
+}
+
+// ── Bottom nav ─────────────────────────────────────────────────────────────
+function renderNav(th) {
   var tabs = [
-    { key: 'goo',      label: 'Goo' },
-    { key: 'inject',   label: 'Inject' },
-    { key: 'unifi',    label: 'Unifi' },
-    { key: 'settings', label: '⚙ Einstellungen' }
+    { id:'goo',      icon:'🔴', label:t('tabGoo') },
+    { id:'inject',   icon:'💉', label:t('tabInject') },
+    { id:'unifi',    icon:'📶', label:t('tabUnifi') },
+    { id:'settings', icon:'⚙', label:lang==='de'?'Einstellungen':'Settings' },
+    { id:'help',     icon:'?', label:lang==='de'?'Hilfe':'Help' },
   ];
-  var descs = {
-    goo:      'Einfaches Testen von APIs',
-    inject:   '11z.co Inject API - Werte in Widgets injizieren',
-    unifi:    'thump.buzz Unifi API - Events live empfangen',
-    settings: 'Globale Einstellungen - werden lokal gespeichert'
-  };
-
-  function handleSave(s) { setSettings(s); }
-
-  function applyProfile(profileSettings) {
-    saveSettings(profileSettings);
-    setSettings(profileSettings);
-    setActiveTab('settings');
-    setShowProfilePicker(false);
-    setSecretSaved(profileSettings);
-    setTimeout(function() { setSecretSaved(false); }, 3000);
-  }
-
-  return React.createElement('div', { style: { fontFamily: 'Segoe UI, sans-serif', background: theme.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, transition: 'background 0.3s' } },
-    React.createElement('div', { style: { background: theme.card, borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '36px 40px', width: '100%', maxWidth: 780, transition: 'background 0.3s' } },
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28, borderBottom: '2px solid #e8002d', paddingBottom: 18, justifyContent: 'space-between' } },
-        React.createElement('svg', { width: 36, height: 36, viewBox: '0 0 36 36', fill: 'none' },
-          React.createElement('rect', { width: 36, height: 36, rx: 8, fill: '#e8002d' }),
-          React.createElement('path', { d: 'M10 18h16M22 13l5 5-5 5', stroke: '#fff', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' })
-        ),
-        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, flex: 1 } },
-          React.createElement('div', null,
-            React.createElement('h1', { style: { fontSize: '1.45rem', color: '#1a1a2e', fontWeight: 700 } }, 'API Tool'),
-            React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginTop: 2 } }, descs[activeTab])
-          )
-        ),
-        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
-          React.createElement('span', {
-            onClick: handleVersionClick,
-            style: { fontSize: '0.82rem', color: theme.subtext || '#999', fontWeight: 500, whiteSpace: 'nowrap', cursor: 'default', userSelect: 'none' }
-          }, 'v 1.2'),
-          React.createElement('button', {
-            onClick: function() { setDarkMode(!darkMode); },
-            title: darkMode ? 'Light Mode' : 'Dark Mode',
-            style: { background: darkMode ? '#2e2e4a' : '#f0f0f0', border: 'none', borderRadius: 20, width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', transition: 'background 0.2s' }
-          }, darkMode ? '☀️' : '🌙')
-        )
-      ),
-      React.createElement('div', { style: { display: 'flex', marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
-        tabs.map(function(t, i) {
-          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : (theme.tabInactive || '#fafafa'), color: activeTab === t.key ? '#fff' : (theme.tabInactiveText || '#888'), border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid ' + (theme.border || '#ddd') : 'none', transition: 'all 0.2s' } }, t.label);
-        })
-      ),
-      activeTab === 'goo'      && React.createElement(GooSection,      { settings: settings }),
-      activeTab === 'inject'   && React.createElement(InjectSection,   { settings: settings }),
-      activeTab === 'unifi'    && React.createElement(UnifiSection,    { settings: settings }),
-      activeTab === 'settings' && React.createElement(SettingsSection, { onSave: handleSave, secretSaved: secretSaved }),
-      showProfilePicker && React.createElement('div', {
-        style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-        onClick: function(e) { if (e.target === e.currentTarget) setShowProfilePicker(false); }
-      },
-        React.createElement('div', { style: { background: theme.card || '#fff', borderRadius: 14, padding: '32px 36px', width: 320, boxShadow: '0 8px 40px rgba(0,0,0,0.25)', textAlign: 'center' } },
-          React.createElement('h2', { style: { fontSize: '1.1rem', fontWeight: 700, color: theme.text || '#1a1a2e', marginBottom: 8 } }, 'Profil auswählen'),
-          React.createElement('p', { style: { fontSize: '0.85rem', color: theme.subtext || '#666', marginBottom: 24 } }, 'Einstellungen für welchen Nutzer laden?'),
-          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
-            React.createElement('button', {
-              onClick: function() { applyProfile(DEFAULT_SETTINGS_DOMINIK); },
-              style: { padding: '14px 20px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }
-            }, 'Dominik'),
-            React.createElement('button', {
-              onClick: function() { applyProfile(DEFAULT_SETTINGS_JOERN); },
-              style: { padding: '14px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }
-            }, 'J\u00f6rn')
-          ),
-          React.createElement('button', {
-            onClick: function() { setShowProfilePicker(false); },
-            style: { marginTop: 18, background: 'none', border: 'none', color: theme.subtext || '#999', fontSize: '0.85rem', cursor: 'pointer' }
-          }, 'Abbrechen')
-        )
-      )
-    )
-  );
+  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
+  tabs.forEach(function(tab) {
+    var active = state.tab===tab.id;
+    var btn = el('button',{ style:'flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
+    btn.appendChild(el('span',{ style:'font-size:1.1rem;' }, tab.icon));
+    btn.appendChild(el('span',{ style:'font-size:0.66rem;font-weight:'+(active?'700':'500')+';color:'+(active?'#e8002d':th.subtext)+';' }, tab.label));
+    btn.onclick = function(){ state.tab=tab.id; render(); };
+    nav.appendChild(btn);
+  });
+  return nav;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+// ── Goo section ────────────────────────────────────────────────────────────
+var gooState = { ep:'post-thump', query:'', result:null };
+
+function renderGoo(th) {
+  var wrap = el('div',{});
+  var epObj = ENDPOINTS.find(function(e){ return e.id===gooState.ep; });
+  var url = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
+
+  // Goo ID + Endpoint row
+  var row = el('div',{ style:'display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;' });
+
+  var gooCol = el('div',{ style:'flex:1;min-width:140px;' });
+  var gooLbl = lbl(t('gooId'),th);
+  gooLbl.appendChild(badge(t('pflicht')));
+  gooCol.appendChild(gooLbl);
+  gooCol.appendChild(makeInput(state.settings.gooId||'',{ placeholder:state.settings.gooId?'':t('inSettings'), readonly:true },th));
+  gooCol.appendChild(hint(t('myGooId'),th));
+  row.appendChild(gooCol);
+
+  var epCol = el('div',{ style:'flex:1;min-width:180px;' });
+  epCol.appendChild(lbl(t('endpoint'),th));
+  var epSelOpts = ENDPOINTS.map(function(e){ return {value:e.id,label:e.label}; });
+  var epSel = makeSelect(epSelOpts, gooState.ep, function(){
+    gooState.ep=epSel.value;
+    render();
+  }, th);
+  epCol.appendChild(epSel);
+  row.appendChild(epCol);
+  wrap.appendChild(row);
+
+  // Desc
+  if(epObj.desc) {
+    var desc = el('div',{ style:'background:'+th.infoBg+';border-left:3px solid #e8002d;border-radius:0 6px 6px 0;padding:10px 14px;font-size:0.83rem;color:'+th.infoText+';margin-bottom:16px;line-height:1.5;' }, epObj.desc);
+    wrap.appendChild(desc);
+  }
+  if(epObj.live) {
+    var liveHintEl = el('div',{ style:'background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 14px;font-size:0.8rem;color:#92400e;margin-bottom:14px;' }, t('liveHint'));
+    wrap.appendChild(liveHintEl);
+  }
+
+  // Query
+  if(epObj.query) {
+    var qDiv = el('div',{ style:'margin-bottom:18px;' });
+    var qLbl = lbl(t('query'),th);
+    qLbl.appendChild(badge(t('pflicht')));
+    qDiv.appendChild(qLbl);
+    var ta = makeTextarea(gooState.query, t('queryPlaceholder'), function(){ gooState.query=ta.value; }, th);
+    qDiv.appendChild(ta);
+    qDiv.appendChild(hint(t('queryHint'),th));
+    wrap.appendChild(qDiv);
+  }
+
+  // URL preview
+  var urlDiv = el('div',{ style:'margin-bottom:18px;' });
+  urlDiv.appendChild(lbl(t('urlPreview'),th));
+  urlDiv.appendChild(makeInput(url,{ readonly:true, mono:true },th));
+  wrap.appendChild(urlDiv);
+
+  // SendBar
+  async function doSend() {
+    if(!state.settings.gooId){ alert('Bitte eine Goo ID in den Einstellungen hinterlegen.'); return; }
+    var targetUrl = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
+    try {
+      var resp = await fetch(targetUrl,{
+        method: epObj.method,
+        headers: {'Content-Type':'application/json'},
+        body: epObj.query ? JSON.stringify({query:gooState.query}) : null
+      });
+      var raw = await resp.text();
+      var fmt = raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
+      gooState.result = { status:resp.status, statusText:resp.statusText, body:fmt };
+    } catch(e) {
+      gooState.result = { status:'ERR', statusText:'', body:'Fehler:\n'+e.message };
+    }
+    // re-render response box
+    var rb = wrap.querySelector('.resp-box');
+    if(rb) rb.remove();
+    var nb = responseBox(gooState.result, th);
+    if(nb) { nb.className='resp-box'; wrap.appendChild(nb); }
+  }
+
+  var sb = buildSendBar({
+    onSend: doSend,
+    onFetch: doSend,
+    getShareText: function(){ return gooState.query; },
+    getResult: function(){ return gooState.result; },
+  }, th);
+  wrap.appendChild(sb);
+
+  // Response
+  if(gooState.result) {
+    var rb2 = responseBox(gooState.result, th);
+    if(rb2) { rb2.className='resp-box'; wrap.appendChild(rb2); }
+  }
+
+  return wrap;
+}
+
+// ── Inject section ─────────────────────────────────────────────────────────
+var injectState = { value:'', result:null };
+
+function renderInject(th) {
+  var wrap = el('div',{});
+
+  var idDiv = el('div',{ style:'margin-bottom:18px;' });
+  var idLbl = lbl(t('injectId'),th);
+  idLbl.appendChild(badge(t('pflicht')));
+  idDiv.appendChild(idLbl);
+  idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true },th));
+  idDiv.appendChild(hint(t('myInjectId'),th));
+  wrap.appendChild(idDiv);
+
+  var valDiv = el('div',{ style:'margin-bottom:18px;' });
+  var valLbl = lbl(t('value'),th);
+  valLbl.appendChild(badge(t('pflicht')));
+  valDiv.appendChild(valLbl);
+  var ta = makeTextarea(injectState.value, t('valuePlaceholder'), function(){ injectState.value=ta.value; }, th);
+  valDiv.appendChild(ta);
+  valDiv.appendChild(hint(t('valueHint'),th));
+  wrap.appendChild(valDiv);
+
+  var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
+  var urlDiv = el('div',{ style:'margin-bottom:18px;' });
+  urlDiv.appendChild(lbl(t('urlPreview'),th));
+  urlDiv.appendChild(makeInput(previewUrl,{ readonly:true, mono:true },th));
+  wrap.appendChild(urlDiv);
+
+  async function doSend() {
+    if(!state.settings.injectId){ alert('Bitte eine Inject ID in den Einstellungen hinterlegen.'); return; }
+    if(!injectState.value){ alert('Bitte einen Value eingeben.'); return; }
+    try {
+      var resp = await fetch(BASE_INJECT+'/'+state.settings.injectId+'/selection',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({value:injectState.value})
+      });
+      var raw = await resp.text();
+      var fmt=raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
+      injectState.result={status:resp.status,statusText:resp.statusText,body:fmt};
+    } catch(e) {
+      injectState.result={status:'ERR',statusText:'',body:'Fehler:\n'+e.message};
+    }
+    var rb = wrap.querySelector('.resp-box');
+    if(rb) rb.remove();
+    var nb = responseBox(injectState.result,th);
+    if(nb){ nb.className='resp-box'; wrap.appendChild(nb); }
+  }
+
+  wrap.appendChild(buildSendBar({
+    onSend: doSend, onFetch: doSend,
+    getShareText: function(){ return injectState.value; },
+    getResult: function(){ return injectState.result; },
+  },th));
+
+  if(injectState.result) {
+    var rb2=responseBox(injectState.result,th);
+    if(rb2){ rb2.className='resp-box'; wrap.appendChild(rb2); }
+  }
+  return wrap;
+}
+
+// ── Unifi section ──────────────────────────────────────────────────────────
+var unifiState = { events:[], result:null, error:'' };
+
+var UNIFI_COLORS2 = {
+  'Unifi Intelligence':'#6366f1','ELIPS':'#f59e0b','Second Sight':'#8b5cf6',
+  'Book Test':'#0ea5e9','Calculator':'#10b981','Poker Chip':'#ef4444',
+  'Dice':'#f97316','MindScale':'#ec4899','Web Messaging':'#64748b'
+};
+
+function renderUnifi(th) {
+  var wrap = el('div',{});
+
+  var idDiv = el('div',{ style:'margin-bottom:18px;' });
+  var idLbl = lbl(t('unifyId'),th);
+  idLbl.appendChild(badge(t('pflicht')));
+  idDiv.appendChild(idLbl);
+  idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true },th));
+  idDiv.appendChild(hint(t('myUnifyId'),th));
+  wrap.appendChild(idDiv);
+
+  async function doFetch() {
+    if(!state.settings.unifiId){ alert('Bitte eine Unify ID in den Einstellungen hinterlegen.'); return; }
+    try {
+      var resp = await fetch(BASE_UNIFI+'?UserId='+state.settings.unifiId);
+      var parsed = await resp.json();
+      unifiState.result={status:resp.status,statusText:resp.statusText,body:JSON.stringify(parsed,null,2)};
+      if(parsed.Event&&parsed.Event.length>0) unifiState.events=parsed.Event;
+      unifiState.error='';
+    } catch(e){ unifiState.error=e.message; }
+    // refresh events display
+    var evBox = wrap.querySelector('.ev-box');
+    if(evBox) evBox.remove();
+    wrap.appendChild(buildEventsBox(th));
+    var rb = wrap.querySelector('.resp-box');
+    if(rb) rb.remove();
+    if(unifiState.result){ var nb=responseBox(unifiState.result,th); if(nb){nb.className='resp-box';wrap.appendChild(nb);} }
+  }
+
+  wrap.appendChild(buildSendBar({
+    onSend: doFetch, onFetch: doFetch,
+    getShareText: function(){ return state.settings.unifiId||''; },
+    getResult: function(){ return unifiState.result; },
+  },th));
+
+  wrap.appendChild(buildEventsBox(th));
+  if(unifiState.result){ var rb2=responseBox(unifiState.result,th); if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);} }
+  return wrap;
+}
+
+function buildEventsBox(th) {
+  var box = el('div',{ class:'ev-box', style:'margin-top:16px;' });
+  if(unifiState.error) {
+    box.appendChild(el('div',{ style:'color:#e8002d;font-size:0.85rem;padding:10px;' }, t('error')+': '+unifiState.error));
+    return box;
+  }
+  if(!unifiState.events||unifiState.events.length===0) {
+    box.appendChild(el('div',{ style:'color:'+th.subtext+';font-size:0.85rem;padding:10px;text-align:center;' }, t('noEvents')));
+    return box;
+  }
+  unifiState.events.forEach(function(ev) {
+    var color = UNIFI_COLORS2[ev.AppName]||'#64748b';
+    var card = el('div',{ style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:3px solid '+color+';border-radius:10px;padding:12px 14px;margin-bottom:10px;' });
+    var hdr2 = el('div',{ style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' });
+    hdr2.appendChild(el('span',{ style:'font-weight:700;font-size:0.88rem;color:'+color+';' }, ev.AppName||'Event'));
+    hdr2.appendChild(el('span',{ style:'font-size:0.75rem;color:'+th.hint+';' }, ev.TimeStamp||''));
+    card.appendChild(hdr2);
+    if(ev.EventData) {
+      var pre2 = el('pre',{ style:'font-size:0.78rem;color:'+th.infoText+';white-space:pre-wrap;word-break:break-all;line-height:1.5;' });
+      pre2.textContent = typeof ev.EventData==='object' ? JSON.stringify(ev.EventData,null,2) : ev.EventData;
+      card.appendChild(pre2);
+    }
+    box.appendChild(card);
+  });
+  return box;
+}
+
+// ── Settings section ───────────────────────────────────────────────────────
+function renderSettings(th) {
+  var wrap = el('div',{});
+  wrap.appendChild(el('p',{ style:'color:'+th.subtext+';font-size:0.88rem;margin-bottom:20px;' }, t('settingsHint')));
+
+  var s = Object.assign({}, state.settings);
+
+  function group(labelText, key, placeholder, opts) {
+    var d = el('div',{ style:'margin-bottom:16px;flex:1;min-width:160px;' });
+    d.appendChild(lbl(labelText,th));
+    var inp = makeInput(s[key]||'',{ placeholder:placeholder, type:opts&&opts.type||'text' },th);
+    inp.oninput = function(){ s[key]=inp.value; };
+    d.appendChild(inp);
+    return d;
+  }
+
+  // API IDs
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:4px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('apiIds')));
+  var idsRow = el('div',{ style:'display:flex;gap:16px;flex-wrap:wrap;' });
+  idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId')));
+  idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId')));
+  idsRow.appendChild(group(t('unifyId'),'unifiId',t('placeholderUnifiId')));
+  wrap.appendChild(idsRow);
+
+  // Telegram
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('telegramSection')));
+  wrap.appendChild(group(t('botToken'),'tgToken',t('placeholderBotToken')));
+  wrap.appendChild(group(t('chatId'),'tgChatId',t('placeholderChatId')));
+
+  // Discord
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('discordSection')));
+  wrap.appendChild(group(t('webhookUrl'),'dcWebhook',t('placeholderWebhook')));
+
+  // Buttons
+  var btnRow = el('div',{ style:'display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;' });
+  var saveBtn = makeBtn(t('save'), function(){
+    state.settings = Object.assign({}, s);
+    saveSettings(state.settings);
+    var saved2 = el('span',{ style:'color:#16a34a;font-weight:700;font-size:0.9rem;' }, '✓ '+t('saved'));
+    btnRow.appendChild(saved2);
+    setTimeout(function(){ if(saved2.parentNode) saved2.remove(); },3000);
+  });
+  var clearBtn = makeBtn(t('clearCache'), function(){
+    try{ localStorage.removeItem(SETTINGS_KEY); }catch(e){}
+    state.settings={};
+    s={};
+    render();
+  },{ bg:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:th.subtext });
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(clearBtn);
+  wrap.appendChild(btnRow);
+
+  return wrap;
+}
+
+// ── Help section ───────────────────────────────────────────────────────────
+var HELP_SECTIONS = [
+  { icon:'🔴', title:'Goo', color:'#e8002d', items:[
+    {name:'Goo ID', desc:'Deine persönliche ID für die 11q.co API. Wird in den Einstellungen hinterlegt.'},
+    {name:'Endpunkt', desc:'Wähle den gewünschten API-Endpunkt. Standard: POST /api/thump. PRO-Endpunkte erfordern PRO-Zugang.'},
+    {name:'Query', desc:'Der Text/die Suchanfrage, die an die Goo API gesendet wird. Wird auch an Telegram/Discord weitergeleitet.'},
+    {name:'URL-Vorschau', desc:'Zeigt die vollständige API-URL an, die beim Senden aufgerufen wird.'},
+    {name:'Auto-Refresh', desc:'Sendet die Anfrage automatisch in einem festgelegten Intervall (2s, 5s, 10s, 30s).'},
+    {name:'Vollbild', desc:'Zeigt die API-Antwort groß und zentriert auf dem gesamten Bildschirm an.'},
+  ]},
+  { icon:'💉', title:'Inject', color:'#6366f1', items:[
+    {name:'Inject ID', desc:'Deine Widget-ID für die 11z.co Inject API. Wird in den Einstellungen hinterlegt.'},
+    {name:'Value', desc:'Der Text, der in das Widget injiziert werden soll.'},
+    {name:'URL-Vorschau', desc:'Zeigt die Ziel-URL der Inject-API an.'},
+  ]},
+  { icon:'📶', title:'Unifi', color:'#0ea5e9', items:[
+    {name:'Unify ID', desc:'Deine User-ID für die thump.buzz Unifi API. Wird in den Einstellungen hinterlegt.'},
+    {name:'Events', desc:'Nach dem Senden werden die letzten Events farblich nach Event-Typ markiert angezeigt.'},
+    {name:'Auto-Refresh', desc:'Fragt die Unifi API automatisch in regelmäßigen Abständen ab – ideal für Live-Überwachung.'},
+  ]},
+  { icon:'✈️', title:'Telegram & Discord', color:'#0088cc', items:[
+    {name:'Checkboxen', desc:'Aktiviere Telegram und/oder Discord direkt über dem Senden-Button.'},
+    {name:'Was wird gesendet?', desc:'Nur der eingegebene Text (Query/Value) wird weitergeleitet – nicht die API-Antwort.'},
+    {name:'Bot Token & Chat ID', desc:'In den Einstellungen hinterlegen. Token von @BotFather, Chat ID von @userinfobot.'},
+    {name:'Discord Webhook', desc:'In den Einstellungen hinterlegen. Webhook unter Servereinstellungen → Integrationen → Webhooks erstellen.'},
+  ]},
+  { icon:'⚙️', title:'Einstellungen', color:'#888', items:[
+    {name:'Speichern', desc:'Speichert alle Eingaben lokal im Browser (localStorage).'},
+    {name:'Cache leeren', desc:'Löscht alle gespeicherten Einstellungen und setzt alle Felder zurück.'},
+    {name:'Profil', desc:'Lade vordefinierte Einstellungen für verschiedene Benutzer.'},
+  ]},
+  { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
+    {name:'Umschalten', desc:'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.'},
+  ]},
+];
+
+function renderHelp(th) {
+  var wrap = el('div',{});
+  var hdg = el('div',{ style:'display:flex;align-items:center;gap:12px;margin-bottom:20px;' });
+  var ic = el('div',{ style:'width:38px;height:38px;border-radius:50%;background:rgba(232,0,45,0.15);border:2px solid rgba(232,0,45,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;font-weight:900;color:#e8002d;' },'?');
+  hdg.appendChild(ic);
+  var ti = el('div',{});
+  ti.appendChild(el('div',{ style:'font-size:1rem;font-weight:700;color:'+th.text+';' },t('helpTitle')));
+  ti.appendChild(el('div',{ style:'font-size:0.82rem;color:'+th.subtext+';margin-top:2px;' },t('helpSubtitle')));
+  hdg.appendChild(ti);
+  wrap.appendChild(hdg);
+
+  HELP_SECTIONS.forEach(function(sec) {
+    var s = el('div',{ style:'margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid '+th.border+';' });
+    var sh = el('div',{ style:'background:'+sec.color+';padding:10px 16px;display:flex;align-items:center;gap:8px;' });
+    sh.appendChild(el('span',{},sec.icon));
+    sh.appendChild(el('span',{ style:'color:#fff;font-weight:700;font-size:0.95rem;' },sec.title));
+    s.appendChild(sh);
+    var sb = el('div',{ style:'background:'+th.infoBg+';padding:4px 0;' });
+    sec.items.forEach(function(item,i) {
+      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;gap:12px;' });
+      row.appendChild(el('div',{ style:'min-width:130px;font-size:0.82rem;font-weight:700;color:'+sec.color+';padding-top:1px;' },item.name));
+      row.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.infoText+';line-height:1.55;' },item.desc));
+      sb.appendChild(row);
+    });
+    s.appendChild(sb);
+    wrap.appendChild(s);
+  });
+  return wrap;
+}
+
+// ── Inject styles ──────────────────────────────────────────────────────────
+var styleEl = document.createElement('style');
+styleEl.textContent = '@keyframes spin{to{transform:rotate(360deg);}}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px;}';
+document.head.appendChild(styleEl);
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+render();
+
+})();
 </script>
 </body>
 </html>
