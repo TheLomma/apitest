@@ -27,6 +27,14 @@ const { useState, useRef, useEffect, useCallback } = React;
 const BASE_GOO    = 'https://11q.co';
 const BASE_INJECT = 'https://11z.co/_w';
 const BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
+const SETTINGS_KEY = 'apitool_settings_v1';
+
+function loadSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
 
 function epPath(ep, id) {
   if (ep === 'get-last')            return '/api/last/' + id;
@@ -55,12 +63,6 @@ const UNIFI_COLORS = {
   'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
 };
 
-const PRIMARY_FIELDS = {
-  'Unifi Intelligence': 'result', 'ELIPS': 'song', 'Second Sight': 'description',
-  'Book Test': 'result', 'Calculator': 'actual_result', 'Poker Chip': 'result',
-  'Dice': 'result', 'MindScale': 'result', 'Web Messaging': 'result'
-};
-
 function Spinner() {
   return React.createElement('span', { style: {
     width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
@@ -71,10 +73,10 @@ function Spinner() {
 
 function FInput(props) {
   var value = props.value, onChange = props.onChange, placeholder = props.placeholder,
-      readOnly = props.readOnly, mono = props.mono;
+      readOnly = props.readOnly, mono = props.mono, type = props.type || 'text';
   var fs = useState(false); var focus = fs[0], setFocus = fs[1];
   return React.createElement('input', {
-    type: 'text', value: value, onChange: onChange, placeholder: placeholder, readOnly: readOnly,
+    type: type, value: value, onChange: onChange, placeholder: placeholder, readOnly: readOnly,
     onFocus: function() { setFocus(true); }, onBlur: function() { setFocus(false); },
     style: {
       width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'), borderRadius: 8,
@@ -138,19 +140,44 @@ function FullscreenOverlay(props) {
   );
 }
 
-function SectionShell(props) {
-  var result = props.result, onFetch = props.onFetch, onShare = props.onShare, children = props.children;
+async function sendToTelegram(botToken, chatId, text) {
+  if (!botToken || !chatId) throw new Error('Bot Token und Chat ID fehlen (Einstellungen pruefen).');
+  var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: text })
+  });
+  var data = await res.json();
+  if (!data.ok) throw new Error(data.description || 'Telegram Fehler');
+  return data;
+}
+
+async function sendToDiscord(webhookUrl, content) {
+  if (!webhookUrl) throw new Error('Discord Webhook URL fehlt (Einstellungen pruefen).');
+  var res = await fetch(webhookUrl, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content, username: 'API Tool' })
+  });
+  if (!res.ok) throw new Error('Discord Fehler: ' + res.status);
+  return true;
+}
+
+// Checkboxen + Sende-Button Komponente
+function SendBar(props) {
+  var loading = props.loading, onSend = props.onSend, settings = props.settings;
+  var sc = useState(false); var sendTg = sc[0], setSendTg = sc[1];
+  var sd = useState(false); var sendDc = sd[0], setSendDc = sd[1];
   var sr = useState(false); var fsOpen = sr[0], setFsOpen = sr[1];
   var si = useState('5000'); var intervalVal = si[0], setIntervalVal = si[1];
   var sl = useState(false); var isLive = sl[0], setIsLive = sl[1];
   var timerRef = useRef(null);
+  var st = useState(null); var notif = st[0], setNotif = st[1];
 
   function togglePolling() {
     if (timerRef.current) {
       clearInterval(timerRef.current); timerRef.current = null; setIsLive(false);
     } else {
-      if (onFetch) onFetch();
-      timerRef.current = setInterval(function() { if (onFetch) onFetch(); }, parseInt(intervalVal));
+      if (props.onFetch) props.onFetch();
+      timerRef.current = setInterval(function() { if (props.onFetch) props.onFetch(); }, parseInt(intervalVal));
       setIsLive(true);
     }
   }
@@ -158,13 +185,47 @@ function SectionShell(props) {
     return function() { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
+  async function handleSend() {
+    var shareText = props.shareText || '';
+    if (onSend) await onSend();
+    var errs = [];
+    if (sendTg) {
+      try { await sendToTelegram(settings.tgToken, settings.tgChatId, shareText); }
+      catch(e) { errs.push('Telegram: ' + e.message); }
+    }
+    if (sendDc) {
+      try { await sendToDiscord(settings.dcWebhook, shareText); }
+      catch(e) { errs.push('Discord: ' + e.message); }
+    }
+    if (errs.length > 0) { setNotif({ ok: false, text: errs.join(' | ') }); setTimeout(function(){ setNotif(null); }, 5000); }
+    else if (sendTg || sendDc) { setNotif({ ok: true, text: 'Gesendet!' }); setTimeout(function(){ setNotif(null); }, 3000); }
+  }
+
   var selStyle = { border: '1.5px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: '0.85rem', color: '#222', background: '#fafafa', outline: 'none', cursor: 'pointer' };
   var btnBase = { padding: '8px 14px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', color: '#fff' };
+  var cbStyle = { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, color: '#444', cursor: 'pointer', userSelect: 'none' };
 
   return React.createElement('div', null,
-    fsOpen && React.createElement(FullscreenOverlay, { result: result, onClose: function() { setFsOpen(false); } }),
-    children,
-    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' } },
+    // Checkboxen
+    React.createElement('div', { style: { display: 'flex', gap: 20, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' } },
+      React.createElement('label', { style: cbStyle },
+        React.createElement('input', { type: 'checkbox', checked: sendTg, onChange: function(e){ setSendTg(e.target.checked); }, style: { width: 16, height: 16, accentColor: '#0088cc' } }),
+        React.createElement('span', { style: { color: '#0088cc' } }, 'Telegram')
+      ),
+      React.createElement('label', { style: cbStyle },
+        React.createElement('input', { type: 'checkbox', checked: sendDc, onChange: function(e){ setSendDc(e.target.checked); }, style: { width: 16, height: 16, accentColor: '#5865F2' } }),
+        React.createElement('span', { style: { color: '#5865F2' } }, 'Discord')
+      )
+    ),
+    // Haupt-Senden-Button
+    React.createElement('button', { onClick: handleSend, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 } },
+      loading ? React.createElement(Spinner, null) : null,
+      loading ? 'Wird gesendet...' : 'Senden'
+    ),
+    // Notiz
+    notif && React.createElement('div', { style: { padding: '8px 14px', borderRadius: 8, background: notif.ok ? '#f0fdf4' : '#fff5f5', border: '1px solid ' + (notif.ok ? '#86efac' : '#fca5a5'), fontSize: '0.85rem', color: notif.ok ? '#166534' : '#991b1b', marginBottom: 8 } }, notif.text),
+    // Auto-Refresh + Vollbild
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
       React.createElement('select', { value: intervalVal, onChange: function(e) { setIntervalVal(e.target.value); }, style: selStyle },
         React.createElement('option', { value: '2000' }, '2s'),
         React.createElement('option', { value: '5000' }, '5s'),
@@ -176,112 +237,84 @@ function SectionShell(props) {
         React.createElement('span', { style: { width: 9, height: 9, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 1s infinite' } }),
         'Live'
       ),
-      React.createElement('button', { onClick: function() { setFsOpen(true); }, style: Object.assign({}, btnBase, { background: '#6366f1' }) }, 'Vollbild'),
-      React.createElement('button', { onClick: function() { onShare(result ? result.body : ''); }, style: Object.assign({}, btnBase, { background: '#1a1a2e' }) }, 'Senden ↗')
+      React.createElement('button', { onClick: function() { setFsOpen(true); }, style: Object.assign({}, btnBase, { background: '#6366f1' }) }, 'Vollbild')
     ),
-    React.createElement(ResponseBox, { result: result })
+    fsOpen && React.createElement(FullscreenOverlay, { result: props.result, onClose: function() { setFsOpen(false); } })
   );
 }
 
-async function sendToTelegram(botToken, chatId, text) {
-  if (!botToken || !chatId) throw new Error('Bot Token und Chat ID sind erforderlich.');
-  var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: text })
-  });
-  var data = await res.json();
-  if (!data.ok) throw new Error(data.description || 'Telegram Fehler');
-  return data;
-}
+function SettingsSection(props) {
+  var init = loadSettings();
+  var s1 = useState(init.gooId || '');       var gooId = s1[0], setGooId = s1[1];
+  var s2 = useState(init.injectId || '');    var injectId = s2[0], setInjectId = s2[1];
+  var s3 = useState(init.unifiId || '');     var unifiId = s3[0], setUnifiId = s3[1];
+  var s4 = useState(init.tgToken || '');     var tgToken = s4[0], setTgToken = s4[1];
+  var s5 = useState(init.tgChatId || '');    var tgChatId = s5[0], setTgChatId = s5[1];
+  var s6 = useState(init.dcWebhook || '');   var dcWebhook = s6[0], setDcWebhook = s6[1];
+  var s7 = useState(null);                   var saved = s7[0], setSaved = s7[1];
 
-async function sendToDiscord(webhookUrl, content) {
-  if (!webhookUrl) throw new Error('Webhook URL ist erforderlich.');
-  var res = await fetch(webhookUrl, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: content, username: 'API Tool' })
-  });
-  if (!res.ok) throw new Error('Discord Fehler: ' + res.status);
-  return true;
-}
-
-function ShareModal(props) {
-  var text = props.text, onClose = props.onClose;
-  var ts  = useState('telegram'); var tab = ts[0], setTab = ts[1];
-  var ts2 = useState('');         var tgToken = ts2[0], setTgToken = ts2[1];
-  var ts3 = useState('');         var tgChatId = ts3[0], setTgChatId = ts3[1];
-  var ts4 = useState('');         var dcWebhook = ts4[0], setDcWebhook = ts4[1];
-  var ts5 = useState(text || ''); var msg = ts5[0], setMsg = ts5[1];
-  var ts6 = useState(null);       var status = ts6[0], setStatus = ts6[1];
-  var ts7 = useState(false);      var loading = ts7[0], setLoading = ts7[1];
-
-  useEffect(function() {
-    function handler(e) { if (e.key === 'Escape') onClose(); }
-    window.addEventListener('keydown', handler);
-    return function() { window.removeEventListener('keydown', handler); };
-  }, [onClose]);
-
-  async function send() {
-    setLoading(true); setStatus(null);
-    try {
-      if (tab === 'telegram') {
-        await sendToTelegram(tgToken, tgChatId, msg);
-        setStatus({ ok: true, text: 'Erfolgreich an Telegram gesendet!' });
-      } else {
-        await sendToDiscord(dcWebhook, msg);
-        setStatus({ ok: true, text: 'Erfolgreich an Discord gesendet!' });
-      }
-    } catch(err) {
-      setStatus({ ok: false, text: err.message });
-    } finally { setLoading(false); }
+  function save() {
+    var s = { gooId, injectId, unifiId, tgToken, tgChatId, dcWebhook };
+    saveSettings(s);
+    if (props.onSave) props.onSave(s);
+    setSaved(true);
+    setTimeout(function(){ setSaved(false); }, 2500);
   }
 
-  var inpStyle = { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '9px 12px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' };
   var lblStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#444', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var groupStyle = { marginBottom: 16 };
+  var sectionTitle = { fontSize: '0.9rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 12, marginTop: 8, paddingBottom: 6, borderBottom: '1.5px solid #f0f0f0' };
 
-  return React.createElement('div', { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
-    React.createElement('div', { style: { background: '#fff', borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.18)', padding: '28px 32px', width: '100%', maxWidth: 480, position: 'relative' } },
-      React.createElement('button', { onClick: onClose, style: { position: 'absolute', top: 14, right: 18, background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#999' } }, 'x'),
-      React.createElement('h2', { style: { fontSize: '1.1rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 } }, 'Nachricht senden'),
-      React.createElement('div', { style: { display: 'flex', marginBottom: 20, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
-        React.createElement('button', { onClick: function() { setTab('telegram'); }, style: { flex: 1, padding: '9px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: 'none', borderRight: '1.5px solid #ddd', background: tab === 'telegram' ? '#0088cc' : '#fafafa', color: tab === 'telegram' ? '#fff' : '#888' } }, 'Telegram'),
-        React.createElement('button', { onClick: function() { setTab('discord'); }, style: { flex: 1, padding: '9px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: 'none', background: tab === 'discord' ? '#5865F2' : '#fafafa', color: tab === 'discord' ? '#fff' : '#888' } }, 'Discord')
+  return React.createElement('div', null,
+    React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginBottom: 20 } }, 'Hier hinterlegte Werte werden automatisch in alle Bereiche uebernommen und lokal gespeichert.'),
+
+    React.createElement('div', { style: sectionTitle }, '🔗 API IDs'),
+    React.createElement('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap' } },
+      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
+        React.createElement('label', { style: lblStyle }, 'Goo ID'),
+        React.createElement(FInput, { value: gooId, onChange: function(e){ setGooId(e.target.value); }, placeholder: 'z.B. 91' })
       ),
-      tab === 'telegram' && React.createElement('div', null,
-        React.createElement('div', { style: { marginBottom: 14 } },
-          React.createElement('label', { style: lblStyle }, 'Bot Token *'),
-          React.createElement('input', { value: tgToken, onChange: function(e) { setTgToken(e.target.value); }, placeholder: '123456:ABC-DEF...', style: inpStyle }),
-          React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Von @BotFather erhalten')
-        ),
-        React.createElement('div', { style: { marginBottom: 14 } },
-          React.createElement('label', { style: lblStyle }, 'Chat ID *'),
-          React.createElement('input', { value: tgChatId, onChange: function(e) { setTgChatId(e.target.value); }, placeholder: 'z.B. -1001234567890', style: inpStyle }),
-          React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Gruppen-ID oder User-ID')
-        )
+      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
+        React.createElement('label', { style: lblStyle }, 'Inject ID'),
+        React.createElement(FInput, { value: injectId, onChange: function(e){ setInjectId(e.target.value); }, placeholder: 'z.B. 12779' })
       ),
-      tab === 'discord' && React.createElement('div', { style: { marginBottom: 14 } },
-        React.createElement('label', { style: lblStyle }, 'Webhook URL *'),
-        React.createElement('input', { value: dcWebhook, onChange: function(e) { setDcWebhook(e.target.value); }, placeholder: 'https://discord.com/api/webhooks/...', style: inpStyle }),
-        React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Kanal-Einstellungen > Integrationen > Webhooks')
-      ),
-      React.createElement('div', { style: { marginBottom: 18 } },
-        React.createElement('label', { style: lblStyle }, 'Nachricht'),
-        React.createElement('textarea', { value: msg, onChange: function(e) { setMsg(e.target.value); }, rows: 4, style: { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '9px 12px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'Courier New, monospace' } })
-      ),
-      status && React.createElement('div', { style: { marginBottom: 14, padding: '9px 14px', borderRadius: 8, background: status.ok ? '#f0fdf4' : '#fff5f5', border: '1px solid ' + (status.ok ? '#86efac' : '#fca5a5'), fontSize: '0.88rem', color: status.ok ? '#166534' : '#991b1b' } }, status.text),
-      React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 12, background: loading ? '#aaa' : (tab === 'telegram' ? '#0088cc' : '#5865F2'), color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' } },
-        loading ? 'Senden...' : (tab === 'telegram' ? 'An Telegram senden' : 'An Discord senden')
+      React.createElement('div', { style: { flex: 1, minWidth: 180, ...groupStyle } },
+        React.createElement('label', { style: lblStyle }, 'Unifi User ID'),
+        React.createElement(FInput, { value: unifiId, onChange: function(e){ setUnifiId(e.target.value); }, placeholder: 'z.B. 10154' })
       )
-    )
+    ),
+
+    React.createElement('div', { style: sectionTitle }, '✈️ Telegram'),
+    React.createElement('div', { style: groupStyle },
+      React.createElement('label', { style: lblStyle }, 'Bot Token'),
+      React.createElement(FInput, { value: tgToken, onChange: function(e){ setTgToken(e.target.value); }, placeholder: '123456:ABC-DEF...' })
+    ),
+    React.createElement('div', { style: groupStyle },
+      React.createElement('label', { style: lblStyle }, 'Chat ID'),
+      React.createElement(FInput, { value: tgChatId, onChange: function(e){ setTgChatId(e.target.value); }, placeholder: 'z.B. 123456789' })
+    ),
+
+    React.createElement('div', { style: sectionTitle }, '💬 Discord'),
+    React.createElement('div', { style: groupStyle },
+      React.createElement('label', { style: lblStyle }, 'Webhook URL'),
+      React.createElement(FInput, { value: dcWebhook, onChange: function(e){ setDcWebhook(e.target.value); }, placeholder: 'https://discord.com/api/webhooks/...' })
+    ),
+
+    React.createElement('button', { onClick: save, style: { padding: '11px 32px', background: '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: 'pointer', marginTop: 4 } }, 'Speichern'),
+    saved && React.createElement('span', { style: { marginLeft: 14, color: '#22c55e', fontWeight: 600, fontSize: '0.9rem' } }, '✓ Gespeichert!')
   );
 }
 
 function GooSection(props) {
-  var onShare = props.onShare;
-  var s1 = useState('');           var gooId = s1[0], setGooId = s1[1];
-  var s2 = useState('post-thump'); var ep = s2[0], setEp = s2[1];
-  var s3 = useState('');           var query = s3[0], setQuery = s3[1];
-  var s4 = useState(false);        var loading = s4[0], setLoading = s4[1];
-  var s5 = useState(null);         var result = s5[0], setResult = s5[1];
+  var settings = props.settings;
+  var s1 = useState(settings.gooId || '');   var gooId = s1[0], setGooId = s1[1];
+  var s2 = useState('post-thump');            var ep = s2[0], setEp = s2[1];
+  var s3 = useState('');                      var query = s3[0], setQuery = s3[1];
+  var s4 = useState(false);                   var loading = s4[0], setLoading = s4[1];
+  var s5 = useState(null);                    var result = s5[0], setResult = s5[1];
+
+  useEffect(function() { setGooId(settings.gooId || ''); }, [settings.gooId]);
+
   var epObj = ENDPOINTS[ep];
   var url = BASE_GOO + epPath(ep, gooId || '{goo_id}');
 
@@ -289,14 +322,15 @@ function GooSection(props) {
     if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
     setLoading(true);
     try {
-      var res = await fetch('/api/proxy', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUrl: BASE_GOO + epPath(ep, gooId), method: epObj.method, headers: { 'Content-Type': 'application/json' }, body: epObj.query ? JSON.stringify({ query: query }) : null })
+      var fetchRes = await fetch(BASE_GOO + epPath(ep, gooId), {
+        method: epObj.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: epObj.query ? JSON.stringify({ query: query }) : null
       });
-      var data = await res.json();
-      var formatted = data.body;
-      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
-      setResult({ status: data.status, statusText: data.statusText, body: formatted });
+      var rawText = await fetchRes.text();
+      var formatted = rawText;
+      try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch(e) {}
+      setResult({ status: fetchRes.status, statusText: fetchRes.statusText, body: formatted });
     } catch(err) {
       setResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
     } finally { setLoading(false); }
@@ -306,7 +340,7 @@ function GooSection(props) {
   var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
   var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
 
-  var form = React.createElement('div', null,
+  return React.createElement('div', null,
     React.createElement('div', { style: { display: 'flex', gap: 16, marginBottom: 18 } },
       React.createElement('div', { style: { flex: 1 } },
         React.createElement('label', { style: lblStyle }, 'Goo ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
@@ -335,27 +369,26 @@ function GooSection(props) {
     epObj.query && React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'Query', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
       React.createElement(FTextarea, { value: query, onChange: function(e) { setQuery(e.target.value); }, placeholder: 'Suchanfrage oder URL eingeben...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Der Text oder die URL, die gesendet werden soll.')
+      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.')
     ),
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
       React.createElement(FInput, { value: url, readOnly: true, mono: true })
     ),
-    React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 } },
-      loading ? React.createElement(Spinner, null) : null,
-      loading ? 'Wird gesendet...' : 'Anfrage senden'
-    )
+    React.createElement(SendBar, { loading: loading, onSend: send, onFetch: send, result: result, settings: settings, shareText: epObj.query ? query : '' }),
+    React.createElement(ResponseBox, { result: result })
   );
-
-  return React.createElement(SectionShell, { result: result, onFetch: send, onShare: onShare }, form);
 }
 
 function InjectSection(props) {
-  var onShare = props.onShare;
-  var s1 = useState('');    var id = s1[0], setId = s1[1];
-  var s2 = useState('');    var value = s2[0], setValue = s2[1];
-  var s3 = useState(false); var loading = s3[0], setLoading = s3[1];
-  var s4 = useState(null);  var result = s4[0], setResult = s4[1];
+  var settings = props.settings;
+  var s1 = useState(settings.injectId || ''); var id = s1[0], setId = s1[1];
+  var s2 = useState('');                       var value = s2[0], setValue = s2[1];
+  var s3 = useState(false);                    var loading = s3[0], setLoading = s3[1];
+  var s4 = useState(null);                     var result = s4[0], setResult = s4[1];
+
+  useEffect(function() { setId(settings.injectId || ''); }, [settings.injectId]);
+
   var previewUrl = id ? BASE_INJECT + '/' + id + '/selection' : 'https://11z.co/_w/{ID}/selection';
 
   async function send() {
@@ -363,14 +396,15 @@ function InjectSection(props) {
     if (!value) { alert('Bitte einen Value eingeben.'); return; }
     setLoading(true);
     try {
-      var res = await fetch('/api/proxy', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUrl: BASE_INJECT + '/' + id + '/selection', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) })
+      var fetchRes = await fetch(BASE_INJECT + '/' + id + '/selection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: value })
       });
-      var data = await res.json();
-      var formatted = data.body;
-      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
-      setResult({ status: data.status, statusText: data.statusText, body: formatted });
+      var rawText = await fetchRes.text();
+      var formatted = rawText;
+      try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch(e) {}
+      setResult({ status: fetchRes.status, statusText: fetchRes.statusText, body: formatted });
     } catch(err) {
       setResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
     } finally { setLoading(false); }
@@ -379,7 +413,7 @@ function InjectSection(props) {
   var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
   var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
 
-  var form = React.createElement('div', null,
+  return React.createElement('div', null,
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'Widget ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
       React.createElement(FInput, { value: id, onChange: function(e) { setId(e.target.value); }, placeholder: 'z.B. 12779' }),
@@ -388,39 +422,34 @@ function InjectSection(props) {
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'Value', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
       React.createElement(FTextarea, { value: value, onChange: function(e) { setValue(e.target.value); }, placeholder: 'Text eingeben, der injiziert werden soll...' }),
-      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Wird als JSON-Body gesendet: { "value": "..." }')
+      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.')
     ),
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
       React.createElement(FInput, { value: previewUrl, readOnly: true, mono: true })
     ),
-    React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 } },
-      loading ? React.createElement(Spinner, null) : null,
-      loading ? 'Wird gesendet...' : 'Anfrage senden'
-    )
+    React.createElement(SendBar, { loading: loading, onSend: send, onFetch: send, result: result, settings: settings, shareText: value }),
+    React.createElement(ResponseBox, { result: result })
   );
-
-  return React.createElement(SectionShell, { result: result, onFetch: send, onShare: onShare }, form);
 }
 
 function UnifiSection(props) {
-  var onShare = props.onShare;
-  var s1 = useState('10154'); var userId = s1[0], setUserId = s1[1];
-  var s2 = useState([]);      var events = s2[0], setEvents = s2[1];
-  var s3 = useState('');      var error = s3[0], setError = s3[1];
-  var s4 = useState(false);   var loading = s4[0], setLoading = s4[1];
-  var s5 = useState(null);    var result = s5[0], setResult = s5[1];
+  var settings = props.settings;
+  var s1 = useState(settings.unifiId || '10154'); var userId = s1[0], setUserId = s1[1];
+  var s2 = useState([]);                           var events = s2[0], setEvents = s2[1];
+  var s3 = useState('');                           var error = s3[0], setError = s3[1];
+  var s4 = useState(false);                        var loading = s4[0], setLoading = s4[1];
+  var s5 = useState(null);                         var result = s5[0], setResult = s5[1];
+
+  useEffect(function() { setUserId(settings.unifiId || '10154'); }, [settings.unifiId]);
 
   var fetchEvents = useCallback(async function() {
     if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
     setLoading(true);
     try {
-      var res = await fetch('/api/proxy', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUrl: BASE_UNIFI + '?UserId=' + userId, method: 'GET', headers: {}, body: null })
-      });
-      var data = await res.json();
-      var parsed = JSON.parse(data.body);
+      var fetchRes = await fetch(BASE_UNIFI + '?UserId=' + userId, { method: 'GET', headers: {} });
+      var data = { status: fetchRes.status, statusText: fetchRes.statusText };
+      var parsed = await fetchRes.json();
       if (parsed.Event && parsed.Event.length > 0) {
         setEvents(parsed.Event);
         setResult({ status: data.status, statusText: data.statusText, body: JSON.stringify(parsed, null, 2) });
@@ -432,17 +461,23 @@ function UnifiSection(props) {
 
   var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
 
-  var form = React.createElement('div', null,
+  // Letztes Event als Share-Text
+  var lastEventText = '';
+  if (events.length > 0) {
+    try {
+      var d = JSON.parse(events[0].Event);
+      lastEventText = Object.entries(d).map(function(kv){ return kv[0] + ': ' + kv[1]; }).join('\n');
+    } catch(e) { lastEventText = events[0].Event || ''; }
+  }
+
+  return React.createElement('div', null,
     React.createElement('div', { style: { marginBottom: 18 } },
       React.createElement('label', { style: lblStyle }, 'User ID'),
       React.createElement(FInput, { value: userId, onChange: function(e) { setUserId(e.target.value); }, placeholder: 'z.B. 10154' }),
       React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Deine Unifi User ID von thump.buzz')
     ),
     error && React.createElement('div', { style: { color: '#e8002d', fontSize: '0.88rem', marginBottom: 12 } }, 'Fehler: ' + error),
-    React.createElement('button', { onClick: fetchEvents, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 } },
-      loading ? React.createElement(Spinner, null) : null,
-      loading ? 'Wird geladen...' : 'Events abrufen'
-    ),
+    React.createElement(SendBar, { loading: loading, onSend: fetchEvents, onFetch: fetchEvents, result: result, settings: settings, shareText: lastEventText }),
     events.length > 0 && React.createElement('div', { style: { maxHeight: 280, overflowY: 'auto', marginTop: 16 } },
       events.map(function(ev, i) {
         var d = {};
@@ -460,28 +495,30 @@ function UnifiSection(props) {
           })
         );
       })
-    )
+    ),
+    React.createElement(ResponseBox, { result: result })
   );
-
-  return React.createElement(SectionShell, { result: result, onFetch: fetchEvents, onShare: onShare }, form);
 }
 
 function App() {
-  var s1 = useState('goo'); var activeTab = s1[0], setActiveTab = s1[1];
-  var s2 = useState(null);  var shareModal = s2[0], setShareModal = s2[1];
+  var initSettings = loadSettings();
+  var s1 = useState('goo');         var activeTab = s1[0], setActiveTab = s1[1];
+  var s2 = useState(initSettings);  var settings = s2[0], setSettings = s2[1];
 
   var tabs = [
-    { key: 'goo',    label: 'Goo' },
-    { key: 'inject', label: 'Inject' },
-    { key: 'unifi',  label: 'Unifi' }
+    { key: 'goo',      label: 'Goo' },
+    { key: 'inject',   label: 'Inject' },
+    { key: 'unifi',    label: 'Unifi' },
+    { key: 'settings', label: '⚙ Einstellungen' }
   ];
   var descs = {
-    goo:    '11q.co API - Anfragen senden & Antworten anzeigen',
-    inject: '11z.co Inject API - Werte in Widgets injizieren',
-    unifi:  'thump.buzz Unifi API - Events live empfangen'
+    goo:      '11q.co API - Anfragen senden & Antworten anzeigen',
+    inject:   '11z.co Inject API - Werte in Widgets injizieren',
+    unifi:    'thump.buzz Unifi API - Events live empfangen',
+    settings: 'Globale Einstellungen - werden lokal gespeichert'
   };
 
-  function openShare(txt) { setShareModal(txt != null ? txt : ''); }
+  function handleSave(s) { setSettings(s); }
 
   return React.createElement('div', { style: { fontFamily: 'Segoe UI, sans-serif', background: '#f0f2f5', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
     React.createElement('div', { style: { background: '#fff', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '36px 40px', width: '100%', maxWidth: 780 } },
@@ -497,13 +534,13 @@ function App() {
       ),
       React.createElement('div', { style: { display: 'flex', marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
         tabs.map(function(t, i) {
-          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' } }, t.label);
+          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' } }, t.label);
         })
       ),
-      activeTab === 'goo'    && React.createElement(GooSection,    { onShare: openShare }),
-      activeTab === 'inject' && React.createElement(InjectSection, { onShare: openShare }),
-      activeTab === 'unifi'  && React.createElement(UnifiSection,  { onShare: openShare }),
-      shareModal !== null && React.createElement(ShareModal, { text: shareModal, onClose: function() { setShareModal(null); } })
+      activeTab === 'goo'      && React.createElement(GooSection,      { settings: settings }),
+      activeTab === 'inject'   && React.createElement(InjectSection,   { settings: settings }),
+      activeTab === 'unifi'    && React.createElement(UnifiSection,    { settings: settings }),
+      activeTab === 'settings' && React.createElement(SettingsSection, { onSave: handleSave })
     )
   );
 }
