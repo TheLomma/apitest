@@ -1,358 +1,383 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Tool</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
 
-const BASE_GOO = "https://11q.co";
-const BASE_INJECT = "https://11z.co/_w";
-const BASE_UNIFI = "https://thump.buzz/unifi/getEvent";
+const BASE_GOO = 'https://11q.co';
+const BASE_INJECT = 'https://11z.co/_w';
+const BASE_UNIFI = 'https://thump.buzz/unifi/getEvent';
 
 function epPath(ep, id) {
-  switch(ep) {
-    case "get-last":            return `/api/last/${id}`;
-    case "post-thump":          return `/api/thump/${id}`;
-    case "pro-last-deleted":    return `/pro-api/${id}/last-deleted`;
-    case "pro-autofill":        return `/pro-api/${id}/autofill`;
-    case "live-text":           return `/api/live-text/${id}`;
-    case "pro-last-bd":         return `/pro-api/${id}/last-bd`;
-    case "pro-last-deleted-bd": return `/pro-api/${id}/last-deleted-bd`;
-    default: return "/";
-  }
+  if (ep === 'get-last')            return '/api/last/' + id;
+  if (ep === 'post-thump')          return '/api/thump/' + id;
+  if (ep === 'pro-last-deleted')    return '/pro-api/' + id + '/last-deleted';
+  if (ep === 'pro-autofill')        return '/pro-api/' + id + '/autofill';
+  if (ep === 'live-text')           return '/api/live-text/' + id;
+  if (ep === 'pro-last-bd')         return '/pro-api/' + id + '/last-bd';
+  if (ep === 'pro-last-deleted-bd') return '/pro-api/' + id + '/last-deleted-bd';
+  return '/';
 }
 
 const ENDPOINTS = {
-  "get-last":            { method: "GET",  desc: "Ruft die zuletzt gesendete Suchanfrage f\u00fcr die Goo ID ab.", query: false },
-  "post-thump":          { method: "POST", desc: "Sendet eine Suchanfrage (query) f\u00fcr die angegebene Goo ID.", query: true },
-  "pro-last-deleted":    { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft den zuletzt gel\u00f6schten Text aus dem Suchfeld ab.", query: false },
-  "pro-autofill":        { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft per Autofill \u00fcbermittelte Formulardaten ab.", query: false },
-  "live-text":           { method: "GET",  desc: "\u2b50 PRO \u2014 Gibt den aktuell getippten Text in Echtzeit zur\u00fcck.", query: false, live: true },
-  "pro-last-bd":         { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft das Geburtsdatum zur letzten Suchanfrage ab.", query: false },
-  "pro-last-deleted-bd": { method: "GET",  desc: "\u2b50 PRO \u2014 Wie last-bd, aber basierend auf dem zuletzt gel\u00f6schten Text.", query: false },
+  'get-last':            { method: 'GET',  desc: 'Ruft die zuletzt gesendete Suchanfrage fuer die Goo ID ab.', query: false },
+  'post-thump':          { method: 'POST', desc: 'Sendet eine Suchanfrage (query) fuer die angegebene Goo ID.', query: true },
+  'pro-last-deleted':    { method: 'GET',  desc: 'PRO - Ruft den zuletzt geloeschten Text aus dem Suchfeld ab.', query: false },
+  'pro-autofill':        { method: 'GET',  desc: 'PRO - Ruft per Autofill uebermittelte Formulardaten ab.', query: false },
+  'live-text':           { method: 'GET',  desc: 'PRO - Gibt den aktuell getippten Text in Echtzeit zurueck.', query: false, live: true },
+  'pro-last-bd':         { method: 'GET',  desc: 'PRO - Ruft das Geburtsdatum zur letzten Suchanfrage ab.', query: false },
+  'pro-last-deleted-bd': { method: 'GET',  desc: 'PRO - Wie last-bd, basierend auf dem zuletzt geloeschten Text.', query: false }
 };
 
 const UNIFI_COLORS = {
-  "Unifi Intelligence": "#6366f1", "ELIPS": "#f59e0b", "Second Sight": "#8b5cf6",
-  "Book Test": "#0ea5e9", "Calculator": "#10b981", "Poker Chip": "#ef4444",
-  "Dice": "#f97316", "MindScale": "#ec4899", "Web Messaging": "#64748b",
+  'Unifi Intelligence': '#6366f1', 'ELIPS': '#f59e0b', 'Second Sight': '#8b5cf6',
+  'Book Test': '#0ea5e9', 'Calculator': '#10b981', 'Poker Chip': '#ef4444',
+  'Dice': '#f97316', 'MindScale': '#ec4899', 'Web Messaging': '#64748b'
 };
 
 const PRIMARY_FIELDS = {
-  "Unifi Intelligence": "result", "ELIPS": "song", "Second Sight": "description",
-  "Book Test": "result", "Calculator": "actual_result", "Poker Chip": "result",
-  "Dice": "result", "MindScale": "result", "Web Messaging": "result",
+  'Unifi Intelligence': 'result', 'ELIPS': 'song', 'Second Sight': 'description',
+  'Book Test': 'result', 'Calculator': 'actual_result', 'Poker Chip': 'result',
+  'Dice': 'result', 'MindScale': 'result', 'Web Messaging': 'result'
 };
 
-function FInput({ value, onChange, placeholder, readOnly, mono }) {
-  const [focus, setFocus] = useState(false);
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      readOnly={readOnly}
-      onFocus={() => setFocus(true)}
-      onBlur={() => setFocus(false)}
-      style={{
-        width: "100%", border: `1.5px solid ${focus ? "#e8002d" : "#ddd"}`, borderRadius: 8,
-        padding: "10px 14px", fontSize: mono ? "0.88rem" : "0.97rem", color: readOnly ? "#666" : "#222",
-        background: readOnly ? "#f0f0f0" : focus ? "#fff" : "#fafafa", outline: "none",
-        boxSizing: "border-box", fontFamily: mono ? "monospace" : "inherit", transition: "border-color 0.2s"
-      }}
-    />
-  );
-}
-
-function FTextarea({ value, onChange, placeholder }) {
-  const [focus, setFocus] = useState(false);
-  return (
-    <textarea
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      rows={3}
-      onFocus={() => setFocus(true)}
-      onBlur={() => setFocus(false)}
-      style={{
-        width: "100%", border: `1.5px solid ${focus ? "#e8002d" : "#ddd"}`, borderRadius: 8,
-        padding: "10px 14px", fontSize: "0.9rem", color: "#222",
-        background: focus ? "#fff" : "#fafafa", outline: "none", boxSizing: "border-box",
-        resize: "vertical", minHeight: 90, fontFamily: "'Courier New', monospace", transition: "border-color 0.2s"
-      }}
-    />
-  );
-}
-
 function Spinner() {
-  return (
-    <span style={{
-      width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)",
-      borderTopColor: "#fff", borderRadius: "50%", display: "inline-block",
-      animation: "spin 0.7s linear infinite"
-    }} />
+  return React.createElement('span', { style: {
+    width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
+    borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
+    animation: 'spin 0.7s linear infinite'
+  }});
+}
+
+function FInput(props) {
+  var s = useState(false);
+  var focus = s[0], setFocus = s[1];
+  return React.createElement('input', {
+    type: 'text',
+    value: props.value,
+    onChange: props.onChange,
+    placeholder: props.placeholder,
+    readOnly: props.readOnly,
+    onFocus: function() { setFocus(true); },
+    onBlur: function() { setFocus(false); },
+    style: {
+      width: '100%',
+      border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'),
+      borderRadius: 8,
+      padding: '10px 14px',
+      fontSize: props.mono ? '0.88rem' : '0.97rem',
+      color: props.readOnly ? '#666' : '#222',
+      background: props.readOnly ? '#f0f0f0' : (focus ? '#fff' : '#fafafa'),
+      outline: 'none',
+      boxSizing: 'border-box',
+      fontFamily: props.mono ? 'monospace' : 'inherit',
+      transition: 'border-color 0.2s'
+    }
+  });
+}
+
+function FTextarea(props) {
+  var s = useState(false);
+  var focus = s[0], setFocus = s[1];
+  return React.createElement('textarea', {
+    value: props.value,
+    onChange: props.onChange,
+    placeholder: props.placeholder,
+    rows: 3,
+    onFocus: function() { setFocus(true); },
+    onBlur: function() { setFocus(false); },
+    style: {
+      width: '100%',
+      border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'),
+      borderRadius: 8,
+      padding: '10px 14px',
+      fontSize: '0.9rem',
+      color: '#222',
+      background: focus ? '#fff' : '#fafafa',
+      outline: 'none',
+      boxSizing: 'border-box',
+      resize: 'vertical',
+      minHeight: 90,
+      fontFamily: 'Courier New, monospace',
+      transition: 'border-color 0.2s'
+    }
+  });
+}
+
+function ResponseBox(props) {
+  if (!props.result) return null;
+  var ok = typeof props.result.status === 'number' ? props.result.status < 400 : props.result.status !== 'ERR';
+  return React.createElement('div', { style: { marginTop: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #e0e0e0' } },
+    React.createElement('div', { style: { background: '#1a1a2e', color: '#fff', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+      React.createElement('span', null, 'Antwort'),
+      React.createElement('span', { style: { padding: '2px 10px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 700, background: ok ? '#22c55e' : '#e8002d', color: '#fff' } },
+        props.result.status + (props.result.statusText ? ' ' + props.result.statusText : '')
+      )
+    ),
+    React.createElement('div', { style: { background: '#f8f8f8', padding: 16, fontFamily: 'Courier New, monospace', fontSize: '0.85rem', color: '#222', maxHeight: 300, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
+      props.result.body || '(Leere Antwort)'
+    )
   );
 }
 
-function Label({ children }) {
-  return (
-    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "#444", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-      {children}
-    </label>
-  );
+async function sendToTelegram(botToken, chatId, text) {
+  if (!botToken || !chatId) throw new Error('Bot Token und Chat ID sind erforderlich.');
+  var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
+  });
+  var data = await res.json();
+  if (!data.ok) throw new Error(data.description || 'Telegram Fehler');
+  return data;
 }
 
-function Badge({ children }) {
-  return (
-    <span style={{ display: "inline-block", fontSize: "0.68rem", background: "#fff3f5", color: "#e8002d", border: "1px solid #f5b8c0", borderRadius: 4, padding: "1px 7px", marginLeft: 6, fontWeight: 700, textTransform: "uppercase", verticalAlign: "middle" }}>
-      {children}
-    </span>
-  );
+async function sendToDiscord(webhookUrl, content) {
+  if (!webhookUrl) throw new Error('Webhook URL ist erforderlich.');
+  var res = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content, username: 'API Tool' })
+  });
+  if (!res.ok) throw new Error('Discord Fehler: ' + res.status);
+  return true;
 }
 
-function Field({ children, style }) {
-  return <div style={{ marginBottom: 18, ...style }}>{children}</div>;
-}
+function ShareModal(props) {
+  var onClose = props.onClose;
+  var s1 = useState('telegram'); var tab = s1[0], setTab = s1[1];
+  var s2 = useState(''); var tgToken = s2[0], setTgToken = s2[1];
+  var s3 = useState(''); var tgChatId = s3[0], setTgChatId = s3[1];
+  var s4 = useState(''); var dcWebhook = s4[0], setDcWebhook = s4[1];
+  var s5 = useState(props.text || ''); var msg = s5[0], setMsg = s5[1];
+  var s6 = useState(null); var status = s6[0], setStatus = s6[1];
+  var s7 = useState(false); var loading = s7[0], setLoading = s7[1];
 
-function Helper({ children }) {
-  return <p style={{ fontSize: "0.78rem", color: "#999", marginTop: 5 }}>{children}</p>;
-}
-
-function SendBtn({ loading, onClick, label }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      style={{
-        width: "100%", padding: 13, background: loading ? "#aaa" : "#e8002d", color: "#fff",
-        border: "none", borderRadius: 8, fontSize: "1rem", fontWeight: 700,
-        cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center",
-        justifyContent: "center", gap: 10, marginTop: 4
-      }}
-    >
-      {loading ? <Spinner /> : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      )}
-      {loading ? "Wird gesendet…" : label}
-    </button>
-  );
-}
-
-function ResponseBox({ result }) {
-  if (!result) return null;
-  const ok = typeof result.status === "number" ? result.status < 400 : result.status !== "ERR";
-  return (
-    <div style={{ marginTop: 24, borderRadius: 8, overflow: "hidden", border: "1.5px solid #e0e0e0" }}>
-      <div style={{ background: "#1a1a2e", color: "#fff", padding: "9px 16px", fontSize: "0.82rem", fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span>Antwort</span>
-        <span style={{ padding: "2px 10px", borderRadius: 12, fontSize: "0.78rem", fontWeight: 700, background: ok ? "#22c55e" : "#e8002d", color: "#fff" }}>
-          {result.status}{result.statusText ? " " + result.statusText : ""}
-        </span>
-      </div>
-      <div style={{ background: "#f8f8f8", padding: 16, fontFamily: "'Courier New', monospace", fontSize: "0.85rem", color: "#222", maxHeight: 300, overflowY: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-        {result.body || "(Leere Antwort)"}
-      </div>
-    </div>
-  );
-}
-
-function GooSection({ onResult }) {
-  const [gooId, setGooId] = useState("");
-  const [ep, setEp] = useState("post-thump");
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const epObj = ENDPOINTS[ep];
-  const url = BASE_GOO + epPath(ep, gooId || "{goo_id}");
-
-  async function send() {
-    if (!gooId) { alert("Bitte eine Goo ID eingeben."); return; }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: BASE_GOO + epPath(ep, gooId), method: epObj.method, headers: { "Content-Type": "application/json" }, body: epObj.query ? JSON.stringify({ query }) : null })
-      });
-      const data = await res.json();
-      let formatted = data.body;
-      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
-      onResult({ status: data.status, statusText: data.statusText, body: formatted });
-    } catch (err) {
-      onResult({ status: "ERR", statusText: "", body: "Fehler:\n" + err.message });
-    } finally { setLoading(false); }
-  }
-
-  return (
-    <>
-      <div style={{ display: "flex", gap: 16 }}>
-        <Field style={{ flex: 1 }}>
-          <Label>Goo ID <Badge>Pflicht</Badge></Label>
-          <FInput value={gooId} onChange={e => setGooId(e.target.value)} placeholder="z.B. 12" />
-          <Helper>Deine persönliche Goo ID</Helper>
-        </Field>
-        <Field style={{ flex: 1 }}>
-          <Label>Endpunkt</Label>
-          <select value={ep} onChange={e => setEp(e.target.value)} style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "10px 14px", fontSize: "0.97rem", color: "#222", background: "#fafafa", outline: "none", cursor: "pointer" }}>
-            <optgroup label="Standard APIs">
-              <option value="get-last">GET /api/last — Letzten Query abrufen</option>
-              <option value="post-thump">POST /api/thump — Query senden</option>
-            </optgroup>
-            <optgroup label="PRO APIs">
-              <option value="pro-last-deleted">GET /pro-api/last-deleted ⭐ PRO</option>
-              <option value="pro-autofill">GET /pro-api/autofill ⭐ PRO</option>
-              <option value="live-text">GET /api/live-text ⭐ PRO</option>
-              <option value="pro-last-bd">GET /pro-api/last-bd ⭐ PRO</option>
-              <option value="pro-last-deleted-bd">GET /pro-api/last-deleted-bd ⭐ PRO</option>
-            </optgroup>
-          </select>
-        </Field>
-      </div>
-      <div style={{ background: "#f8f8f8", borderLeft: "3px solid #e8002d", borderRadius: "0 6px 6px 0", padding: "10px 14px", fontSize: "0.83rem", color: "#555", marginBottom: 18, lineHeight: 1.5 }}>
-        {epObj.desc}
-      </div>
-      {epObj.live && (
-        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "9px 14px", fontSize: "0.8rem", color: "#92400e", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-          ⚡ Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.
-        </div>
-      )}
-      {epObj.query && (
-        <Field>
-          <Label>Query <Badge>Pflicht</Badge></Label>
-          <FTextarea value={query} onChange={e => setQuery(e.target.value)} placeholder="Suchanfrage oder URL eingeben…" />
-          <Helper>Der Text oder die URL, die gesendet werden soll.</Helper>
-        </Field>
-      )}
-      <Field>
-        <Label>URL-Vorschau</Label>
-        <FInput value={url} readOnly mono />
-      </Field>
-      <SendBtn loading={loading} onClick={send} label="Anfrage senden" />
-    </>
-  );
-}
-
-function InjectSection({ onResult }) {
-  const [id, setId] = useState("");
-  const [value, setValue] = useState("");
-  const [loading, setLoading] = useState(false);
-  const previewUrl = id ? `${BASE_INJECT}/${id}/selection` : "https://11z.co/_w/{ID}/selection";
-
-  async function send() {
-    if (!id) { alert("Bitte eine Widget ID eingeben."); return; }
-    if (!value) { alert("Bitte einen Value eingeben."); return; }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: previewUrl, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) })
-      });
-      const data = await res.json();
-      let formatted = data.body;
-      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch {}
-      onResult({ status: data.status, statusText: data.statusText, body: formatted });
-    } catch (err) {
-      onResult({ status: "ERR", statusText: "", body: "Fehler:\n" + err.message });
-    } finally { setLoading(false); }
-  }
-
-  return (
-    <>
-      <Field>
-        <Label>Widget ID <Badge>Pflicht</Badge></Label>
-        <FInput value={id} onChange={e => setId(e.target.value)} placeholder="z.B. 12779" />
-        <Helper>Die ID aus der URL: https://11z.co/_w/ID/selection</Helper>
-      </Field>
-      <Field>
-        <Label>Value <Badge>Pflicht</Badge></Label>
-        <FTextarea value={value} onChange={e => setValue(e.target.value)} placeholder="Text eingeben, der injiziert werden soll…" />
-        <Helper>Wird als JSON-Body gesendet: value</Helper>
-      </Field>
-      <Field>
-        <Label>URL-Vorschau</Label>
-        <FInput value={previewUrl} readOnly mono />
-      </Field>
-      <SendBtn loading={loading} onClick={send} label="Anfrage senden" />
-    </>
-  );
-}
-
-function FullscreenOverlay({ events, isLive, onClose }) {
-  useEffect(() => {
-    const handler = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+  useEffect(function() {
+    function handler(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', handler);
+    return function() { window.removeEventListener('keydown', handler); };
   }, [onClose]);
 
-  let firstData = {};
-  if (events && events.length > 0) {
-    try { firstData = JSON.parse(events[0].Event); } catch {}
+  async function send() {
+    setLoading(true); setStatus(null);
+    try {
+      if (tab === 'telegram') {
+        await sendToTelegram(tgToken, tgChatId, msg);
+        setStatus({ ok: true, text: 'Erfolgreich an Telegram gesendet!' });
+      } else {
+        await sendToDiscord(dcWebhook, msg);
+        setStatus({ ok: true, text: 'Erfolgreich an Discord gesendet!' });
+      }
+    } catch(err) {
+      setStatus({ ok: false, text: err.message });
+    } finally { setLoading(false); }
   }
-  const type = firstData.Event || "Unbekannt";
-  const color = UNIFI_COLORS[type] || "#1a1a2e";
-  const primaryField = PRIMARY_FIELDS[type] || Object.keys(firstData).find(k => k !== "Event") || "";
-  const primaryValue = firstData[primaryField] || "—";
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#0d0d0d", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
-      <button onClick={onClose} style={{ position: "absolute", top: 20, right: 28, background: "none", border: "none", color: "#666", fontSize: "2rem", cursor: "pointer" }}>✕</button>
-      {events && events.length > 0 ? (
-        <>
-          <div style={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 18 }}>{primaryField.toUpperCase()}</div>
-          <div style={{ fontSize: "1rem", fontWeight: 700, padding: "4px 18px", borderRadius: 20, color: "#fff", background: color, marginBottom: 32, letterSpacing: "0.1em", textTransform: "uppercase" }}>{type}</div>
-          <div style={{ fontSize: "clamp(3rem, 10vw, 7rem)", fontWeight: 900, color: "#fff", textAlign: "center", lineHeight: 1.1, wordBreak: "break-word", maxWidth: "90vw" }}>{primaryValue}</div>
-          <div style={{ marginTop: 28, display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center" }}>
-            {Object.entries(firstData).filter(([k, v]) => k !== "Event" && k !== primaryField && v).map(([k, v]) => (
-              <div key={k} style={{ background: "#1a1a1a", borderRadius: 8, padding: "10px 18px", textAlign: "center", minWidth: 120 }}>
-                <div style={{ fontSize: "0.7rem", color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{k}</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#ddd" }}>{v}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#555", marginBottom: 18 }}>Warte auf Events...</div>
-          <div style={{ fontSize: "5rem", fontWeight: 900, color: "#fff" }}>—</div>
-        </>
-      )}
-      {isLive && (
-        <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, color: "#444", fontSize: "0.8rem" }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 1s infinite" }} />
-          Live
-        </div>
-      )}
-    </div>
+  var inpStyle = { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '9px 12px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' };
+  var lblStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#444', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' };
+
+  return React.createElement('div', { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
+    React.createElement('div', { style: { background: '#fff', borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.18)', padding: '28px 32px', width: '100%', maxWidth: 480, position: 'relative' } },
+      React.createElement('button', { onClick: onClose, style: { position: 'absolute', top: 14, right: 18, background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#999' } }, 'x'),
+      React.createElement('h2', { style: { fontSize: '1.1rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 } }, 'Nachricht senden'),
+      React.createElement('div', { style: { display: 'flex', marginBottom: 20, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
+        React.createElement('button', { onClick: function() { setTab('telegram'); }, style: { flex: 1, padding: '9px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: 'none', borderRight: '1.5px solid #ddd', background: tab === 'telegram' ? '#0088cc' : '#fafafa', color: tab === 'telegram' ? '#fff' : '#888' } }, 'Telegram'),
+        React.createElement('button', { onClick: function() { setTab('discord'); }, style: { flex: 1, padding: '9px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: 'none', background: tab === 'discord' ? '#5865F2' : '#fafafa', color: tab === 'discord' ? '#fff' : '#888' } }, 'Discord')
+      ),
+      tab === 'telegram' && React.createElement('div', null,
+        React.createElement('div', { style: { marginBottom: 14 } },
+          React.createElement('label', { style: lblStyle }, 'Bot Token *'),
+          React.createElement('input', { value: tgToken, onChange: function(e) { setTgToken(e.target.value); }, placeholder: '123456:ABC-DEF...', style: inpStyle }),
+          React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Von @BotFather erhalten')
+        ),
+        React.createElement('div', { style: { marginBottom: 14 } },
+          React.createElement('label', { style: lblStyle }, 'Chat ID *'),
+          React.createElement('input', { value: tgChatId, onChange: function(e) { setTgChatId(e.target.value); }, placeholder: 'z.B. -1001234567890', style: inpStyle }),
+          React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Gruppen-ID oder User-ID')
+        )
+      ),
+      tab === 'discord' && React.createElement('div', { style: { marginBottom: 14 } },
+        React.createElement('label', { style: lblStyle }, 'Webhook URL *'),
+        React.createElement('input', { value: dcWebhook, onChange: function(e) { setDcWebhook(e.target.value); }, placeholder: 'https://discord.com/api/webhooks/...', style: inpStyle }),
+        React.createElement('p', { style: { fontSize: '0.75rem', color: '#999', marginTop: 4 } }, 'Kanal-Einstellungen > Integrationen > Webhooks')
+      ),
+      React.createElement('div', { style: { marginBottom: 18 } },
+        React.createElement('label', { style: lblStyle }, 'Nachricht'),
+        React.createElement('textarea', { value: msg, onChange: function(e) { setMsg(e.target.value); }, rows: 4, style: { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '9px 12px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'Courier New, monospace' } })
+      ),
+      status && React.createElement('div', { style: { marginBottom: 14, padding: '9px 14px', borderRadius: 8, background: status.ok ? '#f0fdf4' : '#fff5f5', border: '1px solid ' + (status.ok ? '#86efac' : '#fca5a5'), fontSize: '0.88rem', color: status.ok ? '#166534' : '#991b1b' } }, status.text),
+      React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 12, background: loading ? '#aaa' : (tab === 'telegram' ? '#0088cc' : '#5865F2'), color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.97rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' } },
+        loading ? 'Senden...' : (tab === 'telegram' ? 'An Telegram senden' : 'An Discord senden')
+      )
+    )
+  );
+}
+
+function GooSection(props) {
+  var s1 = useState(''); var gooId = s1[0], setGooId = s1[1];
+  var s2 = useState('post-thump'); var ep = s2[0], setEp = s2[1];
+  var s3 = useState(''); var query = s3[0], setQuery = s3[1];
+  var s4 = useState(false); var loading = s4[0], setLoading = s4[1];
+  var epObj = ENDPOINTS[ep];
+  var url = BASE_GOO + epPath(ep, gooId || '{goo_id}');
+
+  async function send() {
+    if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
+    setLoading(true);
+    try {
+      var res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl: BASE_GOO + epPath(ep, gooId), method: epObj.method, headers: { 'Content-Type': 'application/json' }, body: epObj.query ? JSON.stringify({ query: query }) : null })
+      });
+      var data = await res.json();
+      var formatted = data.body;
+      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
+      props.onResult({ status: data.status, statusText: data.statusText, body: formatted });
+    } catch(err) {
+      props.onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
+    } finally { setLoading(false); }
+  }
+
+  var selStyle = { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '10px 14px', fontSize: '0.97rem', color: '#222', background: '#fafafa', outline: 'none', cursor: 'pointer' };
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
+
+  return React.createElement('div', null,
+    React.createElement('div', { style: { display: 'flex', gap: 16, marginBottom: 18 } },
+      React.createElement('div', { style: { flex: 1 } },
+        React.createElement('label', { style: lblStyle }, 'Goo ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
+        React.createElement(FInput, { value: gooId, onChange: function(e) { setGooId(e.target.value); }, placeholder: 'z.B. 12' }),
+        React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Deine persoenliche Goo ID')
+      ),
+      React.createElement('div', { style: { flex: 1 } },
+        React.createElement('label', { style: lblStyle }, 'Endpunkt'),
+        React.createElement('select', { value: ep, onChange: function(e) { setEp(e.target.value); }, style: selStyle },
+          React.createElement('optgroup', { label: 'Standard APIs' },
+            React.createElement('option', { value: 'get-last' }, 'GET /api/last - Letzten Query abrufen'),
+            React.createElement('option', { value: 'post-thump' }, 'POST /api/thump - Query senden')
+          ),
+          React.createElement('optgroup', { label: 'PRO APIs' },
+            React.createElement('option', { value: 'pro-last-deleted' }, 'GET /pro-api/last-deleted (PRO)'),
+            React.createElement('option', { value: 'pro-autofill' }, 'GET /pro-api/autofill (PRO)'),
+            React.createElement('option', { value: 'live-text' }, 'GET /api/live-text (PRO)'),
+            React.createElement('option', { value: 'pro-last-bd' }, 'GET /pro-api/last-bd (PRO)'),
+            React.createElement('option', { value: 'pro-last-deleted-bd' }, 'GET /pro-api/last-deleted-bd (PRO)')
+          )
+        )
+      )
+    ),
+    React.createElement('div', { style: { background: '#f8f8f8', borderLeft: '3px solid #e8002d', borderRadius: '0 6px 6px 0', padding: '10px 14px', fontSize: '0.83rem', color: '#555', marginBottom: 18, lineHeight: 1.5 } }, epObj.desc),
+    epObj.live && React.createElement('div', { style: { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '9px 14px', fontSize: '0.8rem', color: '#92400e', marginBottom: 14 } }, 'Live-Text: Fuer optimale Echtzeit-Nutzung alle 300-500ms abfragen.'),
+    epObj.query && React.createElement('div', { style: { marginBottom: 18 } },
+      React.createElement('label', { style: lblStyle }, 'Query', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
+      React.createElement(FTextarea, { value: query, onChange: function(e) { setQuery(e.target.value); }, placeholder: 'Suchanfrage oder URL eingeben...' }),
+      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Der Text oder die URL, die gesendet werden soll.')
+    ),
+    React.createElement('div', { style: { marginBottom: 18 } },
+      React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
+      React.createElement(FInput, { value: url, readOnly: true, mono: true })
+    ),
+    React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 } },
+      loading ? React.createElement(Spinner, null) : null,
+      loading ? 'Wird gesendet...' : 'Anfrage senden'
+    )
+  );
+}
+
+function InjectSection(props) {
+  var s1 = useState(''); var id = s1[0], setId = s1[1];
+  var s2 = useState(''); var value = s2[0], setValue = s2[1];
+  var s3 = useState(false); var loading = s3[0], setLoading = s3[1];
+  var previewUrl = id ? BASE_INJECT + '/' + id + '/selection' : 'https://11z.co/_w/{ID}/selection';
+
+  async function send() {
+    if (!id) { alert('Bitte eine Widget ID eingeben.'); return; }
+    if (!value) { alert('Bitte einen Value eingeben.'); return; }
+    setLoading(true);
+    try {
+      var res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl: previewUrl, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) })
+      });
+      var data = await res.json();
+      var formatted = data.body;
+      try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
+      props.onResult({ status: data.status, statusText: data.statusText, body: formatted });
+    } catch(err) {
+      props.onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
+    } finally { setLoading(false); }
+  }
+
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+  var badgeStyle = { display: 'inline-block', fontSize: '0.68rem', background: '#fff3f5', color: '#e8002d', border: '1px solid #f5b8c0', borderRadius: 4, padding: '1px 7px', marginLeft: 6, fontWeight: 700, textTransform: 'uppercase' };
+
+  return React.createElement('div', null,
+    React.createElement('div', { style: { marginBottom: 18 } },
+      React.createElement('label', { style: lblStyle }, 'Widget ID', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
+      React.createElement(FInput, { value: id, onChange: function(e) { setId(e.target.value); }, placeholder: 'z.B. 12779' }),
+      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Die ID aus der URL: https://11z.co/_w/ID/selection')
+    ),
+    React.createElement('div', { style: { marginBottom: 18 } },
+      React.createElement('label', { style: lblStyle }, 'Value', React.createElement('span', { style: badgeStyle }, 'Pflicht')),
+      React.createElement(FTextarea, { value: value, onChange: function(e) { setValue(e.target.value); }, placeholder: 'Text eingeben, der injiziert werden soll...' }),
+      React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Wird als JSON-Body gesendet: { "value": "..." }')
+    ),
+    React.createElement('div', { style: { marginBottom: 18 } },
+      React.createElement('label', { style: lblStyle }, 'URL-Vorschau'),
+      React.createElement(FInput, { value: previewUrl, readOnly: true, mono: true })
+    ),
+    React.createElement('button', { onClick: send, disabled: loading, style: { width: '100%', padding: 13, background: loading ? '#aaa' : '#e8002d', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 } },
+      loading ? React.createElement(Spinner, null) : null,
+      loading ? 'Wird gesendet...' : 'Anfrage senden'
+    )
   );
 }
 
 function UnifiSection() {
-  const [userId, setUserId] = useState("10154");
-  const [intervalVal, setIntervalVal] = useState("5000");
-  const [events, setEvents] = useState([]);
-  const [isLive, setIsLive] = useState(false);
-  const [error, setError] = useState("");
-  const [fsOpen, setFsOpen] = useState(false);
-  const timerRef = useRef(null);
+  var s1 = useState('10154'); var userId = s1[0], setUserId = s1[1];
+  var s2 = useState('5000'); var intervalVal = s2[0], setIntervalVal = s2[1];
+  var s3 = useState([]); var events = s3[0], setEvents = s3[1];
+  var s4 = useState(false); var isLive = s4[0], setIsLive = s4[1];
+  var s5 = useState(''); var error = s5[0], setError = s5[1];
+  var s6 = useState(false); var fsOpen = s6[0], setFsOpen = s6[1];
+  var timerRef = useRef(null);
 
-  const fetchEvents = useCallback(async () => {
-    if (!userId) { alert("Bitte eine User ID eingeben."); return; }
+  var fetchEvents = useCallback(async function() {
+    if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
     try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: BASE_UNIFI + "?UserId=" + userId, method: "GET", headers: {}, body: null })
+      var res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl: BASE_UNIFI + '?UserId=' + userId, method: 'GET', headers: {}, body: null })
       });
-      const data = await res.json();
-      const parsed = JSON.parse(data.body);
+      var data = await res.json();
+      var parsed = JSON.parse(data.body);
       if (parsed.Event && parsed.Event.length > 0) setEvents(parsed.Event);
-      setError("");
-    } catch (err) { setError(err.message); }
+      setError('');
+    } catch(err) { setError(err.message); }
   }, [userId]);
 
   function togglePolling() {
     if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-      setIsLive(false);
+      clearInterval(timerRef.current); timerRef.current = null; setIsLive(false);
     } else {
       fetchEvents();
       timerRef.current = setInterval(fetchEvents, parseInt(intervalVal));
@@ -360,259 +385,134 @@ function UnifiSection() {
     }
   }
 
-  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
+  useEffect(function() {
+    return function() { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
-  return (
-    <>
-      {fsOpen && <FullscreenOverlay events={events} isLive={isLive} onClose={() => setFsOpen(false)} />}
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 18 }}>
-        <div style={{ flex: 1 }}>
-          <Label>User ID <Badge>Pflicht</Badge></Label>
-          <FInput value={userId} onChange={e => setUserId(e.target.value)} placeholder="z.B. 6265" />
-          <Helper>Deine Unifi User ID von thump.buzz</Helper>
-        </div>
-        <div style={{ maxWidth: 160 }}>
-          <Label>Intervall</Label>
-          <select value={intervalVal} onChange={e => setIntervalVal(e.target.value)} style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "10px 14px", fontSize: "0.97rem", color: "#222", background: "#fafafa", outline: "none", cursor: "pointer" }}>
-            <option value="2000">2 Sekunden</option>
-            <option value="5000">5 Sekunden</option>
-            <option value="10000">10 Sekunden</option>
-            <option value="30000">30 Sekunden</option>
-          </select>
-        </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-        <button onClick={togglePolling} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: isLive ? "#e8002d" : "#22c55e", color: "#fff" }}>
-          {isLive ? "⏹ Stop" : "▶ Auto-Refresh starten"}
-        </button>
-        {isLive && (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "#22c55e" }}>
-            <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 1s infinite" }} /> Live
-          </span>
-        )}
-        <button onClick={fetchEvents} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: "#e8002d", color: "#fff" }}>
-          Einmal abrufen
-        </button>
-        <button onClick={() => setFsOpen(true)} style={{ padding: "9px 18px", borderRadius: 8, border: "none", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", background: "#6366f1", color: "#fff" }}>
-          ⛶ Vollbild
-        </button>
-      </div>
-      {error && <div style={{ color: "#e8002d", fontSize: "0.88rem", marginBottom: 12 }}>Fehler: {error}</div>}
-      <div style={{ maxHeight: 400, overflowY: "auto" }}>
-        {events.length === 0 ? (
-          <div style={{ color: "#aaa", fontSize: "0.9rem", textAlign: "center", padding: 30 }}>Noch keine Events. User ID eingeben und abrufen.</div>
-        ) : events.map((ev, i) => {
-          let d = {};
-          try { d = JSON.parse(ev.Event); } catch {}
-          const type = d.Event || "Unbekannt";
-          const color = UNIFI_COLORS[type] || "#1a1a2e";
-          return (
-            <div key={ev.Id || i} style={{ background: "#f8f8f8", border: "1.5px solid #e0e0e0", borderLeft: i === 0 ? "4px solid #e8002d" : "1.5px solid #e0e0e0", borderRadius: 10, padding: "14px 16px", marginBottom: 12 }}>
-              <div style={{ display: "inline-block", fontSize: "0.72rem", fontWeight: 700, padding: "2px 10px", borderRadius: 12, background: color, color: "#fff", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>{type}</div>
-              <div style={{ fontSize: "0.75rem", color: "#aaa", marginBottom: 8 }}>ID: {ev.Id} &nbsp;|&nbsp; User: {ev.UserId}</div>
-              {Object.entries(d).filter(([k, v]) => k !== "Event" && v != null && v !== "").map(([k, v]) => (
-                <div key={k} style={{ fontSize: "0.87rem", color: "#333", marginBottom: 4 }}>
-                  <strong style={{ color: "#1a1a2e", minWidth: 140, display: "inline-block" }}>{k}:</strong> {v}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-    </>
+  var selStyle = { width: '100%', border: '1.5px solid #ddd', borderRadius: 8, padding: '10px 14px', fontSize: '0.97rem', color: '#222', background: '#fafafa', outline: 'none', cursor: 'pointer' };
+  var lblStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' };
+
+  return React.createElement('div', null,
+    fsOpen && React.createElement('div', { style: { position: 'fixed', inset: 0, background: '#0d0d0d', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40 } },
+      React.createElement('button', { onClick: function() { setFsOpen(false); }, style: { position: 'absolute', top: 20, right: 28, background: 'none', border: 'none', color: '#666', fontSize: '2rem', cursor: 'pointer' } }, 'x'),
+      events.length === 0
+        ? React.createElement('div', { style: { color: '#fff', fontSize: '3rem' } }, 'Warte auf Events...')
+        : (function() {
+            var firstData = {};
+            try { firstData = JSON.parse(events[0].Event); } catch(e) {}
+            var type = firstData.Event || 'Unbekannt';
+            var color = UNIFI_COLORS[type] || '#1a1a2e';
+            var pf = PRIMARY_FIELDS[type] || '';
+            var pv = firstData[pf] || '-';
+            return React.createElement('div', { style: { textAlign: 'center' } },
+              React.createElement('div', { style: { fontSize: '0.85rem', color: '#555', marginBottom: 18, textTransform: 'uppercase', letterSpacing: '0.1em' } }, pf),
+              React.createElement('div', { style: { padding: '4px 18px', borderRadius: 20, background: color, color: '#fff', marginBottom: 32, display: 'inline-block', fontWeight: 700 } }, type),
+              React.createElement('div', { style: { fontSize: '6rem', fontWeight: 900, color: '#fff', lineHeight: 1.1 } }, pv)
+            );
+          })()
+    ),
+    React.createElement('div', { style: { display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 18 } },
+      React.createElement('div', { style: { flex: 1 } },
+        React.createElement('label', { style: lblStyle }, 'User ID'),
+        React.createElement(FInput, { value: userId, onChange: function(e) { setUserId(e.target.value); }, placeholder: 'z.B. 6265' }),
+        React.createElement('p', { style: { fontSize: '0.78rem', color: '#999', marginTop: 5 } }, 'Deine Unifi User ID von thump.buzz')
+      ),
+      React.createElement('div', { style: { maxWidth: 160 } },
+        React.createElement('label', { style: lblStyle }, 'Intervall'),
+        React.createElement('select', { value: intervalVal, onChange: function(e) { setIntervalVal(e.target.value); }, style: selStyle },
+          React.createElement('option', { value: '2000' }, '2 Sekunden'),
+          React.createElement('option', { value: '5000' }, '5 Sekunden'),
+          React.createElement('option', { value: '10000' }, '10 Sekunden'),
+          React.createElement('option', { value: '30000' }, '30 Sekunden')
+        )
+      )
+    ),
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, flexWrap: 'wrap' } },
+      React.createElement('button', { onClick: togglePolling, style: { padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: isLive ? '#e8002d' : '#22c55e', color: '#fff' } }, isLive ? 'Stop' : 'Auto-Refresh starten'),
+      isLive && React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.88rem', color: '#22c55e' } },
+        React.createElement('span', { style: { width: 10, height: 10, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 1s infinite' } }),
+        ' Live'
+      ),
+      React.createElement('button', { onClick: fetchEvents, style: { padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: '#e8002d', color: '#fff' } }, 'Einmal abrufen'),
+      React.createElement('button', { onClick: function() { setFsOpen(true); }, style: { padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', background: '#6366f1', color: '#fff' } }, 'Vollbild')
+    ),
+    error && React.createElement('div', { style: { color: '#e8002d', fontSize: '0.88rem', marginBottom: 12 } }, 'Fehler: ' + error),
+    React.createElement('div', { style: { maxHeight: 400, overflowY: 'auto' } },
+      events.length === 0
+        ? React.createElement('div', { style: { color: '#aaa', fontSize: '0.9rem', textAlign: 'center', padding: 30 } }, 'Noch keine Events. User ID eingeben und abrufen.')
+        : events.map(function(ev, i) {
+            var d = {};
+            try { d = JSON.parse(ev.Event); } catch(e) {}
+            var type = d.Event || 'Unbekannt';
+            var color = UNIFI_COLORS[type] || '#1a1a2e';
+            return React.createElement('div', { key: ev.Id || i, style: { background: '#f8f8f8', border: '1.5px solid #e0e0e0', borderLeft: i === 0 ? '4px solid #e8002d' : '1.5px solid #e0e0e0', borderRadius: 10, padding: '14px 16px', marginBottom: 12 } },
+              React.createElement('div', { style: { display: 'inline-block', fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 12, background: color, color: '#fff', marginBottom: 8, textTransform: 'uppercase' } }, type),
+              React.createElement('div', { style: { fontSize: '0.75rem', color: '#aaa', marginBottom: 8 } }, 'ID: ' + ev.Id + ' | User: ' + ev.UserId),
+              Object.entries(d).filter(function(kv) { return kv[0] !== 'Event' && kv[1] != null && kv[1] !== ''; }).map(function(kv) {
+                return React.createElement('div', { key: kv[0], style: { fontSize: '0.87rem', color: '#333', marginBottom: 4 } },
+                  React.createElement('strong', { style: { color: '#1a1a2e', minWidth: 140, display: 'inline-block' } }, kv[0] + ':'),
+                  ' ' + kv[1]
+                );
+              })
+            );
+          })
+    )
   );
 }
 
-// ── Telegram & Discord Send ─────────────────────────────────────────────────
-async function sendToTelegram(botToken, chatId, text) {
-  if (!botToken || !chatId) throw new Error("Bot Token und Chat ID sind erforderlich.");
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" })
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.description || "Telegram Fehler");
-  return data;
-}
+function App() {
+  var s1 = useState('goo'); var activeTab = s1[0], setActiveTab = s1[1];
+  var s2 = useState(null); var result = s2[0], setResult = s2[1];
+  var s3 = useState(null); var shareModal = s3[0], setShareModal = s3[1];
 
-async function sendToDiscord(webhookUrl, content, username = "API Tool") {
-  if (!webhookUrl) throw new Error("Webhook URL ist erforderlich.");
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, username })
-  });
-  if (!res.ok) throw new Error(`Discord Fehler: ${res.status}`);
-  return true;
-}
-
-// ── Share Modal ───────────────────────────────────────────────────────────────
-function ShareModal({ text, onClose }) {
-  const [tab, setTab] = useState("telegram");
-  const [tgToken, setTgToken] = useState("");
-  const [tgChatId, setTgChatId] = useState("");
-  const [dcWebhook, setDcWebhook] = useState("");
-  const [msg, setMsg] = useState(text || "");
-  const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const handler = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  async function send() {
-    setLoading(true);
-    setStatus(null);
-    try {
-      if (tab === "telegram") {
-        await sendToTelegram(tgToken, tgChatId, msg);
-        setStatus({ ok: true, text: "✅ Erfolgreich an Telegram gesendet!" });
-      } else {
-        await sendToDiscord(dcWebhook, msg);
-        setStatus({ ok: true, text: "✅ Erfolgreich an Discord gesendet!" });
-      }
-    } catch (err) {
-      setStatus({ ok: false, text: "❌ " + err.message });
-    } finally { setLoading(false); }
-  }
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 8px 40px rgba(0,0,0,0.18)", padding: "28px 32px", width: "100%", maxWidth: 480, position: "relative" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 18, background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#999" }}>✕</button>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#1a1a2e", marginBottom: 18 }}>📤 Nachricht senden</h2>
-
-        {/* Platform Tabs */}
-        <div style={{ display: "flex", marginBottom: 20, borderRadius: 8, overflow: "hidden", border: "1.5px solid #ddd" }}>
-          {[{key:"telegram",label:"✈️ Telegram"},{key:"discord",label:"🎮 Discord"}].map((t,i) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              style={{ flex: 1, padding: "9px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer", border: "none", borderRight: i === 0 ? "1.5px solid #ddd" : "none", background: tab === t.key ? (t.key === "telegram" ? "#0088cc" : "#5865F2") : "#fafafa", color: tab === t.key ? "#fff" : "#888", transition: "all 0.2s" }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Telegram Fields */}
-        {tab === "telegram" && (
-          <>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Bot Token <span style={{ color: "#e8002d" }}>*</span></label>
-              <input value={tgToken} onChange={e => setTgToken(e.target.value)} placeholder="123456:ABC-DEF..."
-                style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
-              <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Von @BotFather erhalten</p>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Chat ID <span style={{ color: "#e8002d" }}>*</span></label>
-              <input value={tgChatId} onChange={e => setTgChatId(e.target.value)} placeholder="z.B. -1001234567890"
-                style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
-              <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Gruppen-ID oder User-ID</p>
-            </div>
-          </>
-        )}
-
-        {/* Discord Fields */}
-        {tab === "discord" && (
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Webhook URL <span style={{ color: "#e8002d" }}>*</span></label>
-            <input value={dcWebhook} onChange={e => setDcWebhook(e.target.value)} placeholder="https://discord.com/api/webhooks/..."
-              style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace" }} />
-            <p style={{ fontSize: "0.75rem", color: "#999", marginTop: 4 }}>Kanal-Einstellungen → Integrationen → Webhooks</p>
-          </div>
-        )}
-
-        {/* Message */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#444", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" }}>Nachricht</label>
-          <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={4}
-            style={{ width: "100%", border: "1.5px solid #ddd", borderRadius: 8, padding: "9px 12px", fontSize: "0.9rem", outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "'Courier New', monospace" }} />
-        </div>
-
-        {/* Status */}
-        {status && (
-          <div style={{ marginBottom: 14, padding: "9px 14px", borderRadius: 8, background: status.ok ? "#f0fdf4" : "#fff5f5", border: `1px solid ${status.ok ? "#86efac" : "#fca5a5"}`, fontSize: "0.88rem", color: status.ok ? "#166534" : "#991b1b" }}>
-            {status.text}
-          </div>
-        )}
-
-        <button onClick={send} disabled={loading}
-          style={{ width: "100%", padding: 12, background: loading ? "#aaa" : (tab === "telegram" ? "#0088cc" : "#5865F2"), color: "#fff", border: "none", borderRadius: 8, fontSize: "0.97rem", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          {loading ? <Spinner /> : (tab === "telegram" ? "✈️ An Telegram senden" : "🎮 An Discord senden")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState("goo");
-  const [shareModal, setShareModal] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const tabs = [
-    { key: "goo",    label: "🔵 Goo" },
-    { key: "inject", label: "🟢 Inject" },
-    { key: "unifi",  label: "🟣 Unifi" },
+  var tabs = [
+    { key: 'goo',    label: 'Goo' },
+    { key: 'inject', label: 'Inject' },
+    { key: 'unifi',  label: 'Unifi' }
   ];
-
-  const descs = {
-    goo:    "11q.co API — Anfragen senden & Antworten anzeigen",
-    inject: "11z.co Inject API — Werte in Widgets injizieren",
-    unifi:  "thump.buzz Unifi API — Events live empfangen",
+  var descs = {
+    goo:    '11q.co API - Anfragen senden & Antworten anzeigen',
+    inject: '11z.co Inject API - Werte in Widgets injizieren',
+    unifi:  'thump.buzz Unifi API - Events live empfangen'
   };
 
-  return (
-    <>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; }
-      `}</style>
-      <div style={{ fontFamily: "'Segoe UI', sans-serif", background: "#f0f2f5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.10)", padding: "36px 40px", width: "100%", maxWidth: 780 }}>
-
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, borderBottom: "2px solid #e8002d", paddingBottom: 18 }}>
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <rect width="36" height="36" rx="8" fill="#e8002d"/>
-              <path d="M10 18h16M22 13l5 5-5 5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <div>
-              <h1 style={{ fontSize: "1.45rem", color: "#1a1a2e", fontWeight: 700 }}>API Tool</h1>
-              <p style={{ color: "#666", fontSize: "0.88rem", marginTop: 2 }}>{descs[activeTab]}</p>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div style={{ display: "flex", marginBottom: 24, borderRadius: 8, overflow: "hidden", border: "1.5px solid #ddd" }}>
-            {tabs.map((t, i) => (
-              <button key={t.key} onClick={() => { setActiveTab(t.key); setResult(null); }}
-                style={{ flex: 1, padding: 11, textAlign: "center", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", background: activeTab === t.key ? "#e8002d" : "#fafafa", color: activeTab === t.key ? "#fff" : "#888", border: "none", borderRight: i < tabs.length - 1 ? "1.5px solid #ddd" : "none", transition: "all 0.2s" }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Content */}
-          {activeTab === "goo"    && <GooSection    onResult={setResult} />}
-          {activeTab === "inject" && <InjectSection onResult={setResult} />}
-          {activeTab === "unifi"  && <UnifiSection />}
-
-          {activeTab !== "unifi" && (
-            <>
-              <ResponseBox result={result} />
-              <button onClick={() => setShareModal(result ? result.body : "")} style={{ marginTop: 12, width: "100%", padding: "10px", background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8, fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                📤 An Telegram / Discord senden
-              </button>
-            </>
-          )}
-          {shareModal !== null && <ShareModal text={shareModal} onClose={() => setShareModal(null)} />}
-        </div>
-      </div>
-    </>
+  return React.createElement('div', { style: { fontFamily: 'Segoe UI, sans-serif', background: '#f0f2f5', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
+    React.createElement('div', { style: { background: '#fff', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '36px 40px', width: '100%', maxWidth: 780 } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28, borderBottom: '2px solid #e8002d', paddingBottom: 18 } },
+        React.createElement('svg', { width: 36, height: 36, viewBox: '0 0 36 36', fill: 'none' },
+          React.createElement('rect', { width: 36, height: 36, rx: 8, fill: '#e8002d' }),
+          React.createElement('path', { d: 'M10 18h16M22 13l5 5-5 5', stroke: '#fff', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' })
+        ),
+        React.createElement('div', null,
+          React.createElement('h1', { style: { fontSize: '1.45rem', color: '#1a1a2e', fontWeight: 700 } }, 'API Tool'),
+          React.createElement('p', { style: { color: '#666', fontSize: '0.88rem', marginTop: 2 } }, descs[activeTab])
+        )
+      ),
+      React.createElement('div', { style: { display: 'flex', marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
+        tabs.map(function(t, i) {
+          return React.createElement('button', {
+            key: t.key,
+            onClick: function() { setActiveTab(t.key); setResult(null); },
+            style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' }
+          }, t.label);
+        })
+      ),
+      activeTab === 'goo'    && React.createElement(GooSection,    { onResult: setResult }),
+      activeTab === 'inject' && React.createElement(InjectSection, { onResult: setResult }),
+      activeTab === 'unifi'  && React.createElement(UnifiSection,  null),
+      activeTab !== 'unifi' && React.createElement('div', null,
+        React.createElement(ResponseBox, { result: result }),
+        React.createElement('button', {
+          onClick: function() { setShareModal(result ? result.body : ''); },
+          style: { marginTop: 12, width: '100%', padding: '10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }
+        }, 'An Telegram / Discord senden')
+      ),
+      shareModal !== null && React.createElement(ShareModal, { text: shareModal, onClose: function() { setShareModal(null); } })
+    )
   );
 }
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+</script>
+</body>
+</html>
