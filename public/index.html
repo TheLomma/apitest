@@ -28,7 +28,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v1.4', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v1.5', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -55,7 +55,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v1.4', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v1.5', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Settings', tabHelp: '? Help',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -184,7 +184,21 @@ var state = {
   tab: 'goo',
   settings: loadSettings(),
   profileModal: false,
+  online: true,
 };
+
+// ── Online check ───────────────────────────────────────────────────────────
+function checkOnline() {
+  fetch('https://11q.co/favicon.ico?_='+Date.now(), { method:'HEAD', mode:'no-cors', cache:'no-store' })
+    .then(function(){ if(!state.online){ state.online=true; updateNavIcons(); } })
+    .catch(function(){ if(state.online){ state.online=false; updateNavIcons(); } });
+}
+function updateNavIcons() {
+  var gooIcons = document.querySelectorAll('.nav-icon-goo');
+  gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
+}
+setInterval(checkOnline, 10000);
+checkOnline();
 
 // ── Render engine ──────────────────────────────────────────────────────────
 var app = document.getElementById('app');
@@ -510,17 +524,19 @@ function renderHeader(th) {
 // ── Bottom nav ─────────────────────────────────────────────────────────────
 function renderNav(th) {
   var tabs = [
-    { id:'goo',      icon:'🔴', label:t('tabGoo') },
+    { id:'goo', icon: state.online ? '🟢' : '🔴', label:t('tabGoo'), iconClass:'nav-icon-goo' },
     { id:'inject',   icon:'💉', label:t('tabInject') },
     { id:'unifi',    icon:'📶', label:t('tabUnifi') },
-    { id:'settings', icon:'⚙', label:lang==='de'?'Einstellungen':'Settings' },
-    { id:'help',     icon:'?', label:lang==='de'?'Hilfe':'Help' },
+    { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
+    { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
   ];
   var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
   tabs.forEach(function(tab) {
     var active = state.tab===tab.id;
     var btn = el('button',{ style:'flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
-    btn.appendChild(el('span',{ style:'font-size:1.1rem;' }, tab.icon));
+    var iconSpan = el('span',{ style:'font-size:1.1rem;' }, tab.icon);
+    if(tab.iconClass) iconSpan.className = tab.iconClass;
+    btn.appendChild(iconSpan);
     btn.appendChild(el('span',{ style:'font-size:0.66rem;font-weight:'+(active?'700':'500')+';color:'+(active?'#e8002d':th.subtext)+';' }, tab.label));
     btn.onclick = function(){ state.tab=tab.id; render(); };
     nav.appendChild(btn);
