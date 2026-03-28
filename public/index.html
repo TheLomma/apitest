@@ -23,6 +23,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; m
 var BASE_GOO    = 'https://11q.co';
 var BASE_INJECT = 'https://11z.co/_w';
 var BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
+var PROXY_URL   = '/api/proxy';
+
+async function proxyFetch(targetUrl, method, body) {
+  var resp = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUrl: targetUrl, method: method || 'GET', body: body || null })
+  });
+  return resp;
+}
 var SETTINGS_KEY = 'apitool_settings_v1';
 
 // ── Translations ───────────────────────────────────────────────────────────
@@ -295,36 +305,28 @@ var state = {
 };
 
 // ── Online check ───────────────────────────────────────────────────────────
-function checkOnline() {
-  var prev = state.online;
-  if(navigator.onLine === false) {
-    state.online = false;
-    if(prev !== state.online) updateNavIcons();
-    return;
+  function checkOnline() {
+    var prev = state.online;
+    if(navigator.onLine === false) { state.online=false; if(prev!==state.online) updateNavIcons(); return; }
+    proxyFetch('https://11q.co/api/ping?_='+Date.now(), 'GET', null)
+      .then(function(r){ state.online = r.ok||r.status<500; if(prev!==state.online) updateNavIcons(); })
+      .catch(function(){
+        var img = new Image();
+        var done = false;
+        img.onload = function(){ if(!done){ done=true; state.online=true; if(prev!==state.online) updateNavIcons(); } };
+        img.onerror = function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } };
+        setTimeout(function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } }, 4000);
+        img.src = 'https://11q.co/favicon.ico?_='+Date.now();
+      });
   }
-  fetch('https://11q.co/api/ping?_='+Date.now(), { method:'GET', cache:'no-store', signal: AbortSignal.timeout(4000) })
-    .then(function(r){
-      state.online = r.ok || r.status < 500;
-      if(prev !== state.online) updateNavIcons();
-    })
-    .catch(function(){
-      // fallback: try image
-      var img = new Image();
-      var done = false;
-      img.onload = function(){ if(!done){ done=true; state.online=true; if(prev!==state.online) updateNavIcons(); } };
-      img.onerror = function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } };
-      setTimeout(function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } }, 4000);
-      img.src = 'https://11q.co/favicon.ico?_='+Date.now();
-    });
-}
-function updateNavIcons() {
-  var gooIcons = document.querySelectorAll('.nav-icon-goo');
-  gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
-}
-window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
-window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
-setInterval(checkOnline, 15000);
-checkOnline();
+  function updateNavIcons() {
+    var gooIcons = document.querySelectorAll('.nav-icon-goo');
+    gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
+  }
+  window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
+  window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
+  setInterval(checkOnline, 15000);
+  checkOnline();
 
 // Easter Egg beim Start
 renderEasterEgg();
@@ -746,11 +748,7 @@ function renderGoo(th) {
     if(!state.settings.gooId){ alert('Bitte eine Goo ID in den Einstellungen hinterlegen.'); return; }
     var targetUrl = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
     try {
-      var resp = await fetch(targetUrl,{
-        method: epObj.method,
-        headers: {'Content-Type':'application/json'},
-        body: epObj.query ? JSON.stringify({query:gooState.query}) : null
-      });
+      var resp = await proxyFetch(targetUrl, epObj.method, epObj.query ? {query:gooState.query} : null);
       var raw = await resp.text();
       var fmt = raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
       gooState.result = { status:resp.status, statusText:resp.statusText, body:fmt };
@@ -782,68 +780,65 @@ function renderGoo(th) {
 }
 
 // ── Inject section ─────────────────────────────────────────────────────────
-var injectState = { value:'', result:null };
+  var injectState = { value:'', result:null };
 
-function renderInject(th) {
-  var wrap = el('div',{});
+  function renderInject(th) {
+    var wrap = el('div',{});
 
-  var idDiv = el('div',{ style:'margin-bottom:18px;' });
-  var idLbl = lbl(t('injectId'),th);
-  idLbl.appendChild(badge(t('pflicht')));
-  idDiv.appendChild(idLbl);
-  idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true },th));
-  idDiv.appendChild(hint(t('myInjectId'),th));
-  wrap.appendChild(idDiv);
+    var idDiv = el('div',{ style:'margin-bottom:18px;' });
+    var idLbl = lbl(t('injectId'),th);
+    idLbl.appendChild(badge(t('pflicht')));
+    idDiv.appendChild(idLbl);
+    idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true },th));
+    idDiv.appendChild(hint(t('myInjectId'),th));
+    wrap.appendChild(idDiv);
 
-  var valDiv = el('div',{ style:'margin-bottom:18px;' });
-  var valLbl = lbl(t('value'),th);
-  valLbl.appendChild(badge(t('pflicht')));
-  valDiv.appendChild(valLbl);
-  var ta = makeTextarea(injectState.value, t('valuePlaceholder'), function(){ injectState.value=ta.value; }, th);
-  valDiv.appendChild(ta);
-  valDiv.appendChild(hint(t('valueHint'),th));
-  wrap.appendChild(valDiv);
+    var valDiv = el('div',{ style:'margin-bottom:18px;' });
+    var valLbl = lbl(t('value'),th);
+    valLbl.appendChild(badge(t('pflicht')));
+    valDiv.appendChild(valLbl);
+    var ta = makeTextarea(injectState.value, t('valuePlaceholder'), function(){ injectState.value=ta.value; }, th);
+    valDiv.appendChild(ta);
+    valDiv.appendChild(hint(t('valueHint'),th));
+    wrap.appendChild(valDiv);
 
-  var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
-  var urlDiv = el('div',{ style:'margin-bottom:18px;' });
-  urlDiv.appendChild(lbl(t('urlPreview'),th));
-  urlDiv.appendChild(makeInput(previewUrl,{ readonly:true, mono:true },th));
-  wrap.appendChild(urlDiv);
+    var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
+    var urlDiv = el('div',{ style:'margin-bottom:18px;' });
+    urlDiv.appendChild(lbl(t('urlPreview'),th));
+    urlDiv.appendChild(makeInput(previewUrl,{ readonly:true, mono:true },th));
+    wrap.appendChild(urlDiv);
 
-  async function doSend() {
-    if(!state.settings.injectId){ alert('Bitte eine Inject ID in den Einstellungen hinterlegen.'); return; }
-    if(!injectState.value){ alert('Bitte einen Value eingeben.'); return; }
-    try {
-      var resp = await fetch(BASE_INJECT+'/'+state.settings.injectId+'/selection',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({value:injectState.value})
-      });
-      var raw = await resp.text();
-      var fmt=raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
-      injectState.result={status:resp.status,statusText:resp.statusText,body:fmt};
-    } catch(e) {
-      injectState.result={status:'ERR',statusText:'',body:'Fehler:\n'+e.message};
+    async function doSend() {
+      if(!state.settings.injectId){ alert('Bitte eine Inject ID in den Einstellungen hinterlegen.'); return; }
+      if(!injectState.value){ alert('Bitte einen Value eingeben.'); return; }
+      try {
+        var resp = await proxyFetch(BASE_INJECT+'/'+state.settings.injectId+'/selection', 'POST', {value:injectState.value});
+        var raw = await resp.text();
+        var fmt=raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
+        injectState.result={status:resp.status,statusText:resp.statusText,body:fmt};
+      } catch(e) {
+        injectState.result={status:'ERR',statusText:'',body:'Fehler:\n'+e.message};
+      }
+      var rb = wrap.querySelector('.resp-box');
+      if(rb) rb.remove();
+      var nb = responseBox(injectState.result,th);
+      if(nb){ nb.className='resp-box'; wrap.appendChild(nb); }
     }
-    var rb = wrap.querySelector('.resp-box');
-    if(rb) rb.remove();
-    var nb = responseBox(injectState.result,th);
-    if(nb){ nb.className='resp-box'; wrap.appendChild(nb); }
+
+    wrap.appendChild(buildSendBar({
+      onSend: doSend, onFetch: doSend,
+      getShareText: function(){ return injectState.value; },
+      getResult: function(){ return injectState.result; },
+    },th));
+
+    if(injectState.result) {
+      var rb2=responseBox(injectState.result,th);
+      if(rb2){ rb2.className='resp-box'; wrap.appendChild(rb2); }
+    }
+    return wrap;
   }
 
-  wrap.appendChild(buildSendBar({
-    onSend: doSend, onFetch: doSend,
-    getShareText: function(){ return injectState.value; },
-    getResult: function(){ return injectState.result; },
-  },th));
-
-  if(injectState.result) {
-    var rb2=responseBox(injectState.result,th);
-    if(rb2){ rb2.className='resp-box'; wrap.appendChild(rb2); }
-  }
-  return wrap;
-}
-
-// ── Unifi section ──────────────────────────────────────────────────────────
+  // ── Unifi section ──────────────────────────────────────────────────────────
 var unifiState = { events:[], result:null, error:'' };
 
 var UNIFI_COLORS2 = {
@@ -866,7 +861,7 @@ function renderUnifi(th) {
   async function doFetch() {
     if(!state.settings.unifiId){ alert('Bitte eine Unify ID in den Einstellungen hinterlegen.'); return; }
     try {
-      var resp = await fetch(BASE_UNIFI+'?UserId='+state.settings.unifiId);
+      var resp = await proxyFetch(BASE_UNIFI+'?UserId='+state.settings.unifiId, 'GET', null);
       var parsed = await resp.json();
       unifiState.result={status:resp.status,statusText:resp.statusText,body:JSON.stringify(parsed,null,2)};
       if(parsed.Event&&parsed.Event.length>0) unifiState.events=parsed.Event;
