@@ -1,21 +1,1089 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Tool v1.3</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function() {
 
-  const { targetUrl, method, body } = req.body || {};
-  if (!targetUrl) return res.status(400).json({ error: 'targetUrl fehlt' });
+// ── Constants ──────────────────────────────────────────────────────────────
+var BASE_GOO    = 'https://11q.co';
+var BASE_INJECT = 'https://11z.co/_w';
+var BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
+var PROXY_URL   = '/api/proxy';
 
-  try {
-    const response = await fetch(targetUrl, {
-      method: method || 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: method !== 'GET' && body ? JSON.stringify(body) : undefined
-    });
-    const text = await response.text();
-    res.status(response.status).send(text);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+async function proxyFetch(targetUrl, method, body) {
+  var resp = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUrl: targetUrl, method: method || 'GET', body: body || null })
+  });
+  return resp;
 }
+var SETTINGS_KEY = 'apitool_settings_v1';
+
+// ── Translations ───────────────────────────────────────────────────────────
+var TRANSLATIONS = {
+  de: {
+    appTitle: 'API Tool', appVersion: 'v1.9', appSubtitle: 'Einfaches Testen von APIs',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
+    send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
+    telegram: 'Telegram', discord: 'Discord',
+    gooId: 'Goo ID', endpoint: 'Endpunkt', query: 'Query', urlPreview: 'URL-Vorschau',
+    pflicht: 'Pflicht', myGooId: 'Deine persönliche Goo ID',
+    queryHint: 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.',
+    queryPlaceholder: 'Suchanfrage oder URL eingeben...',
+    injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
+    valueHint: 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
+    valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
+    unifyId: 'Unify ID', myUnifyId: 'Deine Unifi User ID',
+    answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
+    error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
+    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
+    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
+    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren',
+    placeholderGooId: 'z.B. XX', placeholderInjectId: 'z.B. 12345', placeholderUnifiId: 'z.B. 12345',
+    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'z.B. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
+    inSettings: 'In Einstellungen hinterlegen', sentOk: 'Gesendet!',
+    liveHint: 'Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.',
+    events: 'Events', noEvents: 'Noch keine Events empfangen.',
+    profileTitle: 'Profil auswählen', profileSubtitle: 'Einstellungen für welchen Nutzer laden?', cancel: 'Abbrechen',
+    darkMode: 'Dark Mode', lightMode: 'Light Mode',
+    helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick',
+  },
+  en: {
+    appTitle: 'API Tool', appVersion: 'v1.9', appSubtitle: 'Simple API Testing',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
+    send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
+    telegram: 'Telegram', discord: 'Discord',
+    gooId: 'Goo ID', endpoint: 'Endpoint', query: 'Query', urlPreview: 'URL Preview',
+    pflicht: 'Required', myGooId: 'Your personal Goo ID',
+    queryHint: 'Sent to Goo. If Telegram/Discord is enabled, only this text is forwarded.',
+    queryPlaceholder: 'Enter search query or URL...',
+    injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
+    valueHint: 'If Telegram/Discord is enabled, only this value is forwarded.',
+    valuePlaceholder: 'Enter text to inject...',
+    unifyId: 'Unify ID', myUnifyId: 'Your Unifi User ID',
+    answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
+    error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
+    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
+    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
+    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache',
+    placeholderGooId: 'e.g. XX', placeholderInjectId: 'e.g. 12345', placeholderUnifiId: 'e.g. 12345',
+    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'e.g. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
+    inSettings: 'Set in Settings', sentOk: 'Sent!',
+    liveHint: 'Live-Text: For best real-time results, query every 300–500ms.',
+    events: 'Events', noEvents: 'No events received yet.',
+    profileTitle: 'Select Profile', profileSubtitle: 'Load settings for which user?', cancel: 'Cancel',
+    darkMode: 'Dark Mode', lightMode: 'Light Mode',
+    helpTitle: 'Guide & Feature Overview', helpSubtitle: 'All sections and their features at a glance',
+  }
+};
+
+var lang = 'de';
+function t(k) { return (TRANSLATIONS[lang]||TRANSLATIONS.de)[k] || k; }
+
+// ── Settings ───────────────────────────────────────────────────────────────
+var DEFAULT_DOMINIK = { gooId:'91', injectId:'12779', unifiId:'10154', tgToken:'8556873591:AAEtuYkA6tO3i4W-AGbiQKDRL7mVk6Kah34', tgChatId:'8792112920', dcWebhook:'' };
+var DEFAULT_JOERN   = { gooId:'', injectId:'', unifiId:'', tgToken:'', tgChatId:'', dcWebhook:'' };
+
+function loadSettings() {
+  try { var r = localStorage.getItem(SETTINGS_KEY); if(r) return JSON.parse(r); } catch(e){}
+  return {};
+}
+function saveSettings(s) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e){}
+}
+
+// ── Endpoint helpers ───────────────────────────────────────────────────────
+var ENDPOINTS = [
+  { id:'post-thump',          method:'POST', label:'POST /api/thump – Query senden',          desc:'Sendet eine Query an die Goo API.',                                 query:true,  live:false },
+  { id:'get-last',            method:'GET',  label:'GET /api/last – Letzten Query abrufen',   desc:'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.',         query:false, live:false },
+  { id:'live-text',           method:'GET',  label:'GET /api/live-text – Live Text (PRO)',    desc:'Gibt den aktuell getippten Text in Echtzeit zurück.',               query:false, live:true  },
+  { id:'pro-last-deleted',    method:'GET',  label:'GET /pro-api/last-deleted (PRO)',         desc:'Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.',             query:false, live:false },
+  { id:'pro-autofill',        method:'GET',  label:'GET /pro-api/autofill (PRO)',             desc:'Ruft per Autofill übermittelte Formulardaten ab.',                  query:false, live:false },
+  { id:'pro-last-bd',         method:'GET',  label:'GET /pro-api/last-bd (PRO)',              desc:'Ruft das Geburtsdatum zur letzten Suchanfrage ab.',                 query:false, live:false },
+  { id:'pro-last-deleted-bd', method:'GET',  label:'GET /pro-api/last-deleted-bd (PRO)',     desc:'Wie last-bd, basierend auf dem zuletzt gelöschten Text.',           query:false, live:false },
+];
+
+function epPath(id, gooId) {
+  var g = gooId || '{goo_id}';
+  if(id==='get-last')            return '/api/last/'+g;
+  if(id==='post-thump')          return '/api/thump/'+g;
+  if(id==='pro-last-deleted')    return '/pro-api/'+g+'/last-deleted';
+  if(id==='pro-autofill')        return '/pro-api/'+g+'/autofill';
+  if(id==='live-text')           return '/api/live-text/'+g;
+  if(id==='pro-last-bd')         return '/pro-api/'+g+'/last-bd';
+  if(id==='pro-last-deleted-bd') return '/pro-api/'+g+'/last-deleted-bd';
+  return '/';
+}
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+var THEMES = {
+  dark: {
+    bg: 'linear-gradient(135deg,#0f0f1e 0%,#1a1a2e 50%,#16213e 100%)',
+    card: 'rgba(255,255,255,0.06)',
+    cardBorder: 'rgba(255,255,255,0.1)',
+    text: '#f0f0ff',
+    subtext: '#aaa',
+    hint: '#888',
+    inputBg: 'rgba(255,255,255,0.07)',
+    inputBgFocus: 'rgba(255,255,255,0.13)',
+    inputText: '#f0f0ff',
+    inputBorder: 'rgba(255,255,255,0.18)',
+    readonlyBg: 'rgba(255,255,255,0.03)',
+    readonlyText: '#777',
+    responseBg: '#111',
+    responseText: '#e0e0e0',
+    responseHeader: '#1a1a2e',
+    border: 'rgba(255,255,255,0.1)',
+    infoBg: 'rgba(255,255,255,0.04)',
+    infoText: '#bbb',
+    sectionTitle: '#e0e0ff',
+    tabActive: 'rgba(232,0,45,0.85)',
+    tabInactive: 'rgba(255,255,255,0.06)',
+    tabBorder: 'rgba(255,255,255,0.1)',
+    headerBg: 'rgba(15,15,30,0.8)',
+    navBg: 'rgba(15,15,30,0.9)',
+  },
+  light: {
+    bg: 'linear-gradient(135deg,#f5f5f5 0%,#ececf5 50%,#e8e8f0 100%)',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: '#e0e0e0',
+    text: '#1a1a2e',
+    subtext: '#555',
+    hint: '#888',
+    inputBg: '#fafafa',
+    inputBgFocus: '#fff',
+    inputText: '#222',
+    inputBorder: '#ddd',
+    readonlyBg: '#f0f0f0',
+    readonlyText: '#666',
+    responseBg: '#f8f8f8',
+    responseText: '#222',
+    responseHeader: '#1a1a2e',
+    border: '#e0e0e0',
+    infoBg: '#f8f8f8',
+    infoText: '#555',
+    sectionTitle: '#1a1a2e',
+    tabActive: '#e8002d',
+    tabInactive: '#f0f0f0',
+    tabBorder: '#e0e0e0',
+    headerBg: 'rgba(255,255,255,0.9)',
+    navBg: 'rgba(255,255,255,0.95)',
+  }
+};
+
+// ── Easter Egg Quiz ──────────────────────────────────────────────────────────
+function renderEasterEgg() {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center;';
+
+  // Logo
+  var logo = document.createElement('div');
+  logo.style.cssText = 'width:52px;height:52px;border-radius:14px;background:#e8002d;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:1.6rem;';
+  logo.textContent = '🍸';
+  box.appendChild(logo);
+
+  // Title
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:1.1rem;font-weight:800;color:#f0f0ff;margin-bottom:10px;';
+  title.textContent = 'Hallo Jörn! 👋';
+  box.appendChild(title);
+
+  // Subtitle
+  var sub = document.createElement('div');
+  sub.style.cssText = 'font-size:0.9rem;color:#aaa;margin-bottom:20px;line-height:1.6;';
+  sub.textContent = 'Ich freue mich, dass du dieses API Tool testen möchtest! Ich habe eine kleine Quizfrage für dich:';
+  box.appendChild(sub);
+
+  // Question
+  var q = document.createElement('div');
+  q.style.cssText = 'font-size:0.95rem;font-weight:700;color:#f0f0ff;margin-bottom:14px;background:rgba(232,0,45,0.1);border:1px solid rgba(232,0,45,0.3);border-radius:10px;padding:12px 14px;';
+  q.textContent = '🍸 Nenne einen Cocktail, den ich heute Abend gerne trinken würde …';
+  box.appendChild(q);
+
+  // Input
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = '';
+  inp.placeholder = 'antwort eingeben...';
+  inp.style.cssText = 'width:100%;border:1.5px solid rgba(232,0,45,0.4);border-radius:10px;padding:11px 14px;font-size:1rem;color:#f0f0ff;background:rgba(255,255,255,0.07);outline:none;box-sizing:border-box;margin-bottom:8px;text-align:center;letter-spacing:0.05em;';
+  inp.onfocus = function(){ inp.style.borderColor='#e8002d'; inp.style.boxShadow='0 0 0 3px rgba(232,0,45,0.15)'; };
+  inp.onblur  = function(){ inp.style.borderColor='rgba(232,0,45,0.4)'; inp.style.boxShadow='none'; };
+  box.appendChild(inp);
+
+  // Hint
+  var inpHint = document.createElement('div');
+  inpHint.style.cssText = 'font-size:0.78rem;color:#888;margin-bottom:14px;margin-top:-8px;';
+  inpHint.textContent = 'Bitte alles klein schreiben (z.B. caipirinha)';
+  box.appendChild(inpHint);
+
+  // Feedback
+  var feedback = document.createElement('div');
+  feedback.style.cssText = 'font-size:0.88rem;min-height:24px;margin-bottom:10px;';
+  box.appendChild(feedback);
+
+  // Send button
+  var btn = document.createElement('button');
+  btn.textContent = 'Senden';
+  btn.style.cssText = 'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.35);transition:all 0.2s;';
+
+  function checkAnswer() {
+    var answer = inp.value.trim().toLowerCase();
+    if(answer === 'espresso martini') {
+      // SUCCESS
+      box.innerHTML = '';
+      var successIcon = document.createElement('div');
+      successIcon.style.cssText = 'font-size:2.5rem;margin-bottom:16px;';
+      successIcon.textContent = '🎉';
+      box.appendChild(successIcon);
+
+      var sTitle = document.createElement('div');
+      sTitle.style.cssText = 'font-size:1.15rem;font-weight:800;color:#22c55e;margin-bottom:12px;';
+      sTitle.textContent = 'Glückwunsch, du hast es richtig erraten!';
+      box.appendChild(sTitle);
+
+      var sInfo = document.createElement('div');
+      sInfo.style.cssText = 'font-size:0.88rem;color:#aaa;line-height:1.7;margin-bottom:20px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px;text-align:left;';
+      sInfo.innerHTML = '🔐 <strong style="color:#f0f0ff;">Geheime Einstellungen laden:</strong><br><br>'
+        + '1. Gehe zum Tab <strong style="color:#f0f0ff;">⚙️ Einstellungen</strong><br>'
+        + '2. Klicke <strong style="color:#e8002d;">5× auf „API Tool"</strong> im Header<br>'
+        + '3. Das Profil-Menü öffnet sich automatisch<br>'
+        + '4. Wähle dein Profil – die Einstellungen werden sofort eingefügt<br><br>'
+        + '<span style="color:#888;font-size:0.82rem;">(Momentan nur für Dominik verfügbar)</span>';
+      box.appendChild(sInfo);
+
+      var closeBtn2 = document.createElement('button');
+      closeBtn2.textContent = 'Los geht\'s! 🚀';
+      closeBtn2.style.cssText = 'width:100%;padding:13px;background:rgba(34,197,94,0.85);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;';
+      closeBtn2.onclick = function(){ document.body.removeChild(ov); };
+      box.appendChild(closeBtn2);
+    } else {
+      // WRONG
+      feedback.style.color = '#f87171';
+      feedback.textContent = 'Tut mir leid, das Wort war falsch.';
+      setTimeout(function(){
+        document.body.removeChild(ov);
+      }, 2000);
+    }
+  }
+
+  btn.onclick = checkAnswer;
+  inp.onkeydown = function(e){ if(e.key==='Enter') checkAnswer(); };
+  box.appendChild(btn);
+
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+var state = {
+  theme: 'dark',
+  lang: 'de',
+  tab: 'goo',
+  settings: loadSettings(),
+  profileModal: false,
+  fullscreen: null,
+  online: true,
+};
+
+// ── Online check ───────────────────────────────────────────────────────────
+  function checkOnline() {
+    var prev = state.online;
+    if(navigator.onLine === false) { state.online=false; if(prev!==state.online) updateNavIcons(); return; }
+    proxyFetch('https://11q.co/api/ping?_='+Date.now(), 'GET', null)
+      .then(function(r){ state.online = r.ok||r.status<500; if(prev!==state.online) updateNavIcons(); })
+      .catch(function(){
+        var img = new Image();
+        var done = false;
+        img.onload = function(){ if(!done){ done=true; state.online=true; if(prev!==state.online) updateNavIcons(); } };
+        img.onerror = function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } };
+        setTimeout(function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } }, 4000);
+        img.src = 'https://11q.co/favicon.ico?_='+Date.now();
+      });
+  }
+  function updateNavIcons() {
+    var gooIcons = document.querySelectorAll('.nav-icon-goo');
+    gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
+  }
+  window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
+  window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
+  setInterval(checkOnline, 15000);
+  checkOnline();
+
+// Easter Egg beim Start
+renderEasterEgg();
+
+// ── Render engine ──────────────────────────────────────────────────────────
+var app = document.getElementById('app');
+
+function render() {
+  var th = THEMES[state.theme];
+  lang = state.lang;
+
+  app.innerHTML = '';
+  app.style.cssText = 'min-height:100vh;background:'+th.bg+';display:flex;flex-direction:column;';
+
+  // Profile modal
+  if(state.profileModal) { app.appendChild(renderProfileModal(th)); }
+
+  // Fullscreen
+  if(state.fullscreen) { app.appendChild(renderFullscreen(th)); return; }
+
+  // Header
+  app.appendChild(renderHeader(th));
+
+  // Scrollable content
+  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 80px;' });
+  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 16px;' });
+
+  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:22px 20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
+
+  if(state.tab==='goo')      card.appendChild(renderGoo(th));
+  if(state.tab==='inject')   card.appendChild(renderInject(th));
+  if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
+    if(state.tab==='custom')   card.appendChild(renderCustom(th));
+  if(state.tab==='settings') card.appendChild(renderSettings(th));
+  if(state.tab==='help') { card.appendChild(renderHelp(th)); }
+
+  wrap.appendChild(card);
+  scroll.appendChild(wrap);
+  app.appendChild(scroll);
+
+  // Bottom nav
+  app.appendChild(renderNav(th));
+}
+
+// ── DOM helpers ────────────────────────────────────────────────────────────
+function el(tag, attrs, children) {
+  var e = document.createElement(tag);
+  if(attrs) {
+    Object.keys(attrs).forEach(function(k) {
+      if(k==='style') e.style.cssText = attrs[k];
+      else if(k==='class') e.className = attrs[k];
+      else if(k.startsWith('on')) e[k] = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    });
+  }
+  if(children) {
+    if(Array.isArray(children)) children.forEach(function(c){ if(c) e.appendChild(typeof c==='string'?txt(c):c); });
+    else if(typeof children==='string') e.appendChild(txt(children));
+    else e.appendChild(children);
+  }
+  return e;
+}
+function txt(s) { return document.createTextNode(s); }
+
+function lbl(text, th) {
+  return el('label',{ style:'display:block;font-size:0.78rem;font-weight:700;color:'+th.subtext+';margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;' }, text);
+}
+function badge(text) {
+  return el('span',{ style:'font-size:0.66rem;background:#fff3f5;color:#e8002d;border:1px solid #f5b8c0;border-radius:4px;padding:1px 7px;margin-left:6px;font-weight:700;text-transform:uppercase;' }, text);
+}
+function hint(text, th) {
+  return el('p',{ style:'font-size:0.78rem;color:'+th.hint+';margin-top:5px;' }, text);
+}
+function makeInput(value, opts, th) {
+  opts = opts||{};
+  var i = el('input',{ type:opts.type||'text', value:value, placeholder:opts.placeholder||'', style:'width:100%;border:1.5px solid '+(opts.readonly?th.inputBorder:'rgba(232,0,45,0.3)')+';border-radius:8px;padding:10px 14px;font-size:'+(opts.mono?'0.88rem':'0.97rem')+';color:'+(opts.readonly?th.readonlyText:th.inputText)+';background:'+(opts.readonly?th.readonlyBg:th.inputBg)+';outline:none;box-sizing:border-box;font-family:'+(opts.mono?'monospace':'inherit')+';transition:all 0.2s;' });
+  if(opts.readonly) i.readOnly = true;
+  if(opts.onchange) i.oninput = opts.onchange;
+  i.onfocus = function(){ if(!opts.readonly){ i.style.background=th.inputBgFocus; i.style.borderColor='#e8002d'; i.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; }};
+  i.onblur  = function(){ if(!opts.readonly){ i.style.background=th.inputBg; i.style.borderColor='rgba(232,0,45,0.3)'; i.style.boxShadow='none'; }};
+  return i;
+}
+function makeTextarea(value, placeholder, onchange, th) {
+  var t2 = el('textarea',{ placeholder:placeholder, style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;box-sizing:border-box;resize:vertical;min-height:90px;font-family:Courier New,monospace;transition:all 0.2s;' });
+  t2.value = value;
+  if(onchange) t2.oninput = onchange;
+  t2.onfocus = function(){ t2.style.background=th.inputBgFocus; t2.style.borderColor='#e8002d'; t2.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; };
+  t2.onblur  = function(){ t2.style.background=th.inputBg; t2.style.borderColor='rgba(232,0,45,0.3)'; t2.style.boxShadow='none'; };
+  return t2;
+}
+function makeSelect(options, value, onchange, th) {
+  var s = el('select',{ style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;cursor:pointer;' });
+  options.forEach(function(o) {
+    var opt = el('option',{ value:o.value }, o.label);
+    if(o.value===value) opt.selected = true;
+    s.appendChild(opt);
+  });
+  if(onchange) s.onchange = onchange;
+  return s;
+}
+function makeBtn(text, onclick, opts) {
+  opts = opts||{};
+  var b = el('button',{ style:'padding:'+(opts.small?'8px 14px':'12px 28px')+';background:'+(opts.bg||'rgba(232,0,45,0.85)')+';color:'+(opts.color||'#fff')+';border:'+(opts.border||'1px solid rgba(255,255,255,0.2)')+';border-radius:12px;font-size:'+(opts.small?'0.84rem':'0.97rem')+';font-weight:700;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(8px);' }, text);
+  b.onclick = onclick;
+  b.onmouseover = function(){ b.style.opacity='0.85'; };
+  b.onmouseout  = function(){ b.style.opacity='1'; };
+  return b;
+}
+
+function responseBox(result, th) {
+  if(!result) return null;
+  var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
+  var wrap = el('div',{ style:'margin-top:16px;border-radius:14px;overflow:hidden;border:1px solid '+th.border+';' });
+  var hdr = el('div',{ style:'background:'+th.responseHeader+';color:#fff;padding:9px 16px;font-size:0.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;' });
+  hdr.appendChild(txt(t('answer')));
+  hdr.appendChild(el('span',{ style:'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:'')));
+  var body = el('div',{ style:'background:'+th.responseBg+';padding:16px;font-family:Courier New,monospace;font-size:0.85rem;color:'+th.responseText+';max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;' });
+  body.textContent = result.body || t('emptyAnswer');
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+// ── Telegram/Discord ───────────────────────────────────────────────────────
+async function sendTelegram(token, chatId2, text2) {
+  if(!token||!chatId2) throw new Error('Bot Token und Chat ID fehlen.');
+  var r = await fetch('https://api.telegram.org/bot'+token+'/sendMessage',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:chatId2,text:text2}) });
+  var d = await r.json();
+  if(!d.ok) throw new Error(d.description||'Telegram Fehler');
+}
+async function sendDiscord(url2, content) {
+  if(!url2) throw new Error('Discord Webhook URL fehlt.');
+  var r = await fetch(url2,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content:content,username:'API Tool'}) });
+  if(!r.ok) throw new Error('Discord Fehler: '+r.status);
+}
+
+// ── SendBar builder ────────────────────────────────────────────────────────
+function buildSendBar(opts, th) {
+  // opts: { onSend, onFetch, getShareText, getResult, showFullscreen }
+  var sendTg = false, sendDc = false, isLive = false, interval = 5000;
+  var timer = null;
+  var container = el('div',{});
+
+  function notify(ok, msg, dur) {
+    var old = container.querySelector('.notif');
+    if(old) old.remove();
+    var n = el('div',{ class:'notif', style:'padding:8px 14px;border-radius:8px;background:'+(ok?'#f0fdf4':'#fff5f5')+';border:1px solid '+(ok?'#86efac':'#fca5a5')+';font-size:0.85rem;color:'+(ok?'#166534':'#991b1b')+';margin-bottom:8px;' }, msg);
+    container.insertBefore(n, container.children[container.children.length > 2 ? 2 : 0]);
+    setTimeout(function(){ if(n.parentNode) n.remove(); }, dur||3000);
+  }
+
+  // Checkboxes row
+  var cbRow = el('div',{ style:'display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;align-items:center;' });
+  function mkCb(labelText, color, getter, setter) {
+    var lb = el('label',{ style:'display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;cursor:pointer;user-select:none;color:'+color+';' });
+    var cb = el('input',{ type:'checkbox', style:'width:16px;height:16px;accent-color:'+color+';cursor:pointer;' });
+    cb.onchange = function(){ setter(cb.checked); };
+    lb.appendChild(cb);
+    lb.appendChild(txt(labelText));
+    return lb;
+  }
+  cbRow.appendChild(mkCb(t('telegram'),'#0088cc',function(){return sendTg;},function(v){sendTg=v;}));
+  cbRow.appendChild(mkCb(t('discord'),'#5865F2',function(){return sendDc;},function(v){sendDc=v;}));
+  container.appendChild(cbRow);
+
+  // Send button
+  var sendBtn = el('button',{ style:'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
+  sendBtn.textContent = t('send');
+  sendBtn.onclick = async function() {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> '+t('sending');
+    sendBtn.style.background = 'rgba(180,180,180,0.3)';
+    if(opts.onSend) await opts.onSend();
+    var shareText = opts.getShareText ? opts.getShareText() : '';
+    var errs = [];
+    var s = state.settings;
+    if(sendTg) { try{ await sendTelegram(s.tgToken,s.tgChatId,shareText); } catch(e){ errs.push('Telegram: '+e.message); } }
+    if(sendDc) { try{ await sendDiscord(s.dcWebhook,shareText); } catch(e){ errs.push('Discord: '+e.message); } }
+    sendBtn.disabled = false;
+    sendBtn.textContent = t('send');
+    sendBtn.style.background = 'rgba(232,0,45,0.85)';
+    if(errs.length) notify(false, errs.join(' | '), 5000);
+    else if(sendTg||sendDc) notify(true, t('sentOk'), 3000);
+  };
+  container.appendChild(sendBtn);
+
+  // Controls row
+  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;' });
+
+  // Interval select
+  var selOpts = [{value:'2000',label:'2s'},{value:'5000',label:'5s'},{value:'10000',label:'10s'},{value:'30000',label:'30s'}];
+  var sel = makeSelect(selOpts,'5000',function(){ interval=parseInt(sel.value); },th);
+  sel.style.width = 'auto';
+  sel.style.padding = '8px 10px';
+  ctrlRow.appendChild(sel);
+
+  // Auto-refresh btn
+  var arBtn = makeBtn(t('autoRefresh'),function(){
+    if(timer) {
+      clearInterval(timer); timer=null; isLive=false;
+      arBtn.textContent=t('autoRefresh'); arBtn.style.background='#22c55e';
+      liveDot.style.display='none';
+    } else {
+      if(opts.onFetch) opts.onFetch();
+      timer=setInterval(function(){ if(opts.onFetch) opts.onFetch(); },interval);
+      isLive=true;
+      arBtn.textContent=t('stop'); arBtn.style.background='#e8002d';
+      liveDot.style.display='flex';
+    }
+  },{ small:true, bg:'#22c55e' });
+  ctrlRow.appendChild(arBtn);
+
+  // Live dot
+  var liveDot = el('span',{ style:'display:none;align-items:center;gap:5px;font-size:0.84rem;color:#22c55e;font-weight:600;' });
+  liveDot.appendChild(el('span',{ style:'width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1s infinite;' }));
+  liveDot.appendChild(txt('Live'));
+  ctrlRow.appendChild(liveDot);
+
+  // Fullscreen btn
+  if(opts.showFullscreen!==false) {
+    var fsBtn = makeBtn(t('fullscreen'),function(){
+      state.fullscreen = { result: opts.getResult ? opts.getResult() : null };
+      render();
+    },{ small:true, bg:'#6366f1' });
+    ctrlRow.appendChild(fsBtn);
+  }
+
+  container.appendChild(ctrlRow);
+  return container;
+}
+
+// ── Fullscreen ─────────────────────────────────────────────────────────────
+function renderFullscreen(th) {
+  var result = state.fullscreen.result;
+  var body2 = result ? (result.body||t('emptyAnswer')) : t('waitAnswer');
+  var ov = el('div',{ style:'position:fixed;inset:0;background:#0d0d0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;' });
+  var closeBtn = el('button',{ style:'position:absolute;top:20px;right:28px;background:none;border:none;color:#888;font-size:2rem;cursor:pointer;' },'×');
+  closeBtn.onclick = function(){ state.fullscreen=null; render(); };
+  ov.appendChild(closeBtn);
+  if(result) {
+    var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
+    var sb = el('div',{ style:'position:absolute;top:22px;left:28px;padding:3px 14px;border-radius:12px;font-size:0.8rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:''));
+    ov.appendChild(sb);
+  }
+  var pre = el('pre',{ style:'color:#fff;font-size:1.4rem;font-weight:700;white-space:pre-wrap;word-break:break-all;font-family:Courier New,monospace;line-height:1.6;max-height:85vh;overflow-y:auto;max-width:900px;width:100%;text-align:center;' });
+  pre.textContent = body2;
+  ov.appendChild(pre);
+  document.onkeydown = function(e){ if(e.key==='Escape'){ state.fullscreen=null; render(); document.onkeydown=null; } };
+  return ov;
+}
+
+// ── Profile modal ──────────────────────────────────────────────────────────
+function renderProfileModal(th) {
+  var ov = el('div',{ style:'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;display:flex;align-items:center;justify-content:center;padding:24px;' });
+  var box = el('div',{ style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);' });
+  box.appendChild(el('div',{ style:'font-size:1.1rem;font-weight:700;color:'+th.text+';margin-bottom:4px;' }, t('profileTitle')));
+  box.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.subtext+';margin-bottom:20px;' }, t('profileSubtitle')));
+  function mkProfileBtn(name, data) {
+    var b = makeBtn(name, function(){
+      state.settings = Object.assign({}, data);
+      saveSettings(state.settings);
+      state.profileModal = false;
+      render();
+    },{ bg:'rgba(232,0,45,0.85)' });
+    b.style.width='100%'; b.style.marginBottom='10px';
+    box.appendChild(b);
+  }
+  mkProfileBtn('Dominik', DEFAULT_DOMINIK);
+  mkProfileBtn('Jörn', DEFAULT_JOERN);
+  var cancel = makeBtn(t('cancel'), function(){ state.profileModal=false; render(); }, { bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  cancel.style.width='100%';
+  box.appendChild(cancel);
+  ov.appendChild(box);
+  return ov;
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────
+function renderHeader(th) {
+  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
+
+  var left = el('div',{ style:'display:flex;align-items:center;gap:10px;' });
+  // Logo
+  var logo = el('div',{ style:'width:34px;height:34px;border-radius:9px;background:#e8002d;display:flex;align-items:center;justify-content:center;flex-shrink:0;' });
+  logo.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 6l5 4-5 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  left.appendChild(logo);
+  var titleWrap = el('div',{});
+  var titleRow = el('div',{ style:'display:flex;align-items:baseline;gap:6px;' });
+  var vClicks=0,vTimer=null;
+  var titleEl = el('div',{ style:'font-size:1rem;font-weight:800;color:'+th.text+';letter-spacing:-0.01em;cursor:default;user-select:none;' }, t('appTitle'));
+  titleEl.onclick = function(){
+    vClicks++;
+    if(vTimer) clearTimeout(vTimer);
+    vTimer = setTimeout(function(){ vClicks=0; },2000);
+    if(vClicks>=5){ vClicks=0; state.profileModal=true; render(); }
+  };
+  titleRow.appendChild(titleEl);
+  titleRow.appendChild(el('span',{ style:'font-size:0.78rem;font-weight:400;color:'+th.subtext+';' }, t('appVersion')));
+  titleWrap.appendChild(titleRow);
+  titleWrap.appendChild(el('div',{ style:'font-size:0.72rem;color:'+th.subtext+';' }, t('appSubtitle')));
+  left.appendChild(titleWrap);
+  hdr.appendChild(left);
+
+  var right = el('div',{ style:'display:flex;align-items:center;gap:8px;' });
+
+  // Lang toggle
+  var langBtn = makeBtn(lang==='de'?'EN':'DE', function(){
+    state.lang = lang==='de'?'en':'de';
+    render();
+  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(langBtn);
+
+  // Profile btn
+  var profBtn = makeBtn('👤', function(){ state.profileModal=true; render(); },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(profBtn);
+
+  // Theme toggle
+  var themeBtn = makeBtn(state.theme==='dark'?'☀':'🌙', function(){
+    state.theme = state.theme==='dark'?'light':'dark';
+    render();
+  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
+  right.appendChild(themeBtn);
+
+  // FRAGE button centered in header
+  var frageBtn = el('button',{ style:'position:absolute;left:50%;transform:translateX(-50%);padding:6px 16px;background:rgba(232,0,45,0.12);color:#e8002d;border:1.5px solid rgba(232,0,45,0.4);border-radius:20px;font-size:0.82rem;font-weight:800;cursor:pointer;letter-spacing:0.07em;white-space:nowrap;transition:all 0.2s;' },'🍸 FRAGE');
+  frageBtn.onmouseover = function(){ frageBtn.style.background='rgba(232,0,45,0.25)'; };
+  frageBtn.onmouseout  = function(){ frageBtn.style.background='rgba(232,0,45,0.12)'; };
+  frageBtn.onclick = function(){ renderEasterEgg(); };
+  hdr.appendChild(frageBtn);
+  hdr.style.position = 'sticky';
+
+  hdr.appendChild(right);
+  return hdr;
+}
+
+// ── Bottom nav ─────────────────────────────────────────────────────────────
+function renderNav(th) {
+  var tabs = [
+    { id:'goo', icon: state.online ? '🟢' : '🔴', label:t('tabGoo'), iconClass:'nav-icon-goo' },
+    { id:'inject',   icon:'💉', label:t('tabInject') },
+    { id:'unifi',    icon:'📶', label:t('tabUnifi') },
+    { id:'custom',   icon:'🔧', label:t('tabCustom') },
+      { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
+    { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
+  ];
+  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
+  tabs.forEach(function(tab) {
+    var active = state.tab===tab.id;
+    var btn = el('button',{ style:'flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
+    var iconSpan = el('span',{ style:'font-size:1.1rem;' }, tab.icon);
+    if(tab.iconClass) iconSpan.className = tab.iconClass;
+    btn.appendChild(iconSpan);
+    btn.appendChild(el('span',{ style:'font-size:0.66rem;font-weight:'+(active?'700':'500')+';color:'+(active?'#e8002d':th.subtext)+';' }, tab.label));
+    btn.onclick = function(){ state.tab=tab.id; render(); };
+    nav.appendChild(btn);
+  });
+  return nav;
+}
+
+// ── Goo section ────────────────────────────────────────────────────────────
+var gooState = { ep:'post-thump', query:'', result:null };
+
+function renderGoo(th) {
+  var wrap = el('div',{});
+  var epObj = ENDPOINTS.find(function(e){ return e.id===gooState.ep; });
+  var url = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
+
+  // Goo ID + Endpoint row
+  var row = el('div',{ style:'display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;' });
+
+  var gooCol = el('div',{ style:'flex:1;min-width:140px;' });
+  var gooLbl = lbl(t('gooId'),th);
+  gooLbl.appendChild(badge(t('pflicht')));
+  gooCol.appendChild(gooLbl);
+  gooCol.appendChild(makeInput(state.settings.gooId||'',{ placeholder:state.settings.gooId?'':t('inSettings'), readonly:true },th));
+  gooCol.appendChild(hint(t('myGooId'),th));
+  row.appendChild(gooCol);
+
+  var epCol = el('div',{ style:'flex:1;min-width:180px;' });
+  epCol.appendChild(lbl(t('endpoint'),th));
+  var epSelOpts = ENDPOINTS.map(function(e){ return {value:e.id,label:e.label}; });
+  var epSel = makeSelect(epSelOpts, gooState.ep, function(){
+    gooState.ep=epSel.value;
+    render();
+  }, th);
+  epCol.appendChild(epSel);
+  row.appendChild(epCol);
+  wrap.appendChild(row);
+
+  // Desc
+  if(epObj.desc) {
+    var desc = el('div',{ style:'background:'+th.infoBg+';border-left:3px solid #e8002d;border-radius:0 6px 6px 0;padding:10px 14px;font-size:0.83rem;color:'+th.infoText+';margin-bottom:16px;line-height:1.5;' }, epObj.desc);
+    wrap.appendChild(desc);
+  }
+  if(epObj.live) {
+    var liveHintEl = el('div',{ style:'background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 14px;font-size:0.8rem;color:#92400e;margin-bottom:14px;' }, t('liveHint'));
+    wrap.appendChild(liveHintEl);
+  }
+
+  // Query
+  if(epObj.query) {
+    var qDiv = el('div',{ style:'margin-bottom:18px;' });
+    var qLbl = lbl(t('query'),th);
+    qLbl.appendChild(badge(t('pflicht')));
+    qDiv.appendChild(qLbl);
+    var ta = makeTextarea(gooState.query, t('queryPlaceholder'), function(){ gooState.query=ta.value; }, th);
+    qDiv.appendChild(ta);
+    qDiv.appendChild(hint(t('queryHint'),th));
+    wrap.appendChild(qDiv);
+  }
+
+  // URL preview
+  var urlDiv = el('div',{ style:'margin-bottom:18px;' });
+  urlDiv.appendChild(lbl(t('urlPreview'),th));
+  urlDiv.appendChild(makeInput(url,{ readonly:true, mono:true },th));
+  wrap.appendChild(urlDiv);
+
+  // SendBar
+  async function doSend() {
+    if(!state.settings.gooId){ alert('Bitte eine Goo ID in den Einstellungen hinterlegen.'); return; }
+    var targetUrl = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
+    try {
+      var resp = await proxyFetch(targetUrl, epObj.method, epObj.query ? {query:gooState.query} : null);
+      var raw = await resp.text();
+      var fmt = raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
+      gooState.result = { status:resp.status, statusText:resp.statusText, body:fmt };
+    } catch(e) {
+      gooState.result = { status:'ERR', statusText:'', body:'Fehler:\n'+e.message };
+    }
+    // re-render response box
+    var rb = wrap.querySelector('.resp-box');
+    if(rb) rb.remove();
+    var nb = responseBox(gooState.result, th);
+    if(nb) { nb.className='resp-box'; wrap.appendChild(nb); }
+  }
+
+  var sb = buildSendBar({
+    onSend: doSend,
+    onFetch: doSend,
+    getShareText: function(){ return gooState.query; },
+    getResult: function(){ return gooState.result; },
+  }, th);
+  wrap.appendChild(sb);
+
+  // Response
+  if(gooState.result) {
+    var rb2 = responseBox(gooState.result, th);
+    if(rb2) { rb2.className='resp-box'; wrap.appendChild(rb2); }
+  }
+
+  return wrap;
+}
+
+// ── Inject section ─────────────────────────────────────────────────────────
+  var injectState = { value:'', result:null };
+
+  function renderInject(th) {
+    var wrap = el('div',{});
+
+    var idDiv = el('div',{ style:'margin-bottom:18px;' });
+    var idLbl = lbl(t('injectId'),th);
+    idLbl.appendChild(badge(t('pflicht')));
+    idDiv.appendChild(idLbl);
+    idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true },th));
+    idDiv.appendChild(hint(t('myInjectId'),th));
+    wrap.appendChild(idDiv);
+
+    var valDiv = el('div',{ style:'margin-bottom:18px;' });
+    var valLbl = lbl(t('value'),th);
+    valLbl.appendChild(badge(t('pflicht')));
+    valDiv.appendChild(valLbl);
+    var ta = makeTextarea(injectState.value, t('valuePlaceholder'), function(){ injectState.value=ta.value; }, th);
+    valDiv.appendChild(ta);
+    valDiv.appendChild(hint(t('valueHint'),th));
+    wrap.appendChild(valDiv);
+
+    var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
+    var urlDiv = el('div',{ style:'margin-bottom:18px;' });
+    urlDiv.appendChild(lbl(t('urlPreview'),th));
+    urlDiv.appendChild(makeInput(previewUrl,{ readonly:true, mono:true },th));
+    wrap.appendChild(urlDiv);
+
+    async function doSend() {
+      if(!state.settings.injectId){ alert('Bitte eine Inject ID in den Einstellungen hinterlegen.'); return; }
+      if(!injectState.value){ alert('Bitte einen Value eingeben.'); return; }
+      try {
+        var resp = await proxyFetch(BASE_INJECT+'/'+state.settings.injectId+'/selection', 'POST', {value:injectState.value});
+        var raw = await resp.text();
+        var fmt=raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
+        injectState.result={status:resp.status,statusText:resp.statusText,body:fmt};
+      } catch(e) {
+        injectState.result={status:'ERR',statusText:'',body:'Fehler:\n'+e.message};
+      }
+      var rb = wrap.querySelector('.resp-box');
+      if(rb) rb.remove();
+      var nb = responseBox(injectState.result,th);
+      if(nb){ nb.className='resp-box'; wrap.appendChild(nb); }
+    }
+
+    wrap.appendChild(buildSendBar({
+      onSend: doSend, onFetch: doSend,
+      getShareText: function(){ return injectState.value; },
+      getResult: function(){ return injectState.result; },
+    },th));
+
+    if(injectState.result) {
+      var rb2=responseBox(injectState.result,th);
+      if(rb2){ rb2.className='resp-box'; wrap.appendChild(rb2); }
+    }
+    return wrap;
+  }
+
+  // ── Unifi section ──────────────────────────────────────────────────────────
+var unifiState = { events:[], result:null, error:'' };
+
+var UNIFI_COLORS2 = {
+  'Unifi Intelligence':'#6366f1','ELIPS':'#f59e0b','Second Sight':'#8b5cf6',
+  'Book Test':'#0ea5e9','Calculator':'#10b981','Poker Chip':'#ef4444',
+  'Dice':'#f97316','MindScale':'#ec4899','Web Messaging':'#64748b'
+};
+
+function renderUnifi(th) {
+  var wrap = el('div',{});
+
+  var idDiv = el('div',{ style:'margin-bottom:18px;' });
+  var idLbl = lbl(t('unifyId'),th);
+  idLbl.appendChild(badge(t('pflicht')));
+  idDiv.appendChild(idLbl);
+  idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true },th));
+  idDiv.appendChild(hint(t('myUnifyId'),th));
+  wrap.appendChild(idDiv);
+
+  async function doFetch() {
+    if(!state.settings.unifiId){ alert('Bitte eine Unify ID in den Einstellungen hinterlegen.'); return; }
+    try {
+      var resp = await proxyFetch(BASE_UNIFI+'?UserId='+state.settings.unifiId, 'GET', null);
+      var parsed = await resp.json();
+      unifiState.result={status:resp.status,statusText:resp.statusText,body:JSON.stringify(parsed,null,2)};
+      if(parsed.Event&&parsed.Event.length>0) unifiState.events=parsed.Event;
+      unifiState.error='';
+    } catch(e){ unifiState.error=e.message; }
+    // refresh events display
+    var evBox = wrap.querySelector('.ev-box');
+    if(evBox) evBox.remove();
+    wrap.appendChild(buildEventsBox(th));
+    var rb = wrap.querySelector('.resp-box');
+    if(rb) rb.remove();
+    if(unifiState.result){ var nb=responseBox(unifiState.result,th); if(nb){nb.className='resp-box';wrap.appendChild(nb);} }
+  }
+
+  wrap.appendChild(buildSendBar({
+    onSend: doFetch, onFetch: doFetch,
+    getShareText: function(){ return state.settings.unifiId||''; },
+    getResult: function(){ return unifiState.result; },
+  },th));
+
+  wrap.appendChild(buildEventsBox(th));
+  if(unifiState.result){ var rb2=responseBox(unifiState.result,th); if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);} }
+
+  return wrap;
+}
+
+function buildEventsBox(th) {
+  var box = el('div',{ class:'ev-box', style:'margin-top:16px;' });
+  if(unifiState.error) {
+    box.appendChild(el('div',{ style:'color:#e8002d;font-size:0.85rem;padding:10px;' }, t('error')+': '+unifiState.error));
+    return box;
+  }
+  if(!unifiState.events||unifiState.events.length===0) {
+    box.appendChild(el('div',{ style:'color:'+th.subtext+';font-size:0.85rem;padding:10px;text-align:center;' }, t('noEvents')));
+    return box;
+  }
+  unifiState.events.forEach(function(ev) {
+    var color = UNIFI_COLORS2[ev.AppName]||'#64748b';
+    var card = el('div',{ style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:3px solid '+color+';border-radius:10px;padding:12px 14px;margin-bottom:10px;' });
+    var hdr2 = el('div',{ style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' });
+    hdr2.appendChild(el('span',{ style:'font-weight:700;font-size:0.88rem;color:'+color+';' }, ev.AppName||'Event'));
+    hdr2.appendChild(el('span',{ style:'font-size:0.75rem;color:'+th.hint+';' }, ev.TimeStamp||''));
+    card.appendChild(hdr2);
+    if(ev.EventData) {
+      var pre2 = el('pre',{ style:'font-size:0.78rem;color:'+th.infoText+';white-space:pre-wrap;word-break:break-all;line-height:1.5;' });
+      pre2.textContent = typeof ev.EventData==='object' ? JSON.stringify(ev.EventData,null,2) : ev.EventData;
+      card.appendChild(pre2);
+    }
+    box.appendChild(card);
+  });
+  return box;
+}
+
+// ── Settings section ───────────────────────────────────────────────────────
+var customState = { url:'', method:'GET', headers:'', body:'', result:null };
+  function renderCustom(th) {
+    var wrap = el('div',{});
+    wrap.appendChild(el('div',{ style:'background:rgba(251,191,36,0.13);border:1.5px solid rgba(251,191,36,0.55);border-radius:12px;padding:12px 16px;font-size:0.84rem;color:#b45309;font-weight:600;margin-bottom:20px;line-height:1.5;' }, t('customExperimental')));
+    var urlDiv=el('div',{style:'margin-bottom:16px;'}); var urlLbl=lbl(t('customUrl'),th); urlLbl.appendChild(badge(t('pflicht'))); urlDiv.appendChild(urlLbl);
+    var urlInp=makeInput(customState.url,{placeholder:t('customUrlPlaceholder')},th); urlInp.oninput=function(){customState.url=urlInp.value;}; urlDiv.appendChild(urlInp); urlDiv.appendChild(hint(t('customUrlHint'),th)); wrap.appendChild(urlDiv);
+    var methDiv=el('div',{style:'margin-bottom:16px;'}); methDiv.appendChild(lbl(t('customMethod'),th));
+    var methSel=makeSelect([{value:'GET',label:'GET'},{value:'POST',label:'POST'},{value:'PUT',label:'PUT'},{value:'PATCH',label:'PATCH'},{value:'DELETE',label:'DELETE'}],customState.method,function(){customState.method=methSel.value;},th); methDiv.appendChild(methSel); wrap.appendChild(methDiv);
+    var hdrDiv=el('div',{style:'margin-bottom:16px;'}); hdrDiv.appendChild(lbl(t('customHeaders'),th));
+    var hdrTa=makeTextarea(customState.headers,t('customHeadersPlaceholder'),function(){customState.headers=hdrTa.value;},th); hdrTa.style.minHeight='70px'; hdrDiv.appendChild(hdrTa); hdrDiv.appendChild(hint(t('customHeadersHint'),th)); wrap.appendChild(hdrDiv);
+    var bodyDiv=el('div',{style:'margin-bottom:16px;'}); bodyDiv.appendChild(lbl(t('customBody'),th));
+    var bodyTa=makeTextarea(customState.body,t('customBodyPlaceholder'),function(){customState.body=bodyTa.value;},th); bodyDiv.appendChild(bodyTa); bodyDiv.appendChild(hint(t('customBodyHint'),th)); wrap.appendChild(bodyDiv);
+    wrap.appendChild(el('div',{style:'font-size:0.78rem;color:'+th.hint+';margin-bottom:14px;background:'+th.infoBg+';border-radius:8px;padding:8px 12px;border-left:3px solid #e8002d;'},t('customShareHint')));
+    async function doSend(){
+      if(!customState.url){alert(lang==='de'?'Bitte eine URL eingeben.':'Please enter a URL.');return;}
+      var fo={method:customState.method,headers:{}};
+      if(customState.headers){try{fo.headers=JSON.parse(customState.headers);}catch(e){alert(lang==='de'?'Headers sind kein gueltiges JSON.':'Headers are not valid JSON.');return;}}
+      if(customState.body&&customState.method!=='GET'&&customState.method!=='DELETE'){fo.body=customState.body;if(!fo.headers['Content-Type']&&!fo.headers['content-type'])fo.headers['Content-Type']='application/json';}
+      try{var resp=await fetch(customState.url,fo);var raw=await resp.text();var fmt=raw;try{fmt=JSON.stringify(JSON.parse(raw),null,2);}catch(e){}customState.result={status:resp.status,statusText:resp.statusText,body:fmt};}catch(e){customState.result={status:'ERR',statusText:'',body:(lang==='de'?'Fehler: ':'Error: ')+e.message};}
+      var rb=wrap.querySelector('.resp-box');if(rb)rb.remove();
+      var nb=responseBox(customState.result,th);if(nb){nb.className='resp-box';wrap.appendChild(nb);}
+    }
+    wrap.appendChild(buildSendBar({onSend:doSend,onFetch:doSend,getShareText:function(){return customState.body||customState.url;},getResult:function(){return customState.result;}},th));
+    if(customState.result){var rb2=responseBox(customState.result,th);if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);}}
+    return wrap;
+  }
+
+  function renderSettings(th) {
+  var wrap = el('div',{});
+  wrap.appendChild(el('p',{ style:'color:'+th.subtext+';font-size:0.88rem;margin-bottom:20px;' }, t('settingsHint')));
+
+  var s = Object.assign({}, state.settings);
+
+  function group(labelText, key, placeholder, opts) {
+    var d = el('div',{ style:'margin-bottom:16px;flex:1;min-width:160px;' });
+    d.appendChild(lbl(labelText,th));
+    var inp = makeInput(s[key]||'',{ placeholder:placeholder, type:opts&&opts.type||'text' },th);
+    inp.oninput = function(){ s[key]=inp.value; };
+    d.appendChild(inp);
+    return d;
+  }
+
+  // API IDs
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:4px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('apiIds')));
+  var idsRow = el('div',{ style:'display:flex;gap:16px;flex-wrap:wrap;' });
+  idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId')));
+  idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId')));
+  idsRow.appendChild(group(t('unifyId'),'unifiId',t('placeholderUnifiId')));
+  wrap.appendChild(idsRow);
+
+  // Telegram
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('telegramSection')));
+  wrap.appendChild(group(t('botToken'),'tgToken',t('placeholderBotToken')));
+  wrap.appendChild(group(t('chatId'),'tgChatId',t('placeholderChatId')));
+
+  // Discord
+  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('discordSection')));
+  wrap.appendChild(group(t('webhookUrl'),'dcWebhook',t('placeholderWebhook')));
+
+  // Buttons
+  var btnRow = el('div',{ style:'display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;' });
+  var saveBtn = makeBtn(t('save'), function(){
+    state.settings = Object.assign({}, s);
+    saveSettings(state.settings);
+    var saved2 = el('span',{ style:'color:#16a34a;font-weight:700;font-size:0.9rem;' }, '✓ '+t('saved'));
+    btnRow.appendChild(saved2);
+    setTimeout(function(){ if(saved2.parentNode) saved2.remove(); },3000);
+  });
+  var clearBtn = makeBtn(t('clearCache'), function(){
+    try{ localStorage.removeItem(SETTINGS_KEY); }catch(e){}
+    state.settings={};
+    s={};
+    render();
+  },{ bg:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:th.subtext });
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(clearBtn);
+  wrap.appendChild(btnRow);
+
+  return wrap;
+}
+
+// ── Help section ───────────────────────────────────────────────────────────
+var HELP_SECTIONS = [
+  { icon:'🟢', title:'Goo', color:'#e8002d', items:[
+    {name:'Goo ID', desc: lang==='de' ? 'Deine persönliche ID für die 11q.co API. Wird in den Einstellungen hinterlegt und automatisch befüllt.' : 'Your personal ID for the 11q.co API. Set it in Settings and it will be auto-filled.'},
+    {name:'Endpunkt / Endpoint', desc: lang==='de' ? 'Wähle den gewünschten API-Endpunkt. Standard: POST /api/thump. PRO-Endpunkte erfordern PRO-Zugang.' : 'Choose the desired API endpoint. Default: POST /api/thump. PRO endpoints require a PRO account.'},
+    {name:'Query', desc: lang==='de' ? 'Der Text oder die Suchanfrage, die an die Goo API gesendet wird. Wird auch an Telegram/Discord weitergeleitet.' : 'The text or search query sent to the Goo API. Also forwarded to Telegram/Discord if enabled.'},
+    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die vollständige API-URL an, die beim Senden aufgerufen wird.' : 'Shows the full API URL that will be called when sending.'},
+    {name:'Auto-Refresh', desc: lang==='de' ? 'Sendet die Anfrage automatisch in einem festgelegten Intervall (2s, 5s, 10s, 30s).' : 'Automatically sends the request at a set interval (2s, 5s, 10s, 30s).'},
+    {name:'Vollbild / Fullscreen', desc: lang==='de' ? 'Zeigt die API-Antwort groß und zentriert auf dem gesamten Bildschirm an.' : 'Displays the API response large and centered on the full screen.'},
+    {name:'🟢 / 🔴 Online-Status', desc: lang==='de' ? 'Das Icon beim Goo-Tab zeigt den Verbindungsstatus: Grün = online, Rot = offline. Wird beim Start und alle 15 Sekunden geprüft.' : 'The icon on the Goo tab shows connection status: Green = online, Red = offline. Checked on start and every 15 seconds.'},
+  ]},
+  { icon:'💉', title:'Inject', color:'#6366f1', items:[
+    {name:'Inject ID', desc: lang==='de' ? 'Deine Widget-ID für die 11z.co Inject API. Wird in den Einstellungen hinterlegt.' : 'Your widget ID for the 11z.co Inject API. Set it in Settings.'},
+    {name:'Value', desc: lang==='de' ? 'Der Text, der in das Widget injiziert werden soll. Nur dieser Wert wird an Telegram/Discord weitergeleitet.' : 'The text to inject into the widget. Only this value is forwarded to Telegram/Discord.'},
+    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die Ziel-URL der Inject-API an.' : 'Shows the target URL of the Inject API.'},
+  ]},
+  { icon:'📶', title:'Unifi', color:'#0ea5e9', items:[
+    {name:'Unify ID', desc: lang==='de' ? 'Deine User-ID für die thump.buzz Unifi API. Wird in den Einstellungen hinterlegt.' : 'Your user ID for the thump.buzz Unifi API. Set it in Settings.'},
+    {name:'Events', desc: lang==='de' ? 'Nach dem Senden werden die letzten Events farblich nach Event-Typ markiert angezeigt.' : 'After sending, the latest events are shown, color-coded by event type.'},
+    {name:'Auto-Refresh', desc: lang==='de' ? 'Fragt die Unifi API automatisch in regelmäßigen Abständen ab – ideal für Live-Überwachung.' : 'Queries the Unifi API automatically at regular intervals – ideal for live monitoring.'},
+  ]},
+  { icon:'✈️', title:'Telegram & Discord', color:'#0088cc', items:[
+    {name:'Checkboxen / Checkboxes', desc: lang==='de' ? 'Aktiviere Telegram und/oder Discord direkt über dem Senden-Button. Bei aktivierter Checkbox wird die Nachricht gleichzeitig weitergeleitet.' : 'Enable Telegram and/or Discord above the Send button. When checked, the message is forwarded simultaneously.'},
+    {name:'Was wird gesendet? / What is sent?', desc: lang==='de' ? 'Nur der eingegebene Text (Query/Value) wird weitergeleitet – nicht die API-Antwort.' : 'Only the entered text (Query/Value) is forwarded – not the API response.'},
+    {name:'Bot Token & Chat ID', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Token von @BotFather, Chat ID von @userinfobot in Telegram.' : 'Set in Settings. Token from @BotFather, Chat ID from @userinfobot in Telegram.'},
+    {name:'Discord Webhook', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Webhook unter Servereinstellungen → Integrationen → Webhooks erstellen.' : 'Set in Settings. Create webhook under Server Settings → Integrations → Webhooks.'},
+  ]},
+  { icon:'⚙️', title: lang==='de' ? 'Einstellungen' : 'Settings', color:'#888', items:[
+    {name: lang==='de' ? 'Speichern' : 'Save', desc: lang==='de' ? 'Speichert alle Eingaben lokal im Browser (localStorage). Daten bleiben nach dem Schließen erhalten.' : 'Saves all inputs locally in the browser (localStorage). Data persists after closing.'},
+    {name: lang==='de' ? 'Cache leeren' : 'Clear Cache', desc: lang==='de' ? 'Löscht alle gespeicherten Einstellungen und setzt alle Felder zurück.' : 'Deletes all saved settings and resets all fields.'},
+    {name: lang==='de' ? 'Profil laden' : 'Load Profile', desc: lang==='de' ? '5× auf „API Tool" im Header klicken, um das Profil-Menü zu öffnen und vordefinierte Einstellungen zu laden.' : 'Click "API Tool" in the header 5 times to open the profile menu and load predefined settings.'},
+  ]},
+  { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
+    {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
+  ]},
+  { icon:'🔧', title: lang==='de' ? 'Eigene API' : 'Custom API', color:'#f59e0b', items:[
+      {name:'URL', desc: lang==='de' ? 'Vollständige URL deiner eigenen API – das einzige Pflichtfeld.' : 'Full URL of your custom API – the only required field.'},
+      {name: lang==='de' ? 'HTTP-Methode' : 'HTTP Method', desc: lang==='de' ? 'GET, POST, PUT, PATCH oder DELETE frei wählbar.' : 'Freely choose GET, POST, PUT, PATCH or DELETE.'},
+      {name: lang==='de' ? 'Headers' : 'Headers', desc: lang==='de' ? 'Optionale HTTP-Header als JSON, z.B. für Auth-Token.' : 'Optional HTTP headers as JSON, e.g. for auth tokens.'},
+      {name: lang==='de' ? 'Body' : 'Body', desc: lang==='de' ? 'Optionaler Request-Body (JSON/Text). Bei GET/DELETE ignoriert. Content-Type wird automatisch gesetzt.' : 'Optional request body (JSON/Text). Ignored for GET/DELETE. Content-Type is set automatically.'},
+      {name: lang==='de' ? 'Telegram / Discord' : 'Telegram / Discord', desc: lang==='de' ? 'Aktiviere die Checkboxen, um URL oder Body weiterzuleiten.' : 'Enable checkboxes to forward the URL or body.'},
+      {name: lang==='de' ? 'Experimentell' : 'Experimental', desc: lang==='de' ? 'Dieser Bereich ist noch in der Testphase und wurde noch nicht vollständig getestet.' : 'This section is still in testing and has not been fully validated.'},
+    ]},
+    { icon:'🌐', title: lang==='de' ? 'Sprache' : 'Language', color:'#22c55e', items:[
+    {name:'DE / EN', desc: lang==='de' ? 'Mit dem DE/EN-Button oben rechts zwischen Deutsch und Englisch wechseln.' : 'Use the DE/EN button in the top right to switch between German and English.'},
+  ]},
+];
+
+function renderHelp(th) {
+  var wrap = el('div',{});
+  var hdg = el('div',{ style:'display:flex;align-items:center;gap:12px;margin-bottom:20px;' });
+  var ic = el('div',{ style:'width:38px;height:38px;border-radius:50%;background:rgba(232,0,45,0.15);border:2px solid rgba(232,0,45,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;font-weight:900;color:#e8002d;' },'?');
+  hdg.appendChild(ic);
+  var ti = el('div',{});
+  ti.appendChild(el('div',{ style:'font-size:1rem;font-weight:700;color:'+th.text+';' },t('helpTitle')));
+  ti.appendChild(el('div',{ style:'font-size:0.82rem;color:'+th.subtext+';margin-top:2px;' },t('helpSubtitle')));
+  hdg.appendChild(ti);
+  wrap.appendChild(hdg);
+
+  HELP_SECTIONS.forEach(function(sec) {
+    var s = el('div',{ style:'margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid '+th.border+';' });
+    var sh = el('div',{ style:'background:'+sec.color+';padding:10px 16px;display:flex;align-items:center;gap:8px;' });
+    sh.appendChild(el('span',{},sec.icon));
+    sh.appendChild(el('span',{ style:'color:#fff;font-weight:700;font-size:0.95rem;' },sec.title));
+    s.appendChild(sh);
+    var sb = el('div',{ style:'background:'+th.infoBg+';padding:4px 0;' });
+    sec.items.forEach(function(item,i) {
+      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;gap:12px;' });
+      row.appendChild(el('div',{ style:'min-width:130px;font-size:0.82rem;font-weight:700;color:'+sec.color+';padding-top:1px;' },item.name));
+      row.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.infoText+';line-height:1.55;' },item.desc));
+      sb.appendChild(row);
+    });
+    s.appendChild(sb);
+    wrap.appendChild(s);
+  });
+  return wrap;
+}
+
+// ── Inject styles ──────────────────────────────────────────────────────────
+var styleEl = document.createElement('style');
+styleEl.textContent = '@keyframes spin{to{transform:rotate(360deg);}}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px;}';
+document.head.appendChild(styleEl);
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+render();
+
+})();
+</script>
+</body>
+</html>
