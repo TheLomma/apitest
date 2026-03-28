@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>API Tool</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="API Tool">
+<meta name="theme-color" content="#e8002d">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSIzNiIgZmlsbD0iI2U4MDAyZCIvPjxwYXRoIGQ9Ik00NSA5MGg5ME0xMTAgNjVsMjUgMjUtMjUgMjUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -41,7 +46,7 @@ const ENDPOINTS = {
   'pro-autofill':        { method: 'GET',  desc: 'PRO - Ruft per Autofill uebermittelte Formulardaten ab.', query: false },
   'live-text':           { method: 'GET',  desc: 'PRO - Gibt den aktuell getippten Text in Echtzeit zurueck.', query: false, live: true },
   'pro-last-bd':         { method: 'GET',  desc: 'PRO - Ruft das Geburtsdatum zur letzten Suchanfrage ab.', query: false },
-  'pro-last-deleted-bd': { method: 'GET',  desc: 'PRO - Wie last-bd, basierend auf dem zuletzt geloeschten Text.', query: false }
+  'pro-last-deleted-bd': { method: 'GET',  desc: 'PRO - Wie last-bd, basierend auf dem zuletzt geloeschten Text.', query: false },
 };
 
 const UNIFI_COLORS = {
@@ -65,72 +70,56 @@ function Spinner() {
 }
 
 function FInput(props) {
-  var s = useState(false);
-  var focus = s[0], setFocus = s[1];
+  var value = props.value, onChange = props.onChange, placeholder = props.placeholder,
+      readOnly = props.readOnly, mono = props.mono;
+  var fs = useState(false);
+  var focus = fs[0], setFocus = fs[1];
   return React.createElement('input', {
-    type: 'text',
-    value: props.value,
-    onChange: props.onChange,
-    placeholder: props.placeholder,
-    readOnly: props.readOnly,
+    type: 'text', value: value, onChange: onChange, placeholder: placeholder, readOnly: readOnly,
     onFocus: function() { setFocus(true); },
     onBlur: function() { setFocus(false); },
     style: {
-      width: '100%',
-      border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'),
-      borderRadius: 8,
-      padding: '10px 14px',
-      fontSize: props.mono ? '0.88rem' : '0.97rem',
-      color: props.readOnly ? '#666' : '#222',
-      background: props.readOnly ? '#f0f0f0' : (focus ? '#fff' : '#fafafa'),
-      outline: 'none',
-      boxSizing: 'border-box',
-      fontFamily: props.mono ? 'monospace' : 'inherit',
-      transition: 'border-color 0.2s'
+      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'), borderRadius: 8,
+      padding: '10px 14px', fontSize: mono ? '0.88rem' : '0.97rem',
+      color: readOnly ? '#666' : '#222',
+      background: readOnly ? '#f0f0f0' : (focus ? '#fff' : '#fafafa'),
+      outline: 'none', boxSizing: 'border-box',
+      fontFamily: mono ? 'monospace' : 'inherit', transition: 'border-color 0.2s'
     }
   });
 }
 
 function FTextarea(props) {
-  var s = useState(false);
-  var focus = s[0], setFocus = s[1];
+  var value = props.value, onChange = props.onChange, placeholder = props.placeholder;
+  var fs = useState(false);
+  var focus = fs[0], setFocus = fs[1];
   return React.createElement('textarea', {
-    value: props.value,
-    onChange: props.onChange,
-    placeholder: props.placeholder,
-    rows: 3,
+    value: value, onChange: onChange, placeholder: placeholder, rows: 3,
     onFocus: function() { setFocus(true); },
     onBlur: function() { setFocus(false); },
     style: {
-      width: '100%',
-      border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'),
-      borderRadius: 8,
-      padding: '10px 14px',
-      fontSize: '0.9rem',
-      color: '#222',
-      background: focus ? '#fff' : '#fafafa',
-      outline: 'none',
-      boxSizing: 'border-box',
-      resize: 'vertical',
-      minHeight: 90,
-      fontFamily: 'Courier New, monospace',
+      width: '100%', border: '1.5px solid ' + (focus ? '#e8002d' : '#ddd'), borderRadius: 8,
+      padding: '10px 14px', fontSize: '0.9rem', color: '#222',
+      background: focus ? '#fff' : '#fafafa', outline: 'none', boxSizing: 'border-box',
+      resize: 'vertical', minHeight: 90, fontFamily: 'Courier New, monospace',
       transition: 'border-color 0.2s'
     }
   });
 }
 
 function ResponseBox(props) {
-  if (!props.result) return null;
-  var ok = typeof props.result.status === 'number' ? props.result.status < 400 : props.result.status !== 'ERR';
+  var result = props.result;
+  if (!result) return null;
+  var ok = typeof result.status === 'number' ? result.status < 400 : result.status !== 'ERR';
   return React.createElement('div', { style: { marginTop: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #e0e0e0' } },
     React.createElement('div', { style: { background: '#1a1a2e', color: '#fff', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       React.createElement('span', null, 'Antwort'),
       React.createElement('span', { style: { padding: '2px 10px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 700, background: ok ? '#22c55e' : '#e8002d', color: '#fff' } },
-        props.result.status + (props.result.statusText ? ' ' + props.result.statusText : '')
+        result.status + (result.statusText ? ' ' + result.statusText : '')
       )
     ),
     React.createElement('div', { style: { background: '#f8f8f8', padding: 16, fontFamily: 'Courier New, monospace', fontSize: '0.85rem', color: '#222', maxHeight: 300, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
-      props.result.body || '(Leere Antwort)'
+      result.body || '(Leere Antwort)'
     )
   );
 }
@@ -138,8 +127,7 @@ function ResponseBox(props) {
 async function sendToTelegram(botToken, chatId, text) {
   if (!botToken || !chatId) throw new Error('Bot Token und Chat ID sind erforderlich.');
   var res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
   });
   var data = await res.json();
@@ -150,8 +138,7 @@ async function sendToTelegram(botToken, chatId, text) {
 async function sendToDiscord(webhookUrl, content) {
   if (!webhookUrl) throw new Error('Webhook URL ist erforderlich.');
   var res = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: content, username: 'API Tool' })
   });
   if (!res.ok) throw new Error('Discord Fehler: ' + res.status);
@@ -159,14 +146,14 @@ async function sendToDiscord(webhookUrl, content) {
 }
 
 function ShareModal(props) {
-  var onClose = props.onClose;
-  var s1 = useState('telegram'); var tab = s1[0], setTab = s1[1];
-  var s2 = useState(''); var tgToken = s2[0], setTgToken = s2[1];
-  var s3 = useState(''); var tgChatId = s3[0], setTgChatId = s3[1];
-  var s4 = useState(''); var dcWebhook = s4[0], setDcWebhook = s4[1];
-  var s5 = useState(props.text || ''); var msg = s5[0], setMsg = s5[1];
-  var s6 = useState(null); var status = s6[0], setStatus = s6[1];
-  var s7 = useState(false); var loading = s7[0], setLoading = s7[1];
+  var text = props.text, onClose = props.onClose;
+  var ts = useState('telegram'); var tab = ts[0], setTab = ts[1];
+  var ts2 = useState(''); var tgToken = ts2[0], setTgToken = ts2[1];
+  var ts3 = useState(''); var tgChatId = ts3[0], setTgChatId = ts3[1];
+  var ts4 = useState(''); var dcWebhook = ts4[0], setDcWebhook = ts4[1];
+  var ts5 = useState(text || ''); var msg = ts5[0], setMsg = ts5[1];
+  var ts6 = useState(null); var status = ts6[0], setStatus = ts6[1];
+  var ts7 = useState(false); var loading = ts7[0], setLoading = ts7[1];
 
   useEffect(function() {
     function handler(e) { if (e.key === 'Escape') onClose(); }
@@ -230,6 +217,7 @@ function ShareModal(props) {
 }
 
 function GooSection(props) {
+  var onResult = props.onResult;
   var s1 = useState(''); var gooId = s1[0], setGooId = s1[1];
   var s2 = useState('post-thump'); var ep = s2[0], setEp = s2[1];
   var s3 = useState(''); var query = s3[0], setQuery = s3[1];
@@ -242,16 +230,15 @@ function GooSection(props) {
     setLoading(true);
     try {
       var res = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUrl: BASE_GOO + epPath(ep, gooId), method: epObj.method, headers: { 'Content-Type': 'application/json' }, body: epObj.query ? JSON.stringify({ query: query }) : null })
       });
       var data = await res.json();
       var formatted = data.body;
       try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
-      props.onResult({ status: data.status, statusText: data.statusText, body: formatted });
+      onResult({ status: data.status, statusText: data.statusText, body: formatted });
     } catch(err) {
-      props.onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
+      onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
     } finally { setLoading(false); }
   }
 
@@ -302,6 +289,7 @@ function GooSection(props) {
 }
 
 function InjectSection(props) {
+  var onResult = props.onResult;
   var s1 = useState(''); var id = s1[0], setId = s1[1];
   var s2 = useState(''); var value = s2[0], setValue = s2[1];
   var s3 = useState(false); var loading = s3[0], setLoading = s3[1];
@@ -313,16 +301,15 @@ function InjectSection(props) {
     setLoading(true);
     try {
       var res = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUrl: previewUrl, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) })
       });
       var data = await res.json();
       var formatted = data.body;
       try { formatted = JSON.stringify(JSON.parse(data.body), null, 2); } catch(e) {}
-      props.onResult({ status: data.status, statusText: data.statusText, body: formatted });
+      onResult({ status: data.status, statusText: data.statusText, body: formatted });
     } catch(err) {
-      props.onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
+      onResult({ status: 'ERR', statusText: '', body: 'Fehler:\n' + err.message });
     } finally { setLoading(false); }
   }
 
@@ -364,8 +351,7 @@ function UnifiSection() {
     if (!userId) { alert('Bitte eine User ID eingeben.'); return; }
     try {
       var res = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUrl: BASE_UNIFI + '?UserId=' + userId, method: 'GET', headers: {}, body: null })
       });
       var data = await res.json();
@@ -490,11 +476,7 @@ function App() {
       ),
       React.createElement('div', { style: { display: 'flex', marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1.5px solid #ddd' } },
         tabs.map(function(t, i) {
-          return React.createElement('button', {
-            key: t.key,
-            onClick: function() { setActiveTab(t.key); setResult(null); },
-            style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' }
-          }, t.label);
+          return React.createElement('button', { key: t.key, onClick: function() { setActiveTab(t.key); setResult(null); }, style: { flex: 1, padding: 11, textAlign: 'center', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', background: activeTab === t.key ? '#e8002d' : '#fafafa', color: activeTab === t.key ? '#fff' : '#888', border: 'none', borderRight: i < tabs.length - 1 ? '1.5px solid #ddd' : 'none', transition: 'all 0.2s' } }, t.label);
         })
       ),
       activeTab === 'goo'    && React.createElement(GooSection,    { onResult: setResult }),
@@ -502,10 +484,9 @@ function App() {
       activeTab === 'unifi'  && React.createElement(UnifiSection,  null),
       activeTab !== 'unifi' && React.createElement('div', null,
         React.createElement(ResponseBox, { result: result }),
-        React.createElement('button', {
-          onClick: function() { setShareModal(result ? result.body : ''); },
-          style: { marginTop: 12, width: '100%', padding: '10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }
-        }, 'An Telegram / Discord senden')
+        React.createElement('button', { onClick: function() { setShareModal(result ? result.body : ''); }, style: { marginTop: 12, width: '100%', padding: '10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 } },
+          'An Telegram / Discord senden'
+        )
       ),
       shareModal !== null && React.createElement(ShareModal, { text: shareModal, onClose: function() { setShareModal(null); } })
     )
