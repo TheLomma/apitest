@@ -29,7 +29,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 var TRANSLATIONS = {
   de: {
     appTitle: 'API Tool', appVersion: 'v1.8', appSubtitle: 'Einfaches Testen von APIs',
-    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
     gooId: 'Goo ID', endpoint: 'Endpunkt', query: 'Query', urlPreview: 'URL-Vorschau',
@@ -56,7 +56,7 @@ var TRANSLATIONS = {
   },
   en: {
     appTitle: 'API Tool', appVersion: 'v1.8', appSubtitle: 'Simple API Testing',
-    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabSettings: '⚙ Settings', tabHelp: '? Help',
+    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
     gooId: 'Goo ID', endpoint: 'Endpoint', query: 'Query', urlPreview: 'URL Preview',
@@ -356,6 +356,7 @@ function render() {
   if(state.tab==='goo')      card.appendChild(renderGoo(th));
   if(state.tab==='inject')   card.appendChild(renderInject(th));
   if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
+    if(state.tab==='custom')   card.appendChild(renderCustom(th));
   if(state.tab==='settings') card.appendChild(renderSettings(th));
   if(state.tab==='help') { card.appendChild(renderHelp(th)); }
 
@@ -663,7 +664,8 @@ function renderNav(th) {
     { id:'goo', icon: state.online ? '🟢' : '🔴', label:t('tabGoo'), iconClass:'nav-icon-goo' },
     { id:'inject',   icon:'💉', label:t('tabInject') },
     { id:'unifi',    icon:'📶', label:t('tabUnifi') },
-    { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
+    { id:'custom',   icon:'🔧', label:t('tabCustom') },
+      { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
     { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
   ];
   var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
@@ -918,7 +920,34 @@ function buildEventsBox(th) {
 }
 
 // ── Settings section ───────────────────────────────────────────────────────
-function renderSettings(th) {
+var customState = { url:'', method:'GET', headers:'', body:'', result:null };
+  function renderCustom(th) {
+    var wrap = el('div',{});
+    wrap.appendChild(el('div',{ style:'background:rgba(251,191,36,0.13);border:1.5px solid rgba(251,191,36,0.55);border-radius:12px;padding:12px 16px;font-size:0.84rem;color:#b45309;font-weight:600;margin-bottom:20px;line-height:1.5;' }, t('customExperimental')));
+    var urlDiv=el('div',{style:'margin-bottom:16px;'}); var urlLbl=lbl(t('customUrl'),th); urlLbl.appendChild(badge(t('pflicht'))); urlDiv.appendChild(urlLbl);
+    var urlInp=makeInput(customState.url,{placeholder:t('customUrlPlaceholder')},th); urlInp.oninput=function(){customState.url=urlInp.value;}; urlDiv.appendChild(urlInp); urlDiv.appendChild(hint(t('customUrlHint'),th)); wrap.appendChild(urlDiv);
+    var methDiv=el('div',{style:'margin-bottom:16px;'}); methDiv.appendChild(lbl(t('customMethod'),th));
+    var methSel=makeSelect([{value:'GET',label:'GET'},{value:'POST',label:'POST'},{value:'PUT',label:'PUT'},{value:'PATCH',label:'PATCH'},{value:'DELETE',label:'DELETE'}],customState.method,function(){customState.method=methSel.value;},th); methDiv.appendChild(methSel); wrap.appendChild(methDiv);
+    var hdrDiv=el('div',{style:'margin-bottom:16px;'}); hdrDiv.appendChild(lbl(t('customHeaders'),th));
+    var hdrTa=makeTextarea(customState.headers,t('customHeadersPlaceholder'),function(){customState.headers=hdrTa.value;},th); hdrTa.style.minHeight='70px'; hdrDiv.appendChild(hdrTa); hdrDiv.appendChild(hint(t('customHeadersHint'),th)); wrap.appendChild(hdrDiv);
+    var bodyDiv=el('div',{style:'margin-bottom:16px;'}); bodyDiv.appendChild(lbl(t('customBody'),th));
+    var bodyTa=makeTextarea(customState.body,t('customBodyPlaceholder'),function(){customState.body=bodyTa.value;},th); bodyDiv.appendChild(bodyTa); bodyDiv.appendChild(hint(t('customBodyHint'),th)); wrap.appendChild(bodyDiv);
+    wrap.appendChild(el('div',{style:'font-size:0.78rem;color:'+th.hint+';margin-bottom:14px;background:'+th.infoBg+';border-radius:8px;padding:8px 12px;border-left:3px solid #e8002d;'},t('customShareHint')));
+    async function doSend(){
+      if(!customState.url){alert(lang==='de'?'Bitte eine URL eingeben.':'Please enter a URL.');return;}
+      var fo={method:customState.method,headers:{}};
+      if(customState.headers){try{fo.headers=JSON.parse(customState.headers);}catch(e){alert(lang==='de'?'Headers sind kein gueltiges JSON.':'Headers are not valid JSON.');return;}}
+      if(customState.body&&customState.method!=='GET'&&customState.method!=='DELETE'){fo.body=customState.body;if(!fo.headers['Content-Type']&&!fo.headers['content-type'])fo.headers['Content-Type']='application/json';}
+      try{var resp=await fetch(customState.url,fo);var raw=await resp.text();var fmt=raw;try{fmt=JSON.stringify(JSON.parse(raw),null,2);}catch(e){}customState.result={status:resp.status,statusText:resp.statusText,body:fmt};}catch(e){customState.result={status:'ERR',statusText:'',body:(lang==='de'?'Fehler: ':'Error: ')+e.message};}
+      var rb=wrap.querySelector('.resp-box');if(rb)rb.remove();
+      var nb=responseBox(customState.result,th);if(nb){nb.className='resp-box';wrap.appendChild(nb);}
+    }
+    wrap.appendChild(buildSendBar({onSend:doSend,onFetch:doSend,getShareText:function(){return customState.body||customState.url;},getResult:function(){return customState.result;}},th));
+    if(customState.result){var rb2=responseBox(customState.result,th);if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);}}
+    return wrap;
+  }
+
+  function renderSettings(th) {
   var wrap = el('div',{});
   wrap.appendChild(el('p',{ style:'color:'+th.subtext+';font-size:0.88rem;margin-bottom:20px;' }, t('settingsHint')));
 
@@ -1007,7 +1036,15 @@ var HELP_SECTIONS = [
   { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
     {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
   ]},
-  { icon:'🌐', title: lang==='de' ? 'Sprache' : 'Language', color:'#22c55e', items:[
+  { icon:'🔧', title: lang==='de' ? 'Eigene API' : 'Custom API', color:'#f59e0b', items:[
+      {name:'URL', desc: lang==='de' ? 'Vollständige URL deiner eigenen API – das einzige Pflichtfeld.' : 'Full URL of your custom API – the only required field.'},
+      {name: lang==='de' ? 'HTTP-Methode' : 'HTTP Method', desc: lang==='de' ? 'GET, POST, PUT, PATCH oder DELETE frei wählbar.' : 'Freely choose GET, POST, PUT, PATCH or DELETE.'},
+      {name: lang==='de' ? 'Headers' : 'Headers', desc: lang==='de' ? 'Optionale HTTP-Header als JSON, z.B. für Auth-Token.' : 'Optional HTTP headers as JSON, e.g. for auth tokens.'},
+      {name: lang==='de' ? 'Body' : 'Body', desc: lang==='de' ? 'Optionaler Request-Body (JSON/Text). Bei GET/DELETE ignoriert. Content-Type wird automatisch gesetzt.' : 'Optional request body (JSON/Text). Ignored for GET/DELETE. Content-Type is set automatically.'},
+      {name: lang==='de' ? 'Telegram / Discord' : 'Telegram / Discord', desc: lang==='de' ? 'Aktiviere die Checkboxen, um URL oder Body weiterzuleiten.' : 'Enable checkboxes to forward the URL or body.'},
+      {name: lang==='de' ? 'Experimentell' : 'Experimental', desc: lang==='de' ? 'Dieser Bereich ist noch in der Testphase und wurde noch nicht vollständig getestet.' : 'This section is still in testing and has not been fully validated.'},
+    ]},
+    { icon:'🌐', title: lang==='de' ? 'Sprache' : 'Language', color:'#22c55e', items:[
     {name:'DE / EN', desc: lang==='de' ? 'Mit dem DE/EN-Button oben rechts zwischen Deutsch und Englisch wechseln.' : 'Use the DE/EN button in the top right to switch between German and English.'},
   ]},
 ];
