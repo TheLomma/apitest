@@ -386,11 +386,22 @@ function GooSection(props) {
     if (!gooId) { alert('Bitte eine Goo ID eingeben.'); return; }
     setLoading(true);
     try {
-      var fetchRes = await fetch(BASE_GOO + epPath(ep, gooId), {
-        method: epObj.method,
-        headers: { 'Content-Type': 'application/json' },
-        body: epObj.query ? JSON.stringify({ query: query }) : null
-      });
+      var targetUrl = BASE_GOO + epPath(ep, gooId);
+      var useProxy = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+      var fetchRes;
+      if (useProxy) {
+        fetchRes = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUrl: targetUrl, method: epObj.method, body: epObj.query ? { query: query } : null })
+        });
+      } else {
+        fetchRes = await fetch(targetUrl, {
+          method: epObj.method,
+          headers: { 'Content-Type': 'application/json' },
+          body: epObj.query ? JSON.stringify({ query: query }) : null
+        });
+      }
       var rawText = await fetchRes.text();
       var formatted = rawText;
       try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch(e) {}
