@@ -357,7 +357,7 @@ function render() {
   if(state.tab==='inject')   card.appendChild(renderInject(th));
   if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
   if(state.tab==='settings') card.appendChild(renderSettings(th));
-  if(state.tab==='help')     card.appendChild(renderHelp(th));
+  if(state.tab==='help') { card.appendChild(renderHelp(th)); }
 
   wrap.appendChild(card);
   scroll.appendChild(wrap);
@@ -645,6 +645,14 @@ function renderHeader(th) {
   },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
   right.appendChild(themeBtn);
 
+  // FRAGE button centered in header
+  var frageBtn = el('button',{ style:'position:absolute;left:50%;transform:translateX(-50%);padding:6px 16px;background:rgba(232,0,45,0.12);color:#e8002d;border:1.5px solid rgba(232,0,45,0.4);border-radius:20px;font-size:0.82rem;font-weight:800;cursor:pointer;letter-spacing:0.07em;white-space:nowrap;transition:all 0.2s;' },'🍸 FRAGE');
+  frageBtn.onmouseover = function(){ frageBtn.style.background='rgba(232,0,45,0.25)'; };
+  frageBtn.onmouseout  = function(){ frageBtn.style.background='rgba(232,0,45,0.12)'; };
+  frageBtn.onclick = function(){ renderEasterEgg(); };
+  hdr.appendChild(frageBtn);
+  hdr.style.position = 'sticky';
+
   hdr.appendChild(right);
   return hdr;
 }
@@ -878,6 +886,7 @@ function renderUnifi(th) {
 
   wrap.appendChild(buildEventsBox(th));
   if(unifiState.result){ var rb2=responseBox(unifiState.result,th); if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);} }
+
   return wrap;
 }
 
