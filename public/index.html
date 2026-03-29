@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v2.3</title>
+<title>API Tool v2.4</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -38,7 +38,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v2.3', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.4', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -49,12 +49,12 @@ var TRANSLATIONS = {
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
     valueHint: 'Wird an Inject gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
     valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
-    unifiMessage: 'Nachricht', unifiMessagePlaceholder: 'Text eingeben, der an Unifi gesendet wird...', unifiMessageHint: 'Wird an Unifi gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.', unifyId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID',
+    unifiMessage: 'Nachricht', unifiMessagePlaceholder: 'Text eingeben, der an Unifi gesendet wird...', unifiMessageHint: 'Wird an Unifi gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.', unifyId: 'UNIFI ID', unifiId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID', myUnifiId: 'Deine persönliche Unifi ID',
     answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
     error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
     botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren', apiStatusCheck: 'API-Status prüfen (Nav-Icons)', apiStatusCheckHint: 'Beim Start alle APIs automatisch prüfen und Status-Icons in der Navigation anzeigen.',
+    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren', podcastMode: 'Podcast-Modus', podcastModeHint: 'IDs und sensible Felder werden als ●●● ausgeblendet (Datenschutz beim Streamen).', apiStatusCheck: 'API-Status prüfen (Nav-Icons)', apiStatusCheckHint: 'Beim Start alle APIs automatisch prüfen und Status-Icons in der Navigation anzeigen.',
     placeholderGooId: 'z.B. XX', placeholderInjectId: 'z.B. 12345', placeholderUnifiId: 'z.B. 12345',
     placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'z.B. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
     inSettings: 'In Einstellungen hinterlegen', sentOk: 'Gesendet!',
@@ -65,7 +65,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v2.3', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.4', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -76,12 +76,12 @@ var TRANSLATIONS = {
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
     valueHint: 'Sent to Inject. If Telegram/Discord is enabled, only this value is forwarded.',
     valuePlaceholder: 'Enter text to inject...',
-    unifiMessage: 'Message', unifiMessagePlaceholder: 'Enter text to send to Unifi...', unifiMessageHint: 'Sent to Unifi. If Telegram/Discord is enabled, only this text is forwarded.', unifyId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID',
+    unifiMessage: 'Message', unifiMessagePlaceholder: 'Enter text to send to Unifi...', unifiMessageHint: 'Sent to Unifi. If Telegram/Discord is enabled, only this text is forwarded.', unifyId: 'UNIFI ID', unifiId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID', myUnifiId: 'Your personal Unifi ID',
     answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
     error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
     botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache', apiStatusCheck: 'API status check (nav icons)', apiStatusCheckHint: 'Automatically check all APIs on start and show status icons in navigation.',
+    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache', podcastMode: 'Podcast Mode', podcastModeHint: 'IDs and sensitive fields are hidden as ●●● (privacy while streaming).', apiStatusCheck: 'API status check (nav icons)', apiStatusCheckHint: 'Automatically check all APIs on start and show status icons in navigation.',
     placeholderGooId: 'e.g. XX', placeholderInjectId: 'e.g. 12345', placeholderUnifiId: 'e.g. 12345',
     placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'e.g. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
     inSettings: 'Set in Settings', sentOk: 'Sent!',
@@ -366,7 +366,9 @@ function hint(text, th) {
 }
 function makeInput(value, opts, th) {
   opts = opts||{};
-  var i = el('input',{ type:opts.type||'text', value:value, placeholder:opts.placeholder||'', style:'width:100%;border:1.5px solid '+(opts.readonly?th.inputBorder:'rgba(232,0,45,0.3)')+';border-radius:8px;padding:10px 14px;font-size:'+(opts.mono?'0.88rem':'0.97rem')+';color:'+(opts.readonly?th.readonlyText:th.inputText)+';background:'+(opts.readonly?th.readonlyBg:th.inputBg)+';outline:none;box-sizing:border-box;font-family:'+(opts.mono?'monospace':'inherit')+';transition:all 0.2s;' });
+  var inputType = opts.type || 'text';
+  if(opts.sensitive && state.settings.podcastMode) inputType = 'password';
+  var i = el('input',{ type:inputType, value:value, placeholder:opts.placeholder||'', style:'width:100%;border:1.5px solid '+(opts.readonly?th.inputBorder:'rgba(232,0,45,0.3)')+';border-radius:8px;padding:10px 14px;font-size:'+(opts.mono?'0.88rem':'0.97rem')+';color:'+(opts.readonly?th.readonlyText:th.inputText)+';background:'+(opts.readonly?th.readonlyBg:th.inputBg)+';outline:none;box-sizing:border-box;font-family:'+(opts.mono?'monospace':'inherit')+';transition:all 0.2s;' });
   if(opts.readonly) i.readOnly = true;
   if(opts.onchange) i.oninput = opts.onchange;
   i.onfocus = function(){ if(!opts.readonly){ i.style.background=th.inputBgFocus; i.style.borderColor='#e8002d'; i.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; }};
@@ -436,9 +438,9 @@ function showQRModal(url, th) {
 }
 
 // ── URL-Preview-Row mit QR-Button ──────────────────────────────────────────
-function makeUrlPreviewRow(url, th) {
+function makeUrlPreviewRow(url, th, sensitive) {
   var row = el('div',{ style:'display:flex;gap:8px;align-items:center;' });
-  var inp = makeInput(url, { readonly:true, mono:true }, th);
+  var inp = makeInput(url, { readonly:true, mono:true, sensitive:sensitive }, th);
   inp.style.flex = '1';
   row.appendChild(inp);
   var qrBtn = el('button',{ style:'flex-shrink:0;width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(232,0,45,0.3);background:rgba(232,0,45,0.08);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;' }, '⊞');
@@ -675,7 +677,16 @@ function renderHeader(th) {
 
   hdr.style.position = 'sticky';
 
-  hdr.appendChild(right);
+    hdr.appendChild(right);
+
+  // Podcast Mode Banner
+  if(state.settings.podcastMode) {
+    var pmBanner = el('div',{ style:'position:absolute;left:50%;transform:translateX(-50%);font-size:0.78rem;font-weight:800;color:#e8002d;letter-spacing:0.08em;text-transform:uppercase;pointer-events:none;white-space:nowrap;' }, '— Podcast Modus —');
+    hdr.style.position = 'sticky';
+    hdr.style.overflow = 'visible';
+    hdr.appendChild(pmBanner);
+  }
+
   return hdr;
 }
 
@@ -684,7 +695,70 @@ var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c5
   async function pingApi(api){if(api.id==='custom'){var cu=customState&&customState.url;if(!cu){api.status='unknown';api.ms=null;api.lastCheck=new Date().toLocaleTimeString();return;}api.url=cu;}var start=Date.now();try{var r=await proxyFetch(api.url+'?_='+start,'GET',null);api.ms=Date.now()-start;api.status=(r.ok||r.status<500)?'ok':'warn';}catch(e){api.ms=Date.now()-start;api.status='err';}api.lastCheck=new Date().toLocaleTimeString();}
   async function checkAllApis(){if(dashState.checking)return;dashState.checking=true;await Promise.all(dashState.apis.map(pingApi));dashState.checking=false;if(state.tab==='dash')render();}
 
-  function renderDash(th){var wrap=el('div',{});var hdr=el('div',{style:'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;'});var ti=el('div',{});ti.appendChild(el('div',{style:'font-size:1.1rem;font-weight:800;color:'+th.text+';'},'Status Dashboard'));hdr.appendChild(ti);var rb2=el('button',{style:'padding:8px 14px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.84rem;font-weight:700;cursor:pointer;'});rb2.textContent='Check';rb2.onclick=function(){rb2.disabled=true;rb2.textContent='...';checkAllApis().then(function(){rb2.disabled=false;rb2.textContent='Check';});};hdr.appendChild(rb2);wrap.appendChild(hdr);dashState.apis.forEach(function(api){var sc=api.status==='ok'?'#22c55e':api.status==='warn'?'#f59e0b':api.status==='err'?'#e8002d':'#64748b';var sl={'ok':'Online','warn':'Warning','err':'Offline','unknown':'?'}[api.status]||'?';var card=el('div',{style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:4px solid '+sc+';border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'});var left=el('div',{style:'flex:1;'});left.appendChild(el('div',{style:'font-size:0.95rem;font-weight:700;color:'+th.text+';'},api.label));left.appendChild(el('div',{style:'font-size:0.75rem;color:'+th.hint+';font-family:monospace;'},api.id==='custom'?(customState&&customState.url?customState.url:(lang==='de'?'Keine URL hinterlegt':'No URL set')):api.url));left.appendChild(el('div',{style:'font-size:DUMMY;color:'+th.hint+';font-family:monospace;'},api.id==='custom'?(customState&&customState.url?customState.url:(lang==='de'?'Keine URL hinterlegt':'No URL set')):api.url));if(api.lastCheck)left.appendChild(el('div',{style:'font-size:0.72rem;color:'+th.hint+';margin-top:3px;'},'Checked: '+api.lastCheck));card.appendChild(left);var r2=el('div',{style:'text-align:right;'});r2.appendChild(el('div',{style:'font-size:0.82rem;font-weight:700;color:'+sc+';'},sl));if(api.ms!==null){var mc=api.ms<300?'#22c55e':api.ms<800?'#f59e0b':'#e8002d';r2.appendChild(el('div',{style:'font-size:0.78rem;color:'+mc+';font-weight:600;'},api.ms+'ms'));}card.appendChild(r2);wrap.appendChild(card);});if(dashState.apis.every(function(a){return a.status==='unknown';}))setTimeout(checkAllApis,100);return wrap;}
+  function renderDash(th) {
+  var pm = state.settings.podcastMode;
+  var wrap = el('div', {});
+
+  // Header row
+  var hdr = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;' });
+  var ti = el('div', {});
+  ti.appendChild(el('div', { style: 'font-size:1.1rem;font-weight:800;color:' + th.text + ';' }, 'Status Dashboard'));
+  hdr.appendChild(ti);
+  var rb2 = el('button', { style: 'padding:8px 14px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.84rem;font-weight:700;cursor:pointer;' });
+  rb2.textContent = 'Check';
+  rb2.onclick = function () {
+    rb2.disabled = true;
+    rb2.textContent = '...';
+    checkAllApis().then(function () { rb2.disabled = false; rb2.textContent = 'Check'; });
+  };
+  hdr.appendChild(rb2);
+  wrap.appendChild(hdr);
+
+  // API cards
+  dashState.apis.forEach(function (api) {
+    var sc = api.status === 'ok' ? '#22c55e' : api.status === 'warn' ? '#f59e0b' : api.status === 'err' ? '#e8002d' : '#64748b';
+    var sl = { ok: 'Online', warn: 'Warning', err: 'Offline', unknown: '?' }[api.status] || '?';
+
+    var card = el('div', { style: 'background:' + th.infoBg + ';border:1px solid ' + th.border + ';border-left:4px solid ' + sc + ';border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;' });
+    var left = el('div', { style: 'flex:1;' });
+
+    // API name
+    left.appendChild(el('div', { style: 'font-size:0.95rem;font-weight:700;color:' + th.text + ';' }, api.label));
+
+    // URL row
+    var urlText;
+    if (pm) {
+      urlText = '●●●●●●●●●●●●';
+    } else if (api.id === 'custom') {
+      urlText = (customState && customState.url) ? customState.url : (lang === 'de' ? 'Keine URL hinterlegt' : 'No URL set');
+    } else {
+      urlText = api.url;
+    }
+    left.appendChild(el('div', { style: 'font-size:0.75rem;color:' + th.hint + ';font-family:monospace;' }, urlText));
+
+    // Last check row
+    if (api.lastCheck) {
+      var checkText = pm ? '●●●●●' : ('Checked: ' + api.lastCheck);
+      left.appendChild(el('div', { style: 'font-size:0.72rem;color:' + th.hint + ';margin-top:3px;' }, checkText));
+    }
+
+    card.appendChild(left);
+
+    // Right: status label + ms
+    var r2 = el('div', { style: 'text-align:right;' });
+    r2.appendChild(el('div', { style: 'font-size:0.82rem;font-weight:700;color:' + sc + ';' }, sl));
+    if (api.ms !== null) {
+      var msText = pm ? '●●●' : (api.ms + 'ms');
+      var mc = api.ms < 300 ? '#22c55e' : api.ms < 800 ? '#f59e0b' : '#e8002d';
+      r2.appendChild(el('div', { style: 'font-size:0.78rem;color:' + (pm ? th.hint : mc) + ';font-weight:600;' }, msText));
+    }
+    card.appendChild(r2);
+    wrap.appendChild(card);
+  });
+
+  if (dashState.apis.every(function (a) { return a.status === 'unknown'; })) setTimeout(checkAllApis, 100);
+  return wrap;
+}
 
   function renderNav(th) {
   var tabs = [
@@ -725,7 +799,7 @@ function renderGoo(th) {
   var gooLbl = lbl(t('gooId'),th);
   gooLbl.appendChild(badge(t('pflicht')));
   gooCol.appendChild(gooLbl);
-  gooCol.appendChild(makeInput(state.settings.gooId||'',{ placeholder:state.settings.gooId?'':t('inSettings'), readonly:true },th));
+  gooCol.appendChild(makeInput(state.settings.gooId||'',{ placeholder:state.settings.gooId?'':t('inSettings'), readonly:true, sensitive:true },th));
   gooCol.appendChild(hint(t('myGooId'),th));
   row.appendChild(gooCol);
 
@@ -765,7 +839,7 @@ function renderGoo(th) {
   // URL preview
   var urlDiv = el('div',{ style:'margin-bottom:18px;' });
   urlDiv.appendChild(lbl(t('urlPreview'),th));
-  urlDiv.appendChild(makeUrlPreviewRow(url, th));
+  urlDiv.appendChild(makeUrlPreviewRow(url, th, true));
   wrap.appendChild(urlDiv);
 
   // SendBar
@@ -814,7 +888,7 @@ function renderGoo(th) {
     var idLbl = lbl(t('injectId'),th);
     idLbl.appendChild(badge(t('pflicht')));
     idDiv.appendChild(idLbl);
-    idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true },th));
+    idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true, sensitive:true },th));
     idDiv.appendChild(hint(t('myInjectId'),th));
     wrap.appendChild(idDiv);
 
@@ -830,7 +904,7 @@ function renderGoo(th) {
     var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
     var urlDiv = el('div',{ style:'margin-bottom:18px;' });
     urlDiv.appendChild(lbl(t('urlPreview'),th));
-    urlDiv.appendChild(makeUrlPreviewRow(previewUrl, th));
+    urlDiv.appendChild(makeUrlPreviewRow(previewUrl, th, true));
     wrap.appendChild(urlDiv);
 
     async function doSend() {
@@ -879,7 +953,7 @@ function renderUnifi(th) {
   var idLbl = lbl(t('unifiId'),th);
   idLbl.appendChild(badge(t('pflicht')));
   idDiv.appendChild(idLbl);
-  idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true },th));
+  idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true, sensitive:true },th));
   idDiv.appendChild(hint(t('myUnifiId'),th));
   wrap.appendChild(idDiv);
 
@@ -895,7 +969,7 @@ function renderUnifi(th) {
     var unifiPreviewUrl = state.settings.unifiId ? BASE_UNIFI+'?UserId='+state.settings.unifiId : BASE_UNIFI+'?UserId={unifi_id}';
     var unifiUrlDiv = el('div',{ style:'margin-bottom:18px;' });
     unifiUrlDiv.appendChild(lbl(t('urlPreview'),th));
-    unifiUrlDiv.appendChild(makeUrlPreviewRow(unifiPreviewUrl, th));
+    unifiUrlDiv.appendChild(makeUrlPreviewRow(unifiPreviewUrl, th, true));
     wrap.appendChild(unifiUrlDiv);
 
     async function doFetch() {
@@ -935,7 +1009,7 @@ function buildEventsBox(th) {
     return box;
   }
   if(!unifiState.events||unifiState.events.length===0) {
-    box.appendChild(el('div',{ style:'color:'+th.subtext+';font-size:0.85rem;padding:10px;text-align:center;' }, t('noEvents')));
+    
     return box;
   }
   unifiState.events.forEach(function(ev) {
@@ -961,7 +1035,7 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
     var wrap = el('div',{});
     wrap.appendChild(el('div',{ style:'background:rgba(251,191,36,0.13);border:1.5px solid rgba(251,191,36,0.55);border-radius:12px;padding:12px 16px;font-size:0.84rem;color:#b45309;font-weight:600;margin-bottom:20px;line-height:1.5;' }, t('customExperimental')));
     var urlDiv=el('div',{style:'margin-bottom:16px;'}); var urlLbl=lbl(t('customUrl'),th); urlLbl.appendChild(badge(t('pflicht'))); urlDiv.appendChild(urlLbl);
-    var urlInp=makeInput(customState.url,{placeholder:t('customUrlPlaceholder')},th); urlInp.oninput=function(){customState.url=urlInp.value;}; urlDiv.appendChild(urlInp); urlDiv.appendChild(hint(t('customUrlHint'),th)); wrap.appendChild(urlDiv);
+    var urlInp=makeInput(customState.url,{placeholder:t('customUrlPlaceholder'), sensitive:true},th); urlInp.oninput=function(){customState.url=urlInp.value;}; urlDiv.appendChild(urlInp); urlDiv.appendChild(hint(t('customUrlHint'),th)); wrap.appendChild(urlDiv);
     var methDiv=el('div',{style:'margin-bottom:16px;'}); methDiv.appendChild(lbl(t('customMethod'),th));
     var methSel=makeSelect([{value:'GET',label:'GET'},{value:'POST',label:'POST'},{value:'PUT',label:'PUT'},{value:'PATCH',label:'PATCH'},{value:'DELETE',label:'DELETE'}],customState.method,function(){customState.method=methSel.value;},th); methDiv.appendChild(methSel); wrap.appendChild(methDiv);
     var hdrDiv=el('div',{style:'margin-bottom:16px;'}); hdrDiv.appendChild(lbl(t('customHeaders'),th));
@@ -992,7 +1066,7 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
   function group(labelText, key, placeholder, opts) {
     var d = el('div',{ style:'margin-bottom:16px;flex:1;min-width:160px;' });
     d.appendChild(lbl(labelText,th));
-    var inp = makeInput(s[key]||'',{ placeholder:placeholder, type:opts&&opts.type||'text' },th);
+    var inp = makeInput(s[key]||'',{ placeholder:placeholder, type:opts&&opts.type||'text', sensitive:opts&&opts.sensitive },th);
     inp.oninput = function(){ s[key]=inp.value; };
     d.appendChild(inp);
     return d;
@@ -1001,24 +1075,38 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
   // API IDs
   wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:4px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('apiIds')));
   var idsRow = el('div',{ style:'display:flex;gap:16px;flex-wrap:wrap;' });
-  idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId')));
-  idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId')));
-  idsRow.appendChild(group(t('unifiId'),'unifiId',t('placeholderUnifiId')));
+  idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId'),{sensitive:true}));
+  idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId'),{sensitive:true}));
+  idsRow.appendChild(group(t('unifiId'),'unifiId',t('placeholderUnifiId'),{sensitive:true}));
   wrap.appendChild(idsRow);
 
   // Telegram
   wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('telegramSection')));
-  wrap.appendChild(group(t('botToken'),'tgToken',t('placeholderBotToken')));
-  wrap.appendChild(group(t('chatId'),'tgChatId',t('placeholderChatId')));
+  wrap.appendChild(group(t('botToken'),'tgToken',t('placeholderBotToken'),{sensitive:true}));
+  wrap.appendChild(group(t('chatId'),'tgChatId',t('placeholderChatId'),{sensitive:true}));
 
   // Discord
   wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('discordSection')));
-  wrap.appendChild(group(t('webhookUrl'),'dcWebhook',t('placeholderWebhook')));
+  wrap.appendChild(group(t('webhookUrl'),'dcWebhook',t('placeholderWebhook'),{sensitive:true}));
 
   // Buttons
   var btnRow = el('div',{ style:'display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;' });
   // API Status Toggle
-    var apiSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
+    // Podcast Mode Toggle
+      var podSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
+      podSec.appendChild(el('div',{style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';'},'🎙 '+t('podcastMode')));
+      var podRow=el('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;'});
+      podRow.appendChild(el('div',{style:'font-size:0.83rem;color:'+th.subtext+';line-height:1.5;flex:1;'},t('podcastModeHint')));
+      var podLbl=el('label',{style:'display:flex;align-items:center;cursor:pointer;flex-shrink:0;'});
+      var podCb=el('input',{type:'checkbox'});podCb.style.cssText='width:0;height:0;opacity:0;position:absolute;';podCb.checked=!!s.podcastMode;
+      var podTr=el('div',{style:'width:44px;height:24px;border-radius:12px;background:'+(s.podcastMode?'#e8002d':'rgba(100,100,100,0.4)')+';position:relative;transition:background 0.2s;'});
+      var podTh=el('div',{style:'width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(s.podcastMode?'23px':'3px')+';transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);'});
+      podTr.appendChild(podTh);podLbl.appendChild(podCb);podLbl.appendChild(podTr);
+      podCb.onchange=function(){s.podcastMode=podCb.checked;podTr.style.background=podCb.checked?'#e8002d':'rgba(100,100,100,0.4)';podTh.style.left=podCb.checked?'23px':'3px';};
+      podRow.appendChild(podLbl);podSec.appendChild(podRow);
+      wrap.appendChild(podSec);
+
+      var apiSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
     apiSec.appendChild(el('div',{style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';'},'🟡 '+t('apiStatusCheck')));
     var tRow=el('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;'});
     tRow.appendChild(el('div',{style:'font-size:0.83rem;color:'+th.subtext+';line-height:1.5;flex:1;'},t('apiStatusCheckHint')));
