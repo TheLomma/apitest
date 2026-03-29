@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v2.1</title>
+<title>API Tool v2.2</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -38,7 +38,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v2.1', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.2', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -49,7 +49,7 @@ var TRANSLATIONS = {
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
     valueHint: 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
     valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
-    unifyId: 'Unify ID', myUnifyId: 'Deine Unifi User ID',
+    unifyId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID',
     answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
     error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
@@ -65,7 +65,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v2.1', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.2', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -76,7 +76,7 @@ var TRANSLATIONS = {
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
     valueHint: 'If Telegram/Discord is enabled, only this value is forwarded.',
     valuePlaceholder: 'Enter text to inject...',
-    unifyId: 'Unify ID', myUnifyId: 'Your Unifi User ID',
+    unifyId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID',
     answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
     error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
@@ -400,6 +400,56 @@ function makeBtn(text, onclick, opts) {
   return b;
 }
 
+// ── QR-Code Modal ─────────────────────────────────────────────────────────
+function generateQR(text) {
+  // QR via Google Charts API (no external lib needed)
+  var size = 220;
+  return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(text);
+}
+
+function showQRModal(url, th) {
+  var existing = document.getElementById('qr-modal-overlay');
+  if(existing) existing.remove();
+  var ov = el('div',{ id:'qr-modal-overlay', style:'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9500;display:flex;align-items:center;justify-content:center;padding:24px;' });
+  var box = el('div',{ style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:28px 24px;max-width:300px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;' });
+  // Title
+  box.appendChild(el('div',{ style:'font-size:1rem;font-weight:800;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';margin-bottom:4px;' }, 'QR-Code'));
+  // URL label
+  var urlLbl = el('div',{ style:'font-size:0.72rem;color:#888;font-family:monospace;word-break:break-all;margin-bottom:16px;' }, url);
+  box.appendChild(urlLbl);
+  // QR image
+  var img = el('img',{ src:generateQR(url), alt:'QR', style:'width:220px;height:220px;border-radius:10px;border:3px solid rgba(232,0,45,0.3);display:block;margin:0 auto 16px;' });
+  box.appendChild(img);
+  // Copy button
+  var copyBtn = makeBtn('📋 URL kopieren', function(){
+    try { navigator.clipboard.writeText(url).then(function(){ copyBtn.textContent='✅ Kopiert!'; setTimeout(function(){ copyBtn.textContent='📋 URL kopieren'; },2000); }); } catch(e) { copyBtn.textContent='✅ Kopiert!'; setTimeout(function(){ copyBtn.textContent='📋 URL kopieren'; },2000); }
+  },{ bg:'rgba(99,102,241,0.85)' });
+  copyBtn.style.width='100%'; copyBtn.style.marginBottom='10px';
+  box.appendChild(copyBtn);
+  // Close button
+  var closeBtn = makeBtn(lang==='de'?'Schließen':'Close', function(){ ov.remove(); }, { bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:'#888' });
+  closeBtn.style.width='100%';
+  box.appendChild(closeBtn);
+  ov.appendChild(box);
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+// ── URL-Preview-Row mit QR-Button ──────────────────────────────────────────
+function makeUrlPreviewRow(url, th) {
+  var row = el('div',{ style:'display:flex;gap:8px;align-items:center;' });
+  var inp = makeInput(url, { readonly:true, mono:true }, th);
+  inp.style.flex = '1';
+  row.appendChild(inp);
+  var qrBtn = el('button',{ style:'flex-shrink:0;width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(232,0,45,0.3);background:rgba(232,0,45,0.08);color:#e8002d;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;' }, '⊞');
+  qrBtn.title = 'QR-Code anzeigen / URL kopieren';
+  qrBtn.onmouseover = function(){ qrBtn.style.background='rgba(232,0,45,0.18)'; };
+  qrBtn.onmouseout  = function(){ qrBtn.style.background='rgba(232,0,45,0.08)'; };
+  qrBtn.onclick = function(){ showQRModal(url, th); };
+  row.appendChild(qrBtn);
+  return row;
+}
+
 function responseBox(result, th) {
   if(!result) return null;
   var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
@@ -514,6 +564,7 @@ function buildSendBar(opts, th) {
     var fsBtn = makeBtn(t('fullscreen'),function(){
       state.fullscreen = { result: opts.getResult ? opts.getResult() : null };
       render();
+  setTimeout(initSwipeNav, 300);
     },{ small:true, bg:'#6366f1' });
     ctrlRow.appendChild(fsBtn);
   }
@@ -629,11 +680,11 @@ function renderHeader(th) {
 }
 
 // ── Bottom nav ─────────────────────────────────────────────────────────────
-var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c55e',status:'unknown',ms:null,lastCheck:null},{id:'inject',label:'Inject API',url:'https://11z.co/_w',color:'#6366f1',status:'unknown',ms:null,lastCheck:null},{id:'unifi',label:'Unifi API',url:'https://thump.buzz/unifi/getEvent',color:'#f59e0b',status:'unknown',ms:null,lastCheck:null}],checking:false};
-  async function pingApi(api){var start=Date.now();try{var r=await proxyFetch(api.url+'?_='+start,'GET',null);api.ms=Date.now()-start;api.status=(r.ok||r.status<500)?'ok':'warn';}catch(e){api.ms=Date.now()-start;api.status='err';}api.lastCheck=new Date().toLocaleTimeString();}
+var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c55e',status:'unknown',ms:null,lastCheck:null},{id:'inject',label:'Inject API',url:'https://11z.co/_w',color:'#6366f1',status:'unknown',ms:null,lastCheck:null},{id:'unifi',label:'Unifi API',url:'https://thump.buzz/unifi/getEvent',color:'#f59e0b',status:'unknown',ms:null,lastCheck:null},{id:'custom',label:lang==='de'?'Eigene API':'Custom API',url:null,color:'#e8002d',status:'unknown',ms:null,lastCheck:null}],checking:false};
+  async function pingApi(api){if(api.id==='custom'){var cu=customState&&customState.url;if(!cu){api.status='unknown';api.ms=null;api.lastCheck=new Date().toLocaleTimeString();return;}api.url=cu;}var start=Date.now();try{var r=await proxyFetch(api.url+'?_='+start,'GET',null);api.ms=Date.now()-start;api.status=(r.ok||r.status<500)?'ok':'warn';}catch(e){api.ms=Date.now()-start;api.status='err';}api.lastCheck=new Date().toLocaleTimeString();}
   async function checkAllApis(){if(dashState.checking)return;dashState.checking=true;await Promise.all(dashState.apis.map(pingApi));dashState.checking=false;if(state.tab==='dash')render();}
 
-  function renderDash(th){var wrap=el('div',{});var hdr=el('div',{style:'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;'});var ti=el('div',{});ti.appendChild(el('div',{style:'font-size:1.1rem;font-weight:800;color:'+th.text+';'},'Status Dashboard'));hdr.appendChild(ti);var rb2=el('button',{style:'padding:8px 14px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.84rem;font-weight:700;cursor:pointer;'});rb2.textContent='Check';rb2.onclick=function(){rb2.disabled=true;rb2.textContent='...';checkAllApis().then(function(){rb2.disabled=false;rb2.textContent='Check';});};hdr.appendChild(rb2);wrap.appendChild(hdr);dashState.apis.forEach(function(api){var sc=api.status==='ok'?'#22c55e':api.status==='warn'?'#f59e0b':api.status==='err'?'#e8002d':'#64748b';var sl={'ok':'Online','warn':'Warning','err':'Offline','unknown':'?'}[api.status]||'?';var card=el('div',{style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:4px solid '+sc+';border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'});var left=el('div',{style:'flex:1;'});left.appendChild(el('div',{style:'font-size:0.95rem;font-weight:700;color:'+th.text+';'},api.label));left.appendChild(el('div',{style:'font-size:0.75rem;color:'+th.hint+';font-family:monospace;'},api.url));if(api.lastCheck)left.appendChild(el('div',{style:'font-size:0.72rem;color:'+th.hint+';margin-top:3px;'},'Checked: '+api.lastCheck));card.appendChild(left);var r2=el('div',{style:'text-align:right;'});r2.appendChild(el('div',{style:'font-size:0.82rem;font-weight:700;color:'+sc+';'},sl));if(api.ms!==null){var mc=api.ms<300?'#22c55e':api.ms<800?'#f59e0b':'#e8002d';r2.appendChild(el('div',{style:'font-size:0.78rem;color:'+mc+';font-weight:600;'},api.ms+'ms'));}card.appendChild(r2);wrap.appendChild(card);});if(dashState.apis.every(function(a){return a.status==='unknown';}))setTimeout(checkAllApis,100);return wrap;}
+  function renderDash(th){var wrap=el('div',{});var hdr=el('div',{style:'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;'});var ti=el('div',{});ti.appendChild(el('div',{style:'font-size:1.1rem;font-weight:800;color:'+th.text+';'},'Status Dashboard'));hdr.appendChild(ti);var rb2=el('button',{style:'padding:8px 14px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.84rem;font-weight:700;cursor:pointer;'});rb2.textContent='Check';rb2.onclick=function(){rb2.disabled=true;rb2.textContent='...';checkAllApis().then(function(){rb2.disabled=false;rb2.textContent='Check';});};hdr.appendChild(rb2);wrap.appendChild(hdr);dashState.apis.forEach(function(api){var sc=api.status==='ok'?'#22c55e':api.status==='warn'?'#f59e0b':api.status==='err'?'#e8002d':'#64748b';var sl={'ok':'Online','warn':'Warning','err':'Offline','unknown':'?'}[api.status]||'?';var card=el('div',{style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:4px solid '+sc+';border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'});var left=el('div',{style:'flex:1;'});left.appendChild(el('div',{style:'font-size:0.95rem;font-weight:700;color:'+th.text+';'},api.label));left.appendChild(el('div',{style:'font-size:0.75rem;color:'+th.hint+';font-family:monospace;'},api.id==='custom'?(customState&&customState.url?customState.url:(lang==='de'?'Keine URL hinterlegt':'No URL set')):api.url));left.appendChild(el('div',{style:'font-size:DUMMY;color:'+th.hint+';font-family:monospace;'},api.id==='custom'?(customState&&customState.url?customState.url:(lang==='de'?'Keine URL hinterlegt':'No URL set')):api.url));if(api.lastCheck)left.appendChild(el('div',{style:'font-size:0.72rem;color:'+th.hint+';margin-top:3px;'},'Checked: '+api.lastCheck));card.appendChild(left);var r2=el('div',{style:'text-align:right;'});r2.appendChild(el('div',{style:'font-size:0.82rem;font-weight:700;color:'+sc+';'},sl));if(api.ms!==null){var mc=api.ms<300?'#22c55e':api.ms<800?'#f59e0b':'#e8002d';r2.appendChild(el('div',{style:'font-size:0.78rem;color:'+mc+';font-weight:600;'},api.ms+'ms'));}card.appendChild(r2);wrap.appendChild(card);});if(dashState.apis.every(function(a){return a.status==='unknown';}))setTimeout(checkAllApis,100);return wrap;}
 
   function renderNav(th) {
   var tabs = [
@@ -714,7 +765,7 @@ function renderGoo(th) {
   // URL preview
   var urlDiv = el('div',{ style:'margin-bottom:18px;' });
   urlDiv.appendChild(lbl(t('urlPreview'),th));
-  urlDiv.appendChild(makeInput(url,{ readonly:true, mono:true },th));
+  urlDiv.appendChild(makeUrlPreviewRow(url, th));
   wrap.appendChild(urlDiv);
 
   // SendBar
@@ -779,7 +830,7 @@ function renderGoo(th) {
     var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
     var urlDiv = el('div',{ style:'margin-bottom:18px;' });
     urlDiv.appendChild(lbl(t('urlPreview'),th));
-    urlDiv.appendChild(makeInput(previewUrl,{ readonly:true, mono:true },th));
+    urlDiv.appendChild(makeUrlPreviewRow(previewUrl, th));
     wrap.appendChild(urlDiv);
 
     async function doSend() {
@@ -825,15 +876,21 @@ function renderUnifi(th) {
   var wrap = el('div',{});
 
   var idDiv = el('div',{ style:'margin-bottom:18px;' });
-  var idLbl = lbl(t('unifyId'),th);
+  var idLbl = lbl(t('unifiId'),th);
   idLbl.appendChild(badge(t('pflicht')));
   idDiv.appendChild(idLbl);
   idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true },th));
-  idDiv.appendChild(hint(t('myUnifyId'),th));
+  idDiv.appendChild(hint(t('myUnifiId'),th));
   wrap.appendChild(idDiv);
 
-  async function doFetch() {
-    if(!state.settings.unifiId){ alert('Bitte eine Unify ID in den Einstellungen hinterlegen.'); return; }
+  var unifiPreviewUrl = state.settings.unifiId ? BASE_UNIFI+'?UserId='+state.settings.unifiId : BASE_UNIFI+'?UserId={unifi_id}';
+    var unifiUrlDiv = el('div',{ style:'margin-bottom:18px;' });
+    unifiUrlDiv.appendChild(lbl(t('urlPreview'),th));
+    unifiUrlDiv.appendChild(makeUrlPreviewRow(unifiPreviewUrl, th));
+    wrap.appendChild(unifiUrlDiv);
+
+    async function doFetch() {
+    if(!state.settings.unifiId){ alert('Bitte eine Unifi ID in den Einstellungen hinterlegen.'); return; }
     try {
       var resp = await proxyFetch(BASE_UNIFI+'?UserId='+state.settings.unifiId, 'GET', null);
       var parsed = await resp.json();
@@ -937,7 +994,7 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
   var idsRow = el('div',{ style:'display:flex;gap:16px;flex-wrap:wrap;' });
   idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId')));
   idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId')));
-  idsRow.appendChild(group(t('unifyId'),'unifiId',t('placeholderUnifiId')));
+  idsRow.appendChild(group(t('unifiId'),'unifiId',t('placeholderUnifiId')));
   wrap.appendChild(idsRow);
 
   // Telegram
@@ -1150,3 +1207,4 @@ render();
 </script>
 </body>
 </html>
+
