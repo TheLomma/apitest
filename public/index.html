@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v1.3</title>
+<title>API Tool v2.0</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -38,7 +38,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v1.9', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.0', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -54,7 +54,7 @@ var TRANSLATIONS = {
     error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
     botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren',
+    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren', apiStatusCheck: 'API-Status prüfen (Nav-Icons)', apiStatusCheckHint: 'Beim Start alle APIs automatisch prüfen und Status-Icons in der Navigation anzeigen.',
     placeholderGooId: 'z.B. XX', placeholderInjectId: 'z.B. 12345', placeholderUnifiId: 'z.B. 12345',
     placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'z.B. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
     inSettings: 'In Einstellungen hinterlegen', sentOk: 'Gesendet!',
@@ -62,10 +62,10 @@ var TRANSLATIONS = {
     events: 'Events', noEvents: 'Noch keine Events empfangen.',
     profileTitle: 'Profil auswählen', profileSubtitle: 'Einstellungen für welchen Nutzer laden?', cancel: 'Abbrechen',
     darkMode: 'Dark Mode', lightMode: 'Light Mode',
-    helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick',
+    helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v1.9', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.0', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -81,7 +81,7 @@ var TRANSLATIONS = {
     error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
     botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache',
+    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache', apiStatusCheck: 'API status check (nav icons)', apiStatusCheckHint: 'Automatically check all APIs on start and show status icons in navigation.',
     placeholderGooId: 'e.g. XX', placeholderInjectId: 'e.g. 12345', placeholderUnifiId: 'e.g. 12345',
     placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'e.g. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
     inSettings: 'Set in Settings', sentOk: 'Sent!',
@@ -89,7 +89,7 @@ var TRANSLATIONS = {
     events: 'Events', noEvents: 'No events received yet.',
     profileTitle: 'Select Profile', profileSubtitle: 'Load settings for which user?', cancel: 'Cancel',
     darkMode: 'Dark Mode', lightMode: 'Light Mode',
-    helpTitle: 'Guide & Feature Overview', helpSubtitle: 'All sections and their features at a glance',
+    helpTitle: 'Guide & Feature Overview', helpSubtitle: 'All sections and their features at a glance', helpOnlineTitle: 'Online Indicator', helpDashTitle: 'Status Dashboard', helpNavTitle: 'Nav Icons & API Status', helpSettingsCheckTitle: 'Settings – API Check',
   }
 };
 
@@ -187,112 +187,6 @@ var THEMES = {
   }
 };
 
-// ── Easter Egg Quiz ──────────────────────────────────────────────────────────
-function renderEasterEgg() {
-  var ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;';
-
-  var box = document.createElement('div');
-  box.style.cssText = 'background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center;';
-
-  // Logo
-  var logo = document.createElement('div');
-  logo.style.cssText = 'width:52px;height:52px;border-radius:14px;background:#e8002d;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:1.6rem;';
-  logo.textContent = '🍸';
-  box.appendChild(logo);
-
-  // Title
-  var title = document.createElement('div');
-  title.style.cssText = 'font-size:1.1rem;font-weight:800;color:#f0f0ff;margin-bottom:10px;';
-  title.textContent = 'Hallo Jörn! 👋';
-  box.appendChild(title);
-
-  // Subtitle
-  var sub = document.createElement('div');
-  sub.style.cssText = 'font-size:0.9rem;color:#aaa;margin-bottom:20px;line-height:1.6;';
-  sub.textContent = 'Ich freue mich, dass du dieses API Tool testen möchtest! Ich habe eine kleine Quizfrage für dich:';
-  box.appendChild(sub);
-
-  // Question
-  var q = document.createElement('div');
-  q.style.cssText = 'font-size:0.95rem;font-weight:700;color:#f0f0ff;margin-bottom:14px;background:rgba(232,0,45,0.1);border:1px solid rgba(232,0,45,0.3);border-radius:10px;padding:12px 14px;';
-  q.textContent = '🍸 Nenne einen Cocktail, den ich heute Abend gerne trinken würde …';
-  box.appendChild(q);
-
-  // Input
-  var inp = document.createElement('input');
-  inp.type = 'text';
-  inp.value = '';
-  inp.placeholder = 'antwort eingeben...';
-  inp.style.cssText = 'width:100%;border:1.5px solid rgba(232,0,45,0.4);border-radius:10px;padding:11px 14px;font-size:1rem;color:#f0f0ff;background:rgba(255,255,255,0.07);outline:none;box-sizing:border-box;margin-bottom:8px;text-align:center;letter-spacing:0.05em;';
-  inp.onfocus = function(){ inp.style.borderColor='#e8002d'; inp.style.boxShadow='0 0 0 3px rgba(232,0,45,0.15)'; };
-  inp.onblur  = function(){ inp.style.borderColor='rgba(232,0,45,0.4)'; inp.style.boxShadow='none'; };
-  box.appendChild(inp);
-
-  // Hint
-  var inpHint = document.createElement('div');
-  inpHint.style.cssText = 'font-size:0.78rem;color:#888;margin-bottom:14px;margin-top:-8px;';
-  inpHint.textContent = 'Bitte alles klein schreiben (z.B. caipirinha)';
-  box.appendChild(inpHint);
-
-  // Feedback
-  var feedback = document.createElement('div');
-  feedback.style.cssText = 'font-size:0.88rem;min-height:24px;margin-bottom:10px;';
-  box.appendChild(feedback);
-
-  // Send button
-  var btn = document.createElement('button');
-  btn.textContent = 'Senden';
-  btn.style.cssText = 'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.35);transition:all 0.2s;';
-
-  function checkAnswer() {
-    var answer = inp.value.trim().toLowerCase();
-    if(answer === 'espresso martini') {
-      // SUCCESS
-      box.innerHTML = '';
-      var successIcon = document.createElement('div');
-      successIcon.style.cssText = 'font-size:2.5rem;margin-bottom:16px;';
-      successIcon.textContent = '🎉';
-      box.appendChild(successIcon);
-
-      var sTitle = document.createElement('div');
-      sTitle.style.cssText = 'font-size:1.15rem;font-weight:800;color:#22c55e;margin-bottom:12px;';
-      sTitle.textContent = 'Glückwunsch, du hast es richtig erraten!';
-      box.appendChild(sTitle);
-
-      var sInfo = document.createElement('div');
-      sInfo.style.cssText = 'font-size:0.88rem;color:#aaa;line-height:1.7;margin-bottom:20px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px;text-align:left;';
-      sInfo.innerHTML = '🔐 <strong style="color:#f0f0ff;">Geheime Einstellungen laden:</strong><br><br>'
-        + '1. Gehe zum Tab <strong style="color:#f0f0ff;">⚙️ Einstellungen</strong><br>'
-        + '2. Klicke <strong style="color:#e8002d;">5× auf „API Tool"</strong> im Header<br>'
-        + '3. Das Profil-Menü öffnet sich automatisch<br>'
-        + '4. Wähle dein Profil – die Einstellungen werden sofort eingefügt<br><br>'
-        + '<span style="color:#888;font-size:0.82rem;">(Momentan nur für Dominik verfügbar)</span>';
-      box.appendChild(sInfo);
-
-      var closeBtn2 = document.createElement('button');
-      closeBtn2.textContent = 'Los geht\'s! 🚀';
-      closeBtn2.style.cssText = 'width:100%;padding:13px;background:rgba(34,197,94,0.85);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;';
-      closeBtn2.onclick = function(){ document.body.removeChild(ov); };
-      box.appendChild(closeBtn2);
-    } else {
-      // WRONG
-      feedback.style.color = '#f87171';
-      feedback.textContent = 'Tut mir leid, das Wort war falsch.';
-      setTimeout(function(){
-        document.body.removeChild(ov);
-      }, 2000);
-    }
-  }
-
-  btn.onclick = checkAnswer;
-  inp.onkeydown = function(e){ if(e.key==='Enter') checkAnswer(); };
-  box.appendChild(btn);
-
-  ov.appendChild(box);
-  document.body.appendChild(ov);
-}
-
 // ── State ──────────────────────────────────────────────────────────────────
 // ── Dashboard state ───────────────────────────────────────────────────────
 var dashState = {
@@ -351,16 +245,54 @@ var state = {
       });
   }
   function updateNavIcons() {
-    var gooIcons = document.querySelectorAll('.nav-icon-goo');
-    gooIcons.forEach(function(ic){ ic.textContent = state.online ? '🟢' : '🔴'; });
+    // Update header online indicator
+    var ind = document.querySelector('.header-online-indicator');
+    if(ind) {
+      ind.style.background = state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)';
+      ind.style.border = '1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)');
+      var dot = ind.children[0]; var lbl2 = ind.children[1];
+      if(dot){ dot.style.background=state.online?'#22c55e':'#e8002d'; dot.style.animation=state.online?'':'pulse 1s infinite'; }
+      if(lbl2){ lbl2.style.color=state.online?'#22c55e':'#e8002d'; lbl2.textContent=state.online?'Online':'Offline'; }
+    }
+    // Update per-api nav icons
+    ['goo','inject','unifi'].forEach(function(id){
+      var icons = document.querySelectorAll('.nav-icon-'+id);
+      var status = apiStatus[id];
+      var enabled = state.settings.apiStatusEnabled;
+      icons.forEach(function(ic){
+        if(!enabled) ic.textContent = '🟡';
+        else ic.textContent = status==='ok'?'🟢':status==='err'?'🔴':'⚪';
+      });
+    });
   }
   window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
   window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
+  // Per-API status
+  var apiStatus = { goo:'unknown', inject:'unknown', unifi:'unknown', custom:'unknown' };
+  async function checkApiStatus(id, url) {
+    try {
+      var r = await proxyFetch(url+'?_='+Date.now(),'GET',null);
+      apiStatus[id] = (r.ok||r.status<500)?'ok':'err';
+    } catch(e) { apiStatus[id]='err'; }
+    updateNavIcons();
+  }
+  function checkAllApiStatus() {
+    if(!state.settings.apiStatusEnabled) {
+      apiStatus = { goo:'unknown', inject:'unknown', unifi:'unknown', custom:'unknown' };
+      updateNavIcons();
+      return;
+    }
+    checkApiStatus('goo', 'https://11q.co');
+    checkApiStatus('inject', 'https://11z.co/_w');
+    checkApiStatus('unifi', 'https://thump.buzz/unifi/getEvent');
+    // custom: no fixed URL, mark as ok if proxy reachable
+    apiStatus.custom = apiStatus.goo;
+    updateNavIcons();
+  }
   setInterval(checkOnline, 15000);
+  setInterval(checkAllApiStatus, 30000);
   checkOnline();
-
-// Easter Egg beim Start
-renderEasterEgg();
+  checkAllApiStatus();
 
 // ── Render engine ──────────────────────────────────────────────────────────
 var app = document.getElementById('app');
@@ -663,6 +595,15 @@ function renderHeader(th) {
 
   var right = el('div',{ style:'display:flex;align-items:center;gap:8px;' });
 
+  // Online indicator in header
+  var onlineIndicator = el('div',{ style:'display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:'+(state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)')+';border:1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)')+';' });
+  var onlineDot = el('span',{ style:'width:8px;height:8px;border-radius:50%;background:'+(state.online?'#22c55e':'#e8002d')+';display:inline-block;'+(state.online?'':'animation:pulse 1s infinite;') });
+  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';' }, state.online?'Online':'Offline');
+  onlineIndicator.appendChild(onlineDot);
+  onlineIndicator.appendChild(onlineLabel);
+  onlineIndicator.className = 'header-online-indicator';
+  right.appendChild(onlineIndicator);
+
   // Lang toggle
   var langBtn = makeBtn(lang==='de'?'EN':'DE', function(){
     state.lang = lang==='de'?'en':'de';
@@ -681,12 +622,6 @@ function renderHeader(th) {
   },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
   right.appendChild(themeBtn);
 
-  // FRAGE button centered in header
-  var frageBtn = el('button',{ style:'position:absolute;left:50%;transform:translateX(-50%);padding:6px 16px;background:rgba(232,0,45,0.12);color:#e8002d;border:1.5px solid rgba(232,0,45,0.4);border-radius:20px;font-size:0.82rem;font-weight:800;cursor:pointer;letter-spacing:0.07em;white-space:nowrap;transition:all 0.2s;' },'🍸 FRAGE');
-  frageBtn.onmouseover = function(){ frageBtn.style.background='rgba(232,0,45,0.25)'; };
-  frageBtn.onmouseout  = function(){ frageBtn.style.background='rgba(232,0,45,0.12)'; };
-  frageBtn.onclick = function(){ renderEasterEgg(); };
-  hdr.appendChild(frageBtn);
   hdr.style.position = 'sticky';
 
   hdr.appendChild(right);
@@ -702,10 +637,10 @@ var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c5
 
   function renderNav(th) {
   var tabs = [
-    { id:'goo', icon: state.online ? '🟢' : '🔴', label:t('tabGoo'), iconClass:'nav-icon-goo' },
-    { id:'inject',   icon:'💉', label:t('tabInject') },
-    { id:'unifi',    icon:'📶', label:t('tabUnifi') },
-    { id:'custom',   icon:'🔧', label:t('tabCustom') },
+    { id:'goo',    icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.goo==='ok'?'🟢':apiStatus.goo==='err'?'🔴':'⚪',       label:t('tabGoo'),    iconClass:'nav-icon-goo' },
+    { id:'inject', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.inject==='ok'?'🟢':apiStatus.inject==='err'?'🔴':'⚪',    label:t('tabInject'), iconClass:'nav-icon-inject' },
+    { id:'unifi',  icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.unifi==='ok'?'🟢':apiStatus.unifi==='err'?'🔴':'⚪',     label:t('tabUnifi'),  iconClass:'nav-icon-unifi' },
+    { id:'custom', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.custom==='ok'?'🟢':apiStatus.custom==='err'?'🔴':'⚪',    label:t('tabCustom'), iconClass:'nav-icon-custom' },
       { id:'dash',     icon:'📊', label:lang==='de'?'Status':'Status' },
     { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
     { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
@@ -1016,7 +951,79 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
 
   // Buttons
   var btnRow = el('div',{ style:'display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;' });
-  var saveBtn = makeBtn(t('save'), function(){
+  // API Status Toggle
+    var apiSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
+    apiSec.appendChild(el('div',{style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';'},'🟡 '+t('apiStatusCheck')));
+    var tRow=el('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;'});
+    tRow.appendChild(el('div',{style:'font-size:0.83rem;color:'+th.subtext+';line-height:1.5;flex:1;'},t('apiStatusCheckHint')));
+    var tLbl=el('label',{style:'display:flex;align-items:center;cursor:pointer;flex-shrink:0;'});
+    var tCb=el('input',{type:'checkbox'});tCb.style.cssText='width:0;height:0;opacity:0;position:absolute;';tCb.checked=!!s.apiStatusEnabled;
+    var tTr=el('div',{style:'width:44px;height:24px;border-radius:12px;background:'+(s.apiStatusEnabled?'#22c55e':'rgba(100,100,100,0.4)')+';position:relative;transition:background 0.2s;'});
+    var tTh=el('div',{style:'width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(s.apiStatusEnabled?'23px':'3px')+';transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);'});
+    tTr.appendChild(tTh);tLbl.appendChild(tCb);tLbl.appendChild(tTr);
+    tCb.onchange=function(){s.apiStatusEnabled=tCb.checked;tTr.style.background=tCb.checked?'#22c55e':'rgba(100,100,100,0.4)';tTh.style.left=tCb.checked?'23px':'3px';};
+    tRow.appendChild(tLbl);apiSec.appendChild(tRow);
+
+    // Check-now button
+    var checkNowBtn = el('button',{style:'margin-top:12px;padding:9px 18px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;'});
+    var checkSpinner = el('span',{style:'display:none;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;'});
+    var checkLabel = el('span',{},lang==='de'?'Jetzt prüfen':'Check now');
+    checkNowBtn.appendChild(checkSpinner);
+    checkNowBtn.appendChild(checkLabel);
+    checkNowBtn.onclick = async function(){
+      checkNowBtn.disabled=true;
+      checkSpinner.style.display='inline-block';
+      checkLabel.textContent=lang==='de'?'Prüfe...':'Checking...';
+      // ping all three
+      var results = [];
+      var apis2 = [
+        {id:'goo',    label:'Goo API',    url:'https://11q.co'},
+        {id:'inject', label:'Inject API', url:'https://11z.co/_w'},
+        {id:'unifi',  label:'Unifi API',  url:'https://thump.buzz/unifi/getEvent'},
+      ];
+      await Promise.all(apis2.map(async function(api){
+        var start=Date.now();
+        try{
+          var r=await proxyFetch(api.url+'?_='+start,'GET',null);
+          var ms=Date.now()-start;
+          var ok=(r.ok||r.status<500);
+          apiStatus[api.id]=ok?'ok':'err';
+          results.push({label:api.label,ok:ok,ms:ms});
+        }catch(e){
+          apiStatus[api.id]='err';
+          results.push({label:api.label,ok:false,ms:Date.now()-start});
+        }
+      }));
+      apiStatus.custom = apiStatus.goo;
+      updateNavIcons();
+      checkNowBtn.disabled=false;
+      checkSpinner.style.display='none';
+      checkLabel.textContent=lang==='de'?'Jetzt prüfen':'Check now';
+      // Show popup
+      var ov=el('div',{style:'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;'});
+      var box=el('div',{style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:24px 22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);'});
+      box.appendChild(el('div',{style:'font-size:1rem;font-weight:800;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';margin-bottom:16px;'},lang==='de'?'🔍 Verbindungstest':'🔍 Connection Test'));
+      results.forEach(function(res){
+        var row=el('div',{style:'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:'+(res.ok?'rgba(34,197,94,0.08)':'rgba(232,0,45,0.08)')+';border:1px solid '+(res.ok?'rgba(34,197,94,0.25)':'rgba(232,0,45,0.25)')+';margin-bottom:8px;'});
+        var left2=el('div',{style:'display:flex;align-items:center;gap:8px;'});
+        left2.appendChild(el('span',{style:'font-size:1rem;'},res.ok?'🟢':'🔴'));
+        left2.appendChild(el('span',{style:'font-size:0.88rem;font-weight:600;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';'},res.label));
+        row.appendChild(left2);
+        var msColor=res.ms<300?'#22c55e':res.ms<800?'#f59e0b':'#e8002d';
+        row.appendChild(el('span',{style:'font-size:0.8rem;font-weight:700;color:'+msColor+';'},res.ms+'ms'));
+        box.appendChild(row);
+      });
+      var closeBtn2=el('button',{style:'width:100%;margin-top:14px;padding:11px;background:rgba(232,0,45,0.85);color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;'},lang==='de'?'Schließen':'Close');
+      closeBtn2.onclick=function(){document.body.removeChild(ov);};
+      box.appendChild(closeBtn2);
+      ov.appendChild(box);
+      ov.onclick=function(e){if(e.target===ov)document.body.removeChild(ov);};
+      document.body.appendChild(ov);
+    };
+    apiSec.appendChild(checkNowBtn);
+    wrap.appendChild(apiSec);
+
+    var saveBtn = makeBtn(t('save'), function(){
     state.settings = Object.assign({}, s);
     saveSettings(state.settings);
     var saved2 = el('span',{ style:'color:#16a34a;font-weight:700;font-size:0.9rem;' }, '✓ '+t('saved'));
@@ -1069,8 +1076,25 @@ var HELP_SECTIONS = [
     {name: lang==='de' ? 'Profil laden' : 'Load Profile', desc: lang==='de' ? '5× auf „API Tool" im Header klicken, um das Profil-Menü zu öffnen und vordefinierte Einstellungen zu laden.' : 'Click "API Tool" in the header 5 times to open the profile menu and load predefined settings.'},
   ]},
   { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
-    {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
-  ]},
+      {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
+    ]},
+    { icon:'🌐', title: lang==='de' ? 'Online-Indikator' : 'Online Indicator', color:'#22c55e', items:[
+      {name: lang==='de' ? 'Anzeige im Header' : 'Header Display', desc: lang==='de' ? 'Zeigt oben rechts im Header den aktuellen Verbindungsstatus: Grüner Punkt + „Online" oder roter blinkender Punkt + „Offline".' : 'Shows the current connection status in the top-right header: green dot + "Online" or blinking red dot + "Offline".'},
+      {name: lang==='de' ? 'Automatische Prüfung' : 'Automatic Check', desc: lang==='de' ? 'Der Online-Status wird beim Start und alle 15 Sekunden automatisch geprüft – zuerst über den Proxy, als Fallback über ein Favicon-Bild.' : 'Online status is checked on start and every 15 seconds automatically – first via proxy, with a favicon image as fallback.'},
+      {name: lang==='de' ? 'Echtzeit-Events' : 'Real-time Events', desc: lang==='de' ? 'Wechselt sofort bei Browser-Events (online/offline) ohne Wartezeit.' : 'Switches immediately on browser online/offline events without delay.'},
+    ]},
+    { icon:'📊', title: lang==='de' ? 'Status-Dashboard' : 'Status Dashboard', color:'#6366f1', items:[
+      {name: lang==='de' ? 'Übersicht' : 'Overview', desc: lang==='de' ? 'Zeigt den Verbindungsstatus aller drei APIs (Goo, Inject, Unifi) mit farbiger Statusanzeige, Latenz in ms und Zeitstempel der letzten Prüfung.' : 'Shows the connection status of all three APIs (Goo, Inject, Unifi) with color-coded status, latency in ms, and timestamp of the last check.'},
+      {name: lang==='de' ? 'Check-Button' : 'Check Button', desc: lang==='de' ? 'Der „Check"-Button im Dashboard löst eine sofortige Prüfung aller APIs aus und aktualisiert die Karten.' : 'The "Check" button in the dashboard triggers an immediate check of all APIs and updates the cards.'},
+      {name: lang==='de' ? 'Statusfarben' : 'Status Colors', desc: lang==='de' ? 'Grün = Online (<300ms), Gelb = Warnung (300–800ms), Rot = Offline. Die farbige linke Kante der Karte zeigt den Status auf einen Blick.' : 'Green = Online (<300ms), Yellow = Warning (300–800ms), Red = Offline. The colored left border of each card shows the status at a glance.'},
+      {name: lang==='de' ? 'Automatischer Start' : 'Auto Start', desc: lang==='de' ? 'Beim ersten Öffnen des Dashboards wird automatisch eine Prüfung gestartet, falls noch keine Daten vorhanden sind.' : 'When the dashboard is opened for the first time, a check is started automatically if no data is available yet.'},
+    ]},
+    { icon:'🔵', title: lang==='de' ? 'Nav-Icons & API-Status' : 'Nav Icons & API Status', color:'#0ea5e9', items:[
+      {name: lang==='de' ? 'Icons pro Tab' : 'Per-Tab Icons', desc: lang==='de' ? 'Jeder API-Tab (Goo, Inject, Unifi, Eigene API) hat ein eigenes Status-Icon: 🟢 Online, 🔴 Offline, ⚪ Unbekannt, 🟡 Deaktiviert.' : 'Each API tab (Goo, Inject, Unifi, Custom API) has its own status icon: 🟢 Online, 🔴 Offline, ⚪ Unknown, 🟡 Disabled.'},
+      {name: lang==='de' ? 'Toggle-Abhängigkeit' : 'Toggle Dependency', desc: lang==='de' ? 'Wenn der Toggle in den Einstellungen deaktiviert ist, zeigen alle Icons 🟡 (neutral). Erst bei aktiviertem Toggle werden echte Statuswerte angezeigt.' : 'When the toggle in Settings is disabled, all icons show 🟡 (neutral). Real status values are only shown when the toggle is enabled.'},
+      {name: lang==='de' ? 'Eigene API (Custom)' : 'Custom API Status', desc: lang==='de' ? 'Da die Eigene API keine feste URL hat, übernimmt sie automatisch den Status der Goo API als Indikator.' : 'Since the Custom API has no fixed URL, it automatically inherits the Goo API status as its indicator.'},
+      {name: lang==='de' ? 'Aktualisierungsintervall' : 'Update Interval', desc: lang==='de' ? 'Nav-Icons werden alle 30 Sekunden automatisch aktualisiert, zusätzlich sofort nach dem „Jetzt prüfen"-Button.' : 'Nav icons are updated automatically every 30 seconds, plus immediately after the "Check Now" button.'},
+    ]},
   { icon:'🔧', title: lang==='de' ? 'Eigene API' : 'Custom API', color:'#f59e0b', items:[
       {name:'URL', desc: lang==='de' ? 'Vollständige URL deiner eigenen API – das einzige Pflichtfeld.' : 'Full URL of your custom API – the only required field.'},
       {name: lang==='de' ? 'HTTP-Methode' : 'HTTP Method', desc: lang==='de' ? 'GET, POST, PUT, PATCH oder DELETE frei wählbar.' : 'Freely choose GET, POST, PUT, PATCH or DELETE.'},
