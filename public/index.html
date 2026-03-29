@@ -2,8 +2,11 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v2.5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1e">
+<title>API Tool v2.6</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -38,7 +41,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -65,7 +68,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -302,7 +305,7 @@ function render() {
   lang = state.lang;
 
   app.innerHTML = '';
-  app.style.cssText = 'min-height:100vh;background:'+th.bg+';display:flex;flex-direction:column;';
+  app.style.cssText = 'height:100vh;background:'+th.bg+';display:flex;flex-direction:column;overflow:hidden;';
 
   // Profile modal
   if(state.profileModal) { app.appendChild(renderProfileModal(th)); }
@@ -314,10 +317,10 @@ function render() {
   app.appendChild(renderHeader(th));
 
   // Scrollable content
-  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 80px;' });
-  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 16px;' });
+  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 100px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;min-height:0;' });
+  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 12px;' });
 
-  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:22px 20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
+  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:'+(window.innerWidth<400?'14px 12px':'22px 20px')+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
 
   if(state.tab==='goo')      card.appendChild(renderGoo(th));
   if(state.tab==='inject')   card.appendChild(renderInject(th));
@@ -509,7 +512,7 @@ function buildSendBar(opts, th) {
   container.appendChild(cbRow);
 
   // Send button
-  var sendBtn = el('button',{ style:'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
+  var sendBtn = el('button',{ style:'width:100%;padding:15px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
   sendBtn.textContent = t('send');
   sendBtn.onclick = async function() {
     sendBtn.disabled = true;
@@ -530,13 +533,13 @@ function buildSendBar(opts, th) {
   container.appendChild(sendBtn);
 
   // Controls row
-  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;' });
+  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;' });
 
   // Interval select
   var selOpts = [{value:'2000',label:'2s'},{value:'5000',label:'5s'},{value:'10000',label:'10s'},{value:'30000',label:'30s'}];
   var sel = makeSelect(selOpts,'5000',function(){ interval=parseInt(sel.value); },th);
   sel.style.width = 'auto';
-  sel.style.padding = '8px 10px';
+  sel.style.padding = '10px 10px'; sel.style.minHeight = '44px';
   ctrlRow.appendChild(sel);
 
   // Auto-refresh btn
@@ -553,6 +556,7 @@ function buildSendBar(opts, th) {
       liveDot.style.display='flex';
     }
   },{ small:true, bg:'#22c55e' });
+  arBtn.style.minHeight = '44px'; arBtn.style.padding = '10px 14px';
   ctrlRow.appendChild(arBtn);
 
   // Live dot
@@ -568,6 +572,7 @@ function buildSendBar(opts, th) {
       render();
   setTimeout(initSwipeNav, 300);
     },{ small:true, bg:'#6366f1' });
+    fsBtn.style.minHeight = '44px'; fsBtn.style.padding = '10px 14px';
     ctrlRow.appendChild(fsBtn);
   }
 
@@ -622,7 +627,7 @@ function renderProfileModal(th) {
 
 // ── Header ─────────────────────────────────────────────────────────────────
 function renderHeader(th) {
-  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
+  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
 
   var left = el('div',{ style:'display:flex;align-items:center;gap:10px;' });
   // Logo
@@ -646,12 +651,14 @@ function renderHeader(th) {
   left.appendChild(titleWrap);
   hdr.appendChild(left);
 
-  var right = el('div',{ style:'display:flex;align-items:center;gap:8px;' });
+  var right = el('div',{ style:'display:flex;align-items:center;gap:6px;' });
 
   // Online indicator in header
   var onlineIndicator = el('div',{ style:'display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:'+(state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)')+';border:1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)')+';' });
   var onlineDot = el('span',{ style:'width:8px;height:8px;border-radius:50%;background:'+(state.online?'#22c55e':'#e8002d')+';display:inline-block;'+(state.online?'':'animation:pulse 1s infinite;') });
-  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';' }, state.online?'Online':'Offline');
+  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';display:none;' }, state.online?'Online':'Offline');
+  // Show label only on wider screens
+  if(window.innerWidth >= 400) onlineLabel.style.display = 'inline';
   onlineIndicator.appendChild(onlineDot);
   onlineIndicator.appendChild(onlineLabel);
   onlineIndicator.className = 'header-online-indicator';
@@ -770,10 +777,10 @@ var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c5
     { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
     { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
   ];
-  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
+  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);' });
   tabs.forEach(function(tab) {
     var active = state.tab===tab.id;
-    var btn = el('button',{ style:'flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
+    var btn = el('button',{ style:'flex:1;padding:10px 2px 8px;min-height:52px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
     var iconSpan = el('span',{ style:'font-size:1.1rem;' }, tab.icon);
     if(tab.iconClass) iconSpan.className = tab.iconClass;
     btn.appendChild(iconSpan);
@@ -1289,8 +1296,8 @@ function renderHelp(th) {
     s.appendChild(sh);
     var sb = el('div',{ style:'background:'+th.infoBg+';padding:4px 0;' });
     sec.items.forEach(function(item,i) {
-      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;gap:12px;' });
-      row.appendChild(el('div',{ style:'min-width:130px;font-size:0.82rem;font-weight:700;color:'+sec.color+';padding-top:1px;' },item.name));
+      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;flex-direction:column;gap:4px;' });
+      row.appendChild(el('div',{ style:'font-size:0.82rem;font-weight:700;color:'+sec.color+';word-break:break-word;' },item.name));
       row.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.infoText+';line-height:1.55;' },item.desc));
       sb.appendChild(row);
     });
