@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v2.2</title>
+<title>API Tool v2.3</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -38,7 +38,7 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
   de: {
-    appTitle: 'API Tool', appVersion: 'v2.2', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.3', appSubtitle: 'Einfaches Testen von APIs',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
     send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -47,9 +47,9 @@ var TRANSLATIONS = {
     queryHint: 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.',
     queryPlaceholder: 'Suchanfrage oder URL eingeben...',
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
-    valueHint: 'Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
+    valueHint: 'Wird an Inject gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
     valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
-    unifyId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID',
+    unifiMessage: 'Nachricht', unifiMessagePlaceholder: 'Text eingeben, der an Unifi gesendet wird...', unifiMessageHint: 'Wird an Unifi gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.', unifyId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID',
     answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
     error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
@@ -65,7 +65,7 @@ var TRANSLATIONS = {
     helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
   },
   en: {
-    appTitle: 'API Tool', appVersion: 'v2.2', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.3', appSubtitle: 'Simple API Testing',
     tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
     send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
     telegram: 'Telegram', discord: 'Discord',
@@ -74,9 +74,9 @@ var TRANSLATIONS = {
     queryHint: 'Sent to Goo. If Telegram/Discord is enabled, only this text is forwarded.',
     queryPlaceholder: 'Enter search query or URL...',
     injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
-    valueHint: 'If Telegram/Discord is enabled, only this value is forwarded.',
+    valueHint: 'Sent to Inject. If Telegram/Discord is enabled, only this value is forwarded.',
     valuePlaceholder: 'Enter text to inject...',
-    unifyId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID',
+    unifiMessage: 'Message', unifiMessagePlaceholder: 'Enter text to send to Unifi...', unifiMessageHint: 'Sent to Unifi. If Telegram/Discord is enabled, only this text is forwarded.', unifyId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID',
     answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
     error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
     apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
@@ -110,7 +110,7 @@ function saveSettings(s) {
 
 // ── Endpoint helpers ───────────────────────────────────────────────────────
 var ENDPOINTS = [
-  { id:'post-thump',          method:'POST', label:'POST /api/thump – Query senden',          desc:'Sendet eine Query an die Goo API.',                                 query:true,  live:false },
+  { id:'post-thump',          method:'POST', label:'POST /api/thump – Query senden',          desc:'',                                 query:true,  live:false },
   { id:'get-last',            method:'GET',  label:'GET /api/last – Letzten Query abrufen',   desc:'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.',         query:false, live:false },
   { id:'live-text',           method:'GET',  label:'GET /api/live-text – Live Text (PRO)',    desc:'Gibt den aktuell getippten Text in Echtzeit zurück.',               query:false, live:true  },
   { id:'pro-last-deleted',    method:'GET',  label:'GET /pro-api/last-deleted (PRO)',         desc:'Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.',             query:false, live:false },
@@ -441,7 +441,7 @@ function makeUrlPreviewRow(url, th) {
   var inp = makeInput(url, { readonly:true, mono:true }, th);
   inp.style.flex = '1';
   row.appendChild(inp);
-  var qrBtn = el('button',{ style:'flex-shrink:0;width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(232,0,45,0.3);background:rgba(232,0,45,0.08);color:#e8002d;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;' }, '⊞');
+  var qrBtn = el('button',{ style:'flex-shrink:0;width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(232,0,45,0.3);background:rgba(232,0,45,0.08);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;' }, '⊞');
   qrBtn.title = 'QR-Code anzeigen / URL kopieren';
   qrBtn.onmouseover = function(){ qrBtn.style.background='rgba(232,0,45,0.18)'; };
   qrBtn.onmouseout  = function(){ qrBtn.style.background='rgba(232,0,45,0.08)'; };
@@ -864,7 +864,7 @@ function renderGoo(th) {
   }
 
   // ── Unifi section ──────────────────────────────────────────────────────────
-var unifiState = { events:[], result:null, error:'' };
+var unifiState = { message:'', events:[], result:null, error:'' };
 
 var UNIFI_COLORS2 = {
   'Unifi Intelligence':'#6366f1','ELIPS':'#f59e0b','Second Sight':'#8b5cf6',
@@ -883,7 +883,16 @@ function renderUnifi(th) {
   idDiv.appendChild(hint(t('myUnifiId'),th));
   wrap.appendChild(idDiv);
 
-  var unifiPreviewUrl = state.settings.unifiId ? BASE_UNIFI+'?UserId='+state.settings.unifiId : BASE_UNIFI+'?UserId={unifi_id}';
+  var msgDiv = el('div',{ style:'margin-bottom:18px;' });
+    var msgLbl = lbl(t('unifiMessage'),th);
+    msgLbl.appendChild(badge(t('pflicht')));
+    msgDiv.appendChild(msgLbl);
+    var unifiTa = makeTextarea(unifiState.message, t('unifiMessagePlaceholder'), function(){ unifiState.message=unifiTa.value; }, th);
+    msgDiv.appendChild(unifiTa);
+    msgDiv.appendChild(hint(t('unifiMessageHint'),th));
+    wrap.appendChild(msgDiv);
+
+    var unifiPreviewUrl = state.settings.unifiId ? BASE_UNIFI+'?UserId='+state.settings.unifiId : BASE_UNIFI+'?UserId={unifi_id}';
     var unifiUrlDiv = el('div',{ style:'margin-bottom:18px;' });
     unifiUrlDiv.appendChild(lbl(t('urlPreview'),th));
     unifiUrlDiv.appendChild(makeUrlPreviewRow(unifiPreviewUrl, th));
@@ -909,7 +918,7 @@ function renderUnifi(th) {
 
   wrap.appendChild(buildSendBar({
     onSend: doFetch, onFetch: doFetch,
-    getShareText: function(){ return state.settings.unifiId||''; },
+    getShareText: function(){ return unifiState.message||''; },
     getResult: function(){ return unifiState.result; },
   },th));
 
@@ -1020,6 +1029,7 @@ var customState = { url:'', method:'GET', headers:'', body:'', result:null };
     tTr.appendChild(tTh);tLbl.appendChild(tCb);tLbl.appendChild(tTr);
     tCb.onchange=function(){s.apiStatusEnabled=tCb.checked;tTr.style.background=tCb.checked?'#22c55e':'rgba(100,100,100,0.4)';tTh.style.left=tCb.checked?'23px':'3px';};
     tRow.appendChild(tLbl);apiSec.appendChild(tRow);
+      var legend=el('div',{style:'margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;row-gap:6px;'}); [{icon:'🟢',label:lang==='de'?'Online':'Online'},{icon:'🔴',label:lang==='de'?'Offline':'Offline'},{icon:'⚪',label:lang==='de'?'Unbekannt':'Unknown'},{icon:'🟡',label:lang==='de'?'Deaktiviert':'Disabled'}].forEach(function(it){var chip=el('div',{style:'display:flex;align-items:center;gap:5px;background:'+th.infoBg+';border:1px solid '+th.border+';border-radius:20px;padding:4px 12px;font-size:0.8rem;color:'+th.subtext+';'});chip.appendChild(el('span',{},it.icon));chip.appendChild(el('span',{},it.label));legend.appendChild(chip);});apiSec.appendChild(legend);
 
     // Check-now button
     var checkNowBtn = el('button',{style:'margin-top:12px;padding:9px 18px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;'});
