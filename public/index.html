@@ -2,1321 +2,422 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f0f1e">
-<title>API Tool v2.6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lieferandi.de</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f5f5f5; max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:72px; }
+.header { background:#ff8000; padding:14px 16px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.logo { color:#fff; font-size:21px; font-weight:900; }
+.logo span { color:#ffe066; }
+.cart-pill { background:#fff; color:#ff8000; border:none; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; }
+.cart-pill .badge { background:#ff8000; color:#fff; border-radius:50%; width:19px; height:19px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+.addr-bar { background:#fff; border-radius:10px; padding:9px 13px; display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:9px; }
+.addr-bar .txt { flex:1; font-weight:600; }
+.addr-bar .chg { color:#ff8000; font-weight:700; font-size:12px; cursor:pointer; }
+.search-wrap { background:#fff; border-radius:10px; padding:9px 13px; display:flex; align-items:center; gap:8px; }
+.search-wrap input { border:none; outline:none; flex:1; font-size:14px; }
+.cuisine-row { background:#fff; padding:14px 16px 10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.cuisine-row h3 { font-size:16px; font-weight:800; margin-bottom:11px; color:#111; }
+.cuisine-scroll { display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; }
+.cuisine-scroll::-webkit-scrollbar { display:none; }
+.cuisine-btn { display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px; cursor:pointer; flex-shrink:0; }
+.cuisine-icon { width:54px; height:54px; border-radius:15px; background:#fff4e6; display:flex; align-items:center; justify-content:center; font-size:24px; border:2.5px solid transparent; transition:all .2s; }
+.cuisine-icon.active { border-color:#ff8000; background:#ffe8cc; }
+.cuisine-btn.locked { opacity:0.35; pointer-events:none; filter:grayscale(1); }
+.cuisine-lbl { font-size:10px; font-weight:700; color:#666; text-align:center; }
+.course-row { display:flex; gap:8px; padding:11px 16px; overflow-x:auto; scrollbar-width:none; background:#fafafa; border-bottom:1px solid #eee; }
+.course-row::-webkit-scrollbar { display:none; }
+.course-chip { padding:7px 16px; border-radius:20px; border:1.5px solid #ddd; background:#fff; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; color:#555; transition:all .2s; }
+.course-chip.active { background:#ff8000; border-color:#ff8000; color:#fff; }
+.dish-section { padding:14px 16px 6px; }
+.dish-section h4 { font-size:15px; font-weight:800; color:#111; margin-bottom:10px; }
+.dish-card { background:#fff; border-radius:14px; margin-bottom:10px; display:flex; align-items:center; padding:13px; gap:12px; box-shadow:0 1px 6px rgba(0,0,0,.07); }
+.dish-img { width:72px; height:72px; border-radius:12px; object-fit:cover; flex-shrink:0; background:#f0f0f0; }
+.dish-emoji { font-size:38px; width:72px; height:72px; background:#f5f5f5; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.dish-info { flex:1; }
+.dish-name { font-size:14px; font-weight:800; color:#111; margin-bottom:3px; }
+.dish-desc { font-size:12px; color:#999; line-height:1.4; margin-bottom:6px; }
+.dish-price { font-size:15px; font-weight:800; color:#ff8000; }
+.add-dish-btn { background:#ff8000; color:#fff; border:none; width:32px; height:32px; border-radius:50%; font-size:22px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.add-dish-btn:hover { background:#e67000; }
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:300; }
+.cart-sheet { display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; border-radius:22px 22px 0 0; max-height:82vh; overflow-y:auto; z-index:301; }
+.sheet-hdr { padding:16px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; background:#fff; display:flex; align-items:center; gap:10px; }
+.sheet-hdr h2 { font-size:18px; font-weight:800; flex:1; }
+.sheet-close { background:#f5f5f5; border:none; width:32px; height:32px; border-radius:50%; font-size:17px; cursor:pointer; }
+.ci { display:flex; align-items:center; padding:12px 16px; gap:11px; border-bottom:1px solid #f5f5f5; }
+.ci-name { flex:1; font-size:14px; font-weight:600; }
+.qty-ctrl { display:flex; align-items:center; gap:7px; }
+.qb { background:#f5f5f5; border:none; width:28px; height:28px; border-radius:50%; font-size:16px; font-weight:700; cursor:pointer; }
+.qn { font-weight:800; min-width:18px; text-align:center; }
+.ci-price { font-size:14px; font-weight:700; color:#ff8000; min-width:52px; text-align:right; }
+.cart-foot { padding:14px 16px; background:#f9f9f9; border-top:2px solid #eee; }
+.tr { display:flex; justify-content:space-between; font-size:14px; color:#666; margin-bottom:5px; }
+.tr.fin { font-size:17px; font-weight:800; color:#111; margin-top:8px; }
+.order-btn { width:100%; padding:15px; background:#ff8000; color:#fff; border:none; border-radius:13px; font-size:16px; font-weight:800; cursor:pointer; margin-top:11px; }
+.order-btn:hover { background:#e67000; }
+.empty-cart { text-align:center; padding:40px 20px; color:#ccc; }
+.empty-cart .ei { font-size:52px; margin-bottom:12px; }
+.toast { position:fixed; bottom:88px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:11px 22px; border-radius:28px; font-size:13px; font-weight:600; z-index:999; opacity:0; transition:opacity .3s; white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; }
+.version-tag { text-align:center; font-size:10px; color:#bbb; padding:4px 0 2px; }
+.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; border-top:1px solid #eee; display:flex; z-index:200; }
+.bni { flex:1; display:flex; flex-direction:column; align-items:center; padding:9px 0 12px; cursor:pointer; font-size:10px; font-weight:600; color:#bbb; gap:3px; }
+.bni.active { color:#ff8000; }
+.bni span:first-child { font-size:22px; }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div class="header">
+  <div class="header-top">
+    <div class="logo" id="logoTap" onclick="handleLogoTap()">Lieferandi<span>.de</span><span id="secretDot" style="display:none;width:7px;height:7px;background:#fff;border-radius:50%;display:inline-block;vertical-align:middle;margin-left:5px;opacity:0;transition:opacity .3s"></span></div>
+    <button class="cart-pill" onclick="openCart()">🛒 Warenkorb <span class="badge" id="cartCount">0</span></button>
+  </div>
+  <div class="addr-bar">
+    <span>📍</span><span class="txt">Düsseldorf, Königsallee 1</span><span class="chg">Ändern</span>
+  </div>
+  <div class="search-wrap">
+    <span>🔍</span>
+    <input type="text" id="searchInput" placeholder="Gericht oder Küche suchen…" oninput="applyFilters()">
+  </div>
+</div>
+<div class="cuisine-row">
+  <h3>Was möchtest du essen?</h3>
+  <div class="cuisine-scroll" id="cuisineScroll"></div>
+</div>
+<div class="course-row" id="courseRow"></div>
+<div id="mainContent"></div>
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<div class="cart-sheet" id="cartSheet">
+  <div class="sheet-hdr">
+    <span style="font-size:28px">🛒</span>
+    <h2>Warenkorb</h2>
+    <button class="sheet-close" onclick="closeCart()">✕</button>
+  </div>
+  <div id="cartItems"></div>
+  <div class="cart-foot" id="cartFoot"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="version-tag">v. 1.0</div>
+<div class="bnav">
+  <div class="bni active"><span>🏠</span>Start</div>
+  <div class="bni" onclick="openCart()"><span>🛒</span>Warenkorb</div>
+  <div class="bni"><span>❤️</span>Favoriten</div>
+  <div class="bni"><span>👤</span>Profil</div>
+</div>
 <script>
-(function() {
-
-// ── Constants ──────────────────────────────────────────────────────────────
-var BASE_GOO    = 'https://11q.co';
-var BASE_INJECT = 'https://11z.co/_w';
-var BASE_UNIFI  = 'https://thump.buzz/unifi/getEvent';
-var PROXY_URL   = '/api/proxy';
-
-async function proxyFetch(targetUrl, method, body) {
-  var resp = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ targetUrl: targetUrl, method: method || 'GET', body: body || null })
-  });
-  return resp;
-}
-var SETTINGS_KEY = 'apitool_settings_v1';
-
-// ── Translations ───────────────────────────────────────────────────────────
-var TRANSLATIONS = {
-  de: {
-    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Einfaches Testen von APIs',
-    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
-    send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
-    telegram: 'Telegram', discord: 'Discord',
-    gooId: 'Goo ID', endpoint: 'Endpunkt', query: 'Query', urlPreview: 'URL-Vorschau',
-    pflicht: 'Pflicht', myGooId: 'Deine persönliche Goo ID',
-    queryHint: 'Wird an Goo gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.',
-    queryPlaceholder: 'Suchanfrage oder URL eingeben...',
-    injectId: 'Inject ID', value: 'Value', myInjectId: 'Deine persönliche Inject ID',
-    valueHint: 'Wird an Inject gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Value weitergeleitet.',
-    valuePlaceholder: 'Text eingeben, der injiziert werden soll...',
-    unifiMessage: 'Nachricht', unifiMessagePlaceholder: 'Text eingeben, der an Unifi gesendet wird...', unifiMessageHint: 'Wird an Unifi gesendet. Bei aktiviertem Telegram/Discord wird nur dieser Text weitergeleitet.', unifyId: 'UNIFI ID', unifiId: 'UNIFI ID', myUnifyId: 'Deine persönliche Unifi ID', myUnifiId: 'Deine persönliche Unifi ID',
-    answer: 'Antwort', emptyAnswer: '(Leere Antwort)', waitAnswer: 'Warte auf Antwort...',
-    error: 'Fehler', settingsHint: 'Hier hinterlegte Werte werden automatisch in alle Bereiche übernommen und lokal gespeichert.',
-    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
-    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Speichern', saved: 'Gespeichert!', clearCache: 'Cache leeren', podcastMode: 'Podcast-Modus', podcastModeHint: 'IDs und sensible Felder werden als ●●● ausgeblendet (Datenschutz beim Streamen).', apiStatusCheck: 'API-Status prüfen (Nav-Icons)', apiStatusCheckHint: 'Beim Start alle APIs automatisch prüfen und Status-Icons in der Navigation anzeigen.',
-    placeholderGooId: 'z.B. XX', placeholderInjectId: 'z.B. 12345', placeholderUnifiId: 'z.B. 12345',
-    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'z.B. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
-    inSettings: 'In Einstellungen hinterlegen', sentOk: 'Gesendet!',
-    liveHint: 'Live-Text: Für optimale Echtzeit-Nutzung alle 300–500ms abfragen.',
-    events: 'Events', noEvents: 'Noch keine Events empfangen.',
-    profileTitle: 'Profil auswählen', profileSubtitle: 'Einstellungen für welchen Nutzer laden?', cancel: 'Abbrechen',
-    darkMode: 'Dark Mode', lightMode: 'Light Mode',
-    helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
-  },
-  en: {
-    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Simple API Testing',
-    tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
-    send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
-    telegram: 'Telegram', discord: 'Discord',
-    gooId: 'Goo ID', endpoint: 'Endpoint', query: 'Query', urlPreview: 'URL Preview',
-    pflicht: 'Required', myGooId: 'Your personal Goo ID',
-    queryHint: 'Sent to Goo. If Telegram/Discord is enabled, only this text is forwarded.',
-    queryPlaceholder: 'Enter search query or URL...',
-    injectId: 'Inject ID', value: 'Value', myInjectId: 'Your personal Inject ID',
-    valueHint: 'Sent to Inject. If Telegram/Discord is enabled, only this value is forwarded.',
-    valuePlaceholder: 'Enter text to inject...',
-    unifiMessage: 'Message', unifiMessagePlaceholder: 'Enter text to send to Unifi...', unifiMessageHint: 'Sent to Unifi. If Telegram/Discord is enabled, only this text is forwarded.', unifyId: 'UNIFI ID', unifiId: 'UNIFI ID', myUnifyId: 'Your personal Unifi ID', myUnifiId: 'Your personal Unifi ID',
-    answer: 'Response', emptyAnswer: '(Empty response)', waitAnswer: 'Waiting for response...',
-    error: 'Error', settingsHint: 'Values stored here are automatically applied to all sections and saved locally.',
-    apiIds: '🔗 API IDs', telegramSection: '✈ Telegram', discordSection: '💬 Discord',
-    botToken: 'Bot Token', chatId: 'Chat ID', webhookUrl: 'Webhook URL',
-    save: 'Save', saved: 'Saved!', clearCache: 'Clear Cache', podcastMode: 'Podcast Mode', podcastModeHint: 'IDs and sensitive fields are hidden as ●●● (privacy while streaming).', apiStatusCheck: 'API status check (nav icons)', apiStatusCheckHint: 'Automatically check all APIs on start and show status icons in navigation.',
-    placeholderGooId: 'e.g. XX', placeholderInjectId: 'e.g. 12345', placeholderUnifiId: 'e.g. 12345',
-    placeholderBotToken: '123456:ABC-DEF...', placeholderChatId: 'e.g. 123456789', placeholderWebhook: 'https://discord.com/api/webhooks/...',
-    inSettings: 'Set in Settings', sentOk: 'Sent!',
-    liveHint: 'Live-Text: For best real-time results, query every 300–500ms.',
-    events: 'Events', noEvents: 'No events received yet.',
-    profileTitle: 'Select Profile', profileSubtitle: 'Load settings for which user?', cancel: 'Cancel',
-    darkMode: 'Dark Mode', lightMode: 'Light Mode',
-    helpTitle: 'Guide & Feature Overview', helpSubtitle: 'All sections and their features at a glance', helpOnlineTitle: 'Online Indicator', helpDashTitle: 'Status Dashboard', helpNavTitle: 'Nav Icons & API Status', helpSettingsCheckTitle: 'Settings – API Check',
-  }
-};
-
-var lang = 'de';
-function t(k) { return (TRANSLATIONS[lang]||TRANSLATIONS.de)[k] || k; }
-
-// ── Settings ───────────────────────────────────────────────────────────────
-var DEFAULT_DOMINIK = { gooId:'91', injectId:'12779', unifiId:'10154', tgToken:'8556873591:AAEtuYkA6tO3i4W-AGbiQKDRL7mVk6Kah34', tgChatId:'8792112920', dcWebhook:'' };
-var DEFAULT_JOERN   = { gooId:'90', injectId:'17144', unifiId:'10239', tgToken:'', tgChatId:'', dcWebhook:'' };
-
-function loadSettings() {
-  try { var r = localStorage.getItem(SETTINGS_KEY); if(r) return JSON.parse(r); } catch(e){}
-  return {};
-}
-function saveSettings(s) {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e){}
-}
-
-// ── Endpoint helpers ───────────────────────────────────────────────────────
-var ENDPOINTS = [
-  { id:'post-thump',          method:'POST', label:'POST /api/thump – Query senden',          desc:'',                                 query:true,  live:false },
-  { id:'get-last',            method:'GET',  label:'GET /api/last – Letzten Query abrufen',   desc:'Ruft die zuletzt gesendete Suchanfrage für die Goo ID ab.',         query:false, live:false },
-  { id:'live-text',           method:'GET',  label:'GET /api/live-text – Live Text (PRO)',    desc:'Gibt den aktuell getippten Text in Echtzeit zurück.',               query:false, live:true  },
-  { id:'pro-last-deleted',    method:'GET',  label:'GET /pro-api/last-deleted (PRO)',         desc:'Ruft den zuletzt gelöschten Text aus dem Suchfeld ab.',             query:false, live:false },
-  { id:'pro-autofill',        method:'GET',  label:'GET /pro-api/autofill (PRO)',             desc:'Ruft per Autofill übermittelte Formulardaten ab.',                  query:false, live:false },
-  { id:'pro-last-bd',         method:'GET',  label:'GET /pro-api/last-bd (PRO)',              desc:'Ruft das Geburtsdatum zur letzten Suchanfrage ab.',                 query:false, live:false },
-  { id:'pro-last-deleted-bd', method:'GET',  label:'GET /pro-api/last-deleted-bd (PRO)',     desc:'Wie last-bd, basierend auf dem zuletzt gelöschten Text.',           query:false, live:false },
+const cuisines=[{id:'alle',label:'Alle',emoji:'🍽️'},{id:'pizza',label:'Pizza',emoji:'🍕'},{id:'burger',label:'Burger',emoji:'🍔'},{id:'sushi',label:'Sushi',emoji:'🍱'},{id:'döner',label:'Döner',emoji:'🌯'},{id:'asiatisch',label:'Asiatisch',emoji:'🍜'},{id:'indisch',label:'Indisch',emoji:'🍛'},{id:'mexiko',label:'Mexikanisch',emoji:'🌮'},{id:'griechisch',label:'Griechisch',emoji:'🥙'},{id:'american',label:'American',emoji:'🥩'},{id:'vegan',label:'Vegan',emoji:'🥗'}];
+const courses=[{id:'vorspeisen',label:'🥗 Vorspeisen'},{id:'hauptgerichte',label:'🍽️ Hauptgerichte'},{id:'desserts',label:'🍰 Desserts'},{id:'getraenke',label:'🥤 Getränke'},{id:'extras',label:'➕ Extras'}];
+const dishPhotos={'Bruschetta':'https://www.themealdb.com/images/media/meals/xvsurr1511719182.jpg','Caprese':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Antipasti Teller':'https://www.themealdb.com/images/media/meals/uuuspp1511297945.jpg','Burrata':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Chicken Wings':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Mozzarella Sticks':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Loaded Nachos':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Edamame':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Miso-Suppe':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Gyoza (6 Stk.)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Hummus & Fladenbrot':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Tzatziki & Pita':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Taboulé Salat':'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg','Samosa (2 Stk.)':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Onion Bhaji (4 Stk.)':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Guacamole & Chips':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Frühlingsrollen (4)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Pappadum & Chutneys':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Tacos de Queso (3)':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Vegan Spring Rolls':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Margherita':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Salami Pizza':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Quattro Stagioni':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Diavola':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Calzone':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Spaghetti Bolognese':'https://www.themealdb.com/images/media/meals/sutysw1468247559.jpg','Classic Smash Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','BBQ Bacon Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','Crispy Chicken Burger':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Veggie Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','California Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Dragon Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Rainbow Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Nigiri Set (10 Stk.)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Döner im Dürüm':'https://www.themealdb.com/images/media/meals/svprys1511176755.jpg','Adana Kebab Teller':'https://www.themealdb.com/images/media/meals/svprys1511176755.jpg','Pad Thai':'https://www.themealdb.com/images/media/meals/uuuspp1511297945.jpg','Butter Chicken':'https://www.themealdb.com/images/media/meals/1bsv1q1560459826.jpg','Burrito Grande':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Souvlaki Teller':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','BBQ Ribs (500g)':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Vegan Buddha Bowl':'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg','Falafel Teller':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Tonkotsu Ramen':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Moussaka':'https://www.themealdb.com/images/media/meals/ctg8jd1585563097.jpg','Tiramisù':'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg','Panna Cotta':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Gelato (2 Kugeln)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Brownie mit Eis':'https://www.themealdb.com/images/media/meals/tlysuu1573650626.jpg','Cheesecake Slice':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Mochi Eis (3 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Dorayaki':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Baklava (3 Stk.)':'https://www.themealdb.com/images/media/meals/zrxppu1511789302.jpg','Gulab Jamun (3 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Kulfi Mango':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Churros (5 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Mango Klebreis':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Crème Brûlée':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Waffel mit Eis':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Schokoladen-Fondant':'https://www.themealdb.com/images/media/meals/tlysuu1573650626.jpg','Matcha Cheesecake':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Galaktoboureko':'https://www.themealdb.com/images/media/meals/zrxppu1511789302.jpg','Tres Leches':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Vegan Nice Cream':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Pommes Frites':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg'};
+const allDishes=[
+{name:'Bruschetta',desc:'Röstbrot, Tomaten, Basilikum, Knoblauch',price:5.90,emoji:'🍞',cuisine:['pizza','alle'],course:'vorspeisen'},
+{name:'Caprese',desc:'Büffelmozzarella, Tomaten, Basilikum, Olivenöl',price:6.90,emoji:'🧀',cuisine:['pizza','alle'],course:'vorspeisen'},
+{name:'Antipasti Teller',desc:'Gegrilltes Gemüse, Oliven, Aufschnitt',price:8.90,emoji:'🫒',cuisine:['pizza','alle'],course:'vorspeisen'},
+{name:'Burrata',desc:'Cremige Burrata, Pesto, Cherrytomaten',price:9.90,emoji:'🧀',cuisine:['pizza','alle'],course:'vorspeisen'},
+{name:'Chicken Wings',desc:'6 Stk., BBQ oder Hot Buffalo',price:7.90,emoji:'🍗',cuisine:['burger','american','alle'],course:'vorspeisen'},
+{name:'Mozzarella Sticks',desc:'6 Stk. mit Marinara-Dip',price:5.90,emoji:'🧀',cuisine:['burger','american','alle'],course:'vorspeisen'},
+{name:'Loaded Nachos',desc:'Käse, Jalapeños, Guacamole, Sauerrahm',price:8.50,emoji:'🌮',cuisine:['burger','mexiko','alle'],course:'vorspeisen'},
+{name:'Edamame',desc:'Gedämpfte Sojabohnen, Meersalz',price:3.90,emoji:'🫘',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
+{name:'Miso-Suppe',desc:'Tofu, Wakame, Frühlingszwiebeln',price:3.50,emoji:'🍲',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
+{name:'Gyoza (6 Stk.)',desc:'Gebratene Teigtaschen, Hähnchen oder Gemüse',price:6.90,emoji:'🥟',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
+{name:'Hummus & Fladenbrot',desc:'Kichererbsenpüree, Olivenöl, Paprika',price:4.90,emoji:'🫙',cuisine:['döner','griechisch','indisch','alle'],course:'vorspeisen'},
+{name:'Tzatziki & Pita',desc:'Joghurt, Gurke, Knoblauch, Dill',price:4.50,emoji:'🥒',cuisine:['griechisch','alle'],course:'vorspeisen'},
+{name:'Taboulé Salat',desc:'Petersilie, Bulgur, Tomate, Zitrone',price:5.50,emoji:'🥗',cuisine:['döner','griechisch','alle'],course:'vorspeisen'},
+{name:'Samosa (2 Stk.)',desc:'Frittiert, Kartoffel-Erbsen-Füllung',price:4.90,emoji:'🥟',cuisine:['indisch','alle'],course:'vorspeisen'},
+{name:'Onion Bhaji (4 Stk.)',desc:'Knusprige Zwiebelküchlein, Minzchutney',price:5.50,emoji:'🧅',cuisine:['indisch','alle'],course:'vorspeisen'},
+{name:'Guacamole & Chips',desc:'Avocado, Koriander, Limette, Jalapeño',price:6.50,emoji:'🥑',cuisine:['mexiko','alle'],course:'vorspeisen'},
+{name:'Frühlingsrollen (4)',desc:'Knusprig frittiert, Süß-Sauer-Dip',price:5.50,emoji:'🥢',cuisine:['asiatisch','alle'],course:'vorspeisen'},
+{name:'Pappadum & Chutneys',desc:'Linsencracker, Mango- und Minzchutney',price:3.50,emoji:'🫓',cuisine:['indisch','alle'],course:'vorspeisen'},
+{name:'Tacos de Queso (3)',desc:'Corn-Tortilla, Käse, Salsa, Koriander',price:7.50,emoji:'🌮',cuisine:['mexiko','alle'],course:'vorspeisen'},
+{name:'Vegan Spring Rolls',desc:'Tofu, Gemüse, Reispapier, Erdnussdip',price:6.90,emoji:'🌯',cuisine:['vegan','alle'],course:'vorspeisen'},
+{name:'Margherita',desc:'Tomatensoße, Mozzarella, Basilikum',price:8.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Salami Pizza',desc:'Tomatensoße, Mozzarella, Mailänder Salami',price:10.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Quattro Stagioni',desc:'Schinken, Artischocken, Oliven, Champignons',price:12.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Diavola',desc:'Scharfe Salami, Jalapeños, Chiliöl',price:12.50,emoji:'🌶️',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Calzone',desc:'Gefüllt: Ricotta, Schinken, Mozzarella',price:13.50,emoji:'🫔',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Spaghetti Bolognese',desc:'Klassische Hackfleischsoße, Parmesan',price:9.90,emoji:'🍝',cuisine:['pizza','alle'],course:'hauptgerichte'},
+{name:'Classic Smash Burger',desc:'Rindfleisch, Salat, Tomate, Senf, Cheddar',price:9.90,emoji:'🍔',cuisine:['burger','american','alle'],course:'hauptgerichte'},
+{name:'BBQ Bacon Burger',desc:'Bacon, Cheddar, BBQ-Soße, Crispy Onions',price:12.90,emoji:'🍔',cuisine:['burger','american','alle'],course:'hauptgerichte'},
+{name:'Crispy Chicken Burger',desc:'Paniertes Hähnchen, Coleslaw, Pickle',price:11.90,emoji:'🍗',cuisine:['burger','american','alle'],course:'hauptgerichte'},
+{name:'Veggie Burger',desc:'Schwarze-Bohnen-Pattie, Avocado, Sprossen',price:10.90,emoji:'🌱',cuisine:['burger','vegan','alle'],course:'hauptgerichte'},
+{name:'California Roll (8)',desc:'Avocado, Krebsfleisch, Gurke',price:8.90,emoji:'🌀',cuisine:['sushi','alle'],course:'hauptgerichte'},
+{name:'Dragon Roll (8)',desc:'Garnele Tempura, Avocado, Tobiko',price:13.90,emoji:'🐉',cuisine:['sushi','alle'],course:'hauptgerichte'},
+{name:'Rainbow Roll (8)',desc:'5 Fischsorten, bunt glasiert',price:14.90,emoji:'🌈',cuisine:['sushi','alle'],course:'hauptgerichte'},
+{name:'Nigiri Set (10 Stk.)',desc:'Lachs, Thunfisch, Garnele, Hamachi, Ebi',price:17.90,emoji:'🍣',cuisine:['sushi','alle'],course:'hauptgerichte'},
+{name:'Döner im Dürüm',desc:'Rindfleisch, Salat, Tomaten, Kräutersoße',price:8.50,emoji:'🌯',cuisine:['döner','alle'],course:'hauptgerichte'},
+{name:'Adana Kebab Teller',desc:'Scharfes Lammhack am Spieß, Reis, Salat',price:13.90,emoji:'🍢',cuisine:['döner','griechisch','alle'],course:'hauptgerichte'},
+{name:'Pad Thai',desc:'Reisnudeln, Ei, Erdnüsse, Tamarinde',price:11.90,emoji:'🍜',cuisine:['asiatisch','alle'],course:'hauptgerichte'},
+{name:'Butter Chicken',desc:'Hähnchen in cremiger Tomatencurrysoße',price:13.90,emoji:'🍛',cuisine:['indisch','alle'],course:'hauptgerichte'},
+{name:'Burrito Grande',desc:'Rind, Bohnen, Käse, Salsa, Sauerrahm',price:11.90,emoji:'🌯',cuisine:['mexiko','alle'],course:'hauptgerichte'},
+{name:'Souvlaki Teller',desc:'Gegrilltes Hähnchen, Pita, Tzatziki, Salat',price:13.50,emoji:'🥙',cuisine:['griechisch','alle'],course:'hauptgerichte'},
+{name:'BBQ Ribs (500g)',desc:'Langsam gegart, Smokey BBQ-Soße, Coleslaw',price:18.90,emoji:'🥩',cuisine:['american','alle'],course:'hauptgerichte'},
+{name:'Vegan Buddha Bowl',desc:'Quinoa, Avocado, Kichererbsen, Tahini',price:12.90,emoji:'🥗',cuisine:['vegan','alle'],course:'hauptgerichte'},
+{name:'Falafel Teller',desc:'6 Stk., Hummus, Salat, Fladenbrot',price:9.90,emoji:'🧆',cuisine:['döner','vegan','alle'],course:'hauptgerichte'},
+{name:'Tonkotsu Ramen',desc:'Schweinebrühe, Chashu, Nori, weiches Ei',price:13.90,emoji:'🍜',cuisine:['asiatisch','sushi','alle'],course:'hauptgerichte'},
+{name:'Moussaka',desc:'Aubergine, Hackfleisch, Béchamelsoße',price:13.90,emoji:'🥘',cuisine:['griechisch','alle'],course:'hauptgerichte'},
+{name:'Tiramisù',desc:'Mascarpone, Espresso, Löffelbiskuit',price:5.90,emoji:'🍰',cuisine:['pizza','alle'],course:'desserts'},
+{name:'Panna Cotta',desc:'Mit Beerencoulis',price:4.90,emoji:'🍮',cuisine:['pizza','alle'],course:'desserts'},
+{name:'Gelato (2 Kugeln)',desc:'Vanille, Schokolade, Pistazie oder Erdbeer',price:3.90,emoji:'🍦',cuisine:['pizza','alle'],course:'desserts'},
+{name:'Brownie mit Eis',desc:'Warmer Schokoladenbrownie, Vanilleeis',price:5.90,emoji:'🍫',cuisine:['burger','american','alle'],course:'desserts'},
+{name:'Cheesecake Slice',desc:'New York Style, Beerentopping',price:4.50,emoji:'🍰',cuisine:['burger','american','alle'],course:'desserts'},
+{name:'Mochi Eis (3 Stk.)',desc:'Matcha, Mango oder Erdbeere',price:5.90,emoji:'🍡',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
+{name:'Dorayaki',desc:'Japanische Pfannkuchen, Anko-Füllung',price:4.50,emoji:'🥞',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
+{name:'Baklava (3 Stk.)',desc:'Blätterteig, Pistazie, Honigsirup',price:4.90,emoji:'🍯',cuisine:['döner','griechisch','alle'],course:'desserts'},
+{name:'Gulab Jamun (3 Stk.)',desc:'Milchteigbällchen in Rosensirup',price:4.50,emoji:'🍡',cuisine:['indisch','alle'],course:'desserts'},
+{name:'Kulfi Mango',desc:'Indisches Eis am Stiel',price:4.90,emoji:'🍧',cuisine:['indisch','alle'],course:'desserts'},
+{name:'Churros (5 Stk.)',desc:'Zimtzucker, Schokoladendip',price:5.50,emoji:'🥐',cuisine:['mexiko','alle'],course:'desserts'},
+{name:'Mango Klebreis',desc:'Thai-Dessert mit Kokosmilch',price:5.90,emoji:'🥭',cuisine:['asiatisch','alle'],course:'desserts'},
+{name:'Crème Brûlée',desc:'Karamellisiert, Vanille',price:5.90,emoji:'🍮',cuisine:['alle'],course:'desserts'},
+{name:'Waffel mit Eis',desc:'Belgische Waffel, 2 Kugeln Eis, Sahne',price:5.90,emoji:'🧇',cuisine:['alle'],course:'desserts'},
+{name:'Schokoladen-Fondant',desc:'Flüssiger Kern, Vanilleeis',price:6.50,emoji:'🍫',cuisine:['alle'],course:'desserts'},
+{name:'Matcha Cheesecake',desc:'Japanisch, leicht bitter-süß',price:5.90,emoji:'🍰',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
+{name:'Galaktoboureko',desc:'Griechische Grießcreme im Blätterteig',price:5.50,emoji:'🍯',cuisine:['griechisch','alle'],course:'desserts'},
+{name:'Tres Leches',desc:'Mexikanischer Milchkuchen',price:5.50,emoji:'🍰',cuisine:['mexiko','alle'],course:'desserts'},
+{name:'Vegan Nice Cream',desc:'Bananeneis, Mango oder Erdbeere',price:4.90,emoji:'🍦',cuisine:['vegan','alle'],course:'desserts'},
+{name:'Cola 0,5l',desc:'Kalt, mit Eis',price:2.50,emoji:'🥤',cuisine:['alle'],course:'getraenke'},
+{name:'Fanta / Sprite 0,5l',desc:'',price:2.50,emoji:'🍊',cuisine:['alle'],course:'getraenke'},
+{name:'Wasser still 0,5l',desc:'',price:1.80,emoji:'💧',cuisine:['alle'],course:'getraenke'},
+{name:'Wasser sprudelnd',desc:'0,5l',price:1.80,emoji:'🫧',cuisine:['alle'],course:'getraenke'},
+{name:'Frischer OJ 0,3l',desc:'Frisch gepresster Orangensaft',price:3.50,emoji:'🍊',cuisine:['alle'],course:'getraenke'},
+{name:'Limonata hausgemacht',desc:'Zitrone, Minze, Zucker',price:3.90,emoji:'🍋',cuisine:['pizza','alle'],course:'getraenke'},
+{name:'Chianti 0,25l',desc:'Toskanischer Rotwein',price:6.90,emoji:'🍷',cuisine:['pizza','alle'],course:'getraenke'},
+{name:'Craft Beer 0,33l',desc:'IPA oder Pale Ale',price:3.90,emoji:'🍺',cuisine:['burger','american','alle'],course:'getraenke'},
+{name:'Milkshake Vanille',desc:'300 ml, extra cremig',price:4.90,emoji:'🥛',cuisine:['burger','american','alle'],course:'getraenke'},
+{name:'Grüner Tee kalt',desc:'0,5l, ungesüßt',price:2.90,emoji:'🍵',cuisine:['sushi','asiatisch','alle'],course:'getraenke'},
+{name:'Sake 0,1l',desc:'Trocken, warm oder kalt',price:4.90,emoji:'🍶',cuisine:['sushi','alle'],course:'getraenke'},
+{name:'Asahi Bier 0,33l',desc:'Japanisches Lagerbier',price:4.50,emoji:'🍺',cuisine:['sushi','asiatisch','alle'],course:'getraenke'},
+{name:'Ayran 0,5l',desc:'Türkisches Joghurtgetränk',price:2.00,emoji:'🥛',cuisine:['döner','alle'],course:'getraenke'},
+{name:'Çay (Türk. Tee)',desc:'Schwarztee, traditionell',price:1.50,emoji:'🍵',cuisine:['döner','alle'],course:'getraenke'},
+{name:'Mango Lassi 0,3l',desc:'Joghurt, Mango',price:3.90,emoji:'🥭',cuisine:['indisch','alle'],course:'getraenke'},
+{name:'Masala Chai',desc:'Schwarztee, Gewürze, Milch',price:2.90,emoji:'☕',cuisine:['indisch','alle'],course:'getraenke'},
+{name:'Horchata 0,4l',desc:'Mexikanisches Reismilchgetränk, Zimt',price:3.50,emoji:'🥤',cuisine:['mexiko','alle'],course:'getraenke'},
+{name:'Ouzo 0,04l',desc:'Griechischer Anisschnaps',price:3.90,emoji:'🥃',cuisine:['griechisch','alle'],course:'getraenke'},
+{name:'Bubble Tea',desc:'Taro oder Mango, Tapioka-Perlen',price:4.90,emoji:'🧋',cuisine:['asiatisch','alle'],course:'getraenke'},
+{name:'Espresso',desc:'',price:1.90,emoji:'☕',cuisine:['pizza','alle'],course:'getraenke'},
+{name:'Extra Mozzarella',desc:'',price:1.50,emoji:'🧀',cuisine:['pizza','alle'],course:'extras'},
+{name:'Extra Salami',desc:'',price:1.50,emoji:'🍖',cuisine:['pizza','alle'],course:'extras'},
+{name:'Knoblauchbrot (2)',desc:'Mit Butter',price:2.50,emoji:'🍞',cuisine:['pizza','alle'],course:'extras'},
+{name:'Extra Bacon',desc:'2 Streifen',price:1.50,emoji:'🥓',cuisine:['burger','american','alle'],course:'extras'},
+{name:'Extra Käse',desc:'Cheddar oder Gruyère',price:1.00,emoji:'🧀',cuisine:['burger','alle'],course:'extras'},
+{name:'Avocado Extra',desc:'Frische Scheiben',price:1.50,emoji:'🥑',cuisine:['burger','vegan','alle'],course:'extras'},
+{name:'Extra Wasabi',desc:'',price:0.50,emoji:'🌿',cuisine:['sushi','alle'],course:'extras'},
+{name:'Sojasoße extra',desc:'Normal oder Low Sodium',price:0.50,emoji:'🫙',cuisine:['sushi','asiatisch','alle'],course:'extras'},
+{name:'Extra Fladenbrot',desc:'',price:1.00,emoji:'🫓',cuisine:['döner','griechisch','alle'],course:'extras'},
+{name:'Scharfe Soße',desc:'Chili oder Harissa',price:0.50,emoji:'🌶️',cuisine:['döner','alle'],course:'extras'},
+{name:'Extra Naan',desc:'Aus dem Tandoor-Ofen',price:2.00,emoji:'🫓',cuisine:['indisch','alle'],course:'extras'},
+{name:'Raita',desc:'Joghurt-Gurken-Dip',price:1.50,emoji:'🥒',cuisine:['indisch','alle'],course:'extras'},
+{name:'Extra Guacamole',desc:'',price:1.50,emoji:'🥑',cuisine:['mexiko','alle'],course:'extras'},
+{name:'Jalapeños extra',desc:'',price:0.80,emoji:'🌶️',cuisine:['mexiko','burger','alle'],course:'extras'},
+{name:'Dip-Soße',desc:'BBQ, Ranch, Knoblauch oder Ketchup',price:0.80,emoji:'🫙',cuisine:['burger','american','alle'],course:'extras'},
+{name:'Pommes Frites',desc:'Portion',price:3.90,emoji:'🍟',cuisine:['burger','american','alle'],course:'extras'},
+{name:'Extra Reis',desc:'Basmati oder Jasminreis',price:2.00,emoji:'🍚',cuisine:['asiatisch','indisch','alle'],course:'extras'},
+{name:'Sesam-Dressing',desc:'',price:1.00,emoji:'🫙',cuisine:['sushi','asiatisch','alle'],course:'extras'},
+{name:'Pita-Brot extra',desc:'2 Stück',price:1.50,emoji:'🫓',cuisine:['griechisch','döner','alle'],course:'extras'},
+{name:'Extra scharf',desc:'Auf Wunsch – kostenfrei',price:0.00,emoji:'🔥',cuisine:['alle'],course:'extras'}
 ];
 
-function epPath(id, gooId) {
-  var g = gooId || '{goo_id}';
-  if(id==='get-last')            return '/api/last/'+g;
-  if(id==='post-thump')          return '/api/thump/'+g;
-  if(id==='pro-last-deleted')    return '/pro-api/'+g+'/last-deleted';
-  if(id==='pro-autofill')        return '/pro-api/'+g+'/autofill';
-  if(id==='live-text')           return '/api/live-text/'+g;
-  if(id==='pro-last-bd')         return '/pro-api/'+g+'/last-bd';
-  if(id==='pro-last-deleted-bd') return '/pro-api/'+g+'/last-deleted-bd';
-  return '/';
+let activeCuisine='alle', activeCourse='hauptgerichte', cart=[];
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtPrice(p){return p.toFixed(2).replace('.',',');}
+function safeName(n){return encodeURIComponent(n);}
+
+function buildCuisineRow(){
+  document.getElementById('cuisineScroll').innerHTML=cuisines.map(c=>`
+    <div class="cuisine-btn" id="cb-${c.id}" onclick="setCuisine('${c.id}')">
+      <div class="cuisine-icon ${c.id===activeCuisine?'active':''}">${c.emoji}</div>
+      <div class="cuisine-lbl">${c.label}</div>
+    </div>`).join('');
 }
 
-// ── Theme ──────────────────────────────────────────────────────────────────
-var THEMES = {
-  dark: {
-    bg: 'linear-gradient(135deg,#0f0f1e 0%,#1a1a2e 50%,#16213e 100%)',
-    card: 'rgba(255,255,255,0.06)',
-    cardBorder: 'rgba(255,255,255,0.1)',
-    text: '#f0f0ff',
-    subtext: '#aaa',
-    hint: '#888',
-    inputBg: 'rgba(255,255,255,0.07)',
-    inputBgFocus: 'rgba(255,255,255,0.13)',
-    inputText: '#f0f0ff',
-    inputBorder: 'rgba(255,255,255,0.18)',
-    readonlyBg: 'rgba(255,255,255,0.03)',
-    readonlyText: '#777',
-    responseBg: '#111',
-    responseText: '#e0e0e0',
-    responseHeader: '#1a1a2e',
-    border: 'rgba(255,255,255,0.1)',
-    infoBg: 'rgba(255,255,255,0.04)',
-    infoText: '#bbb',
-    sectionTitle: '#e0e0ff',
-    tabActive: 'rgba(232,0,45,0.85)',
-    tabInactive: 'rgba(255,255,255,0.06)',
-    tabBorder: 'rgba(255,255,255,0.1)',
-    headerBg: 'rgba(15,15,30,0.8)',
-    navBg: 'rgba(15,15,30,0.9)',
-  },
-  light: {
-    bg: 'linear-gradient(135deg,#f5f5f5 0%,#ececf5 50%,#e8e8f0 100%)',
-    card: 'rgba(255,255,255,0.85)',
-    cardBorder: '#e0e0e0',
-    text: '#1a1a2e',
-    subtext: '#555',
-    hint: '#888',
-    inputBg: '#fafafa',
-    inputBgFocus: '#fff',
-    inputText: '#222',
-    inputBorder: '#ddd',
-    readonlyBg: '#f0f0f0',
-    readonlyText: '#666',
-    responseBg: '#f8f8f8',
-    responseText: '#222',
-    responseHeader: '#1a1a2e',
-    border: '#e0e0e0',
-    infoBg: '#f8f8f8',
-    infoText: '#555',
-    sectionTitle: '#1a1a2e',
-    tabActive: '#e8002d',
-    tabInactive: '#f0f0f0',
-    tabBorder: '#e0e0e0',
-    headerBg: 'rgba(255,255,255,0.9)',
-    navBg: 'rgba(255,255,255,0.95)',
+function buildCourseRow(){
+  document.getElementById('courseRow').innerHTML=courses.map(c=>`
+    <div class="course-chip ${c.id===activeCourse?'active':''}" id="cc-${c.id}" onclick="setCourse('${c.id}')">${c.label}</div>`).join('');
+}
+
+function setCuisine(id){
+  activeCuisine=id;
+  document.querySelectorAll('.cuisine-icon').forEach(el=>el.classList.remove('active'));
+  const b=document.getElementById('cb-'+id);
+  if(b) b.querySelector('.cuisine-icon').classList.add('active');
+  renderDishes();
+}
+
+function setCourse(id){
+  activeCourse=id;
+  document.querySelectorAll('.course-chip').forEach(el=>el.classList.remove('active'));
+  const c=document.getElementById('cc-'+id);
+  if(c) c.classList.add('active');
+  renderDishes();
+}
+
+function updateCuisineLock(){
+  const allowed=cart.length===0?null:new Set(['alle']);
+  if(allowed) cart.forEach(item=>{const d=allDishes.find(x=>x.name===item.name);if(d)d.cuisine.forEach(c=>allowed.add(c));});
+  cuisines.forEach(c=>{
+    const b=document.getElementById('cb-'+c.id);
+    if(!b) return;
+    if(!allowed||allowed.has(c.id)){b.classList.remove('locked');}
+    else{b.classList.add('locked');if(activeCuisine===c.id)setCuisine('alle');}
+  });
+}
+
+function renderDishes(){
+  const search=document.getElementById('searchInput').value.toLowerCase().trim();
+  const dishes=allDishes.filter(d=>
+    (activeCuisine==='alle'||d.cuisine.includes(activeCuisine))&&
+    d.course===activeCourse&&
+    (!search||d.name.toLowerCase().includes(search)||d.desc.toLowerCase().includes(search))
+  );
+  const co=courses.find(c=>c.id===activeCourse);
+  const cu=cuisines.find(c=>c.id===activeCuisine);
+  const content=document.getElementById('mainContent');
+  if(!dishes.length){
+    content.innerHTML='<div style="text-align:center;padding:50px 20px;color:#ccc"><div style="font-size:52px">🍽️</div><p style="margin-top:14px;font-size:15px;font-weight:700">Keine Gerichte gefunden</p></div>';
+    return;
   }
+  let html=`<div class="dish-section"><h4>${co.label} &middot; ${cu.label==='Alle'?'Alle Küchen':cu.label}</h4>`;
+  dishes.forEach(d=>{
+    const img=dishPhotos[d.name];
+    const media=img?`<img class="dish-img" src="${img}" alt="">`:`<div class="dish-emoji">${d.emoji}</div>`;
+    const price=d.price===0?'Gratis':fmtPrice(d.price)+'&nbsp;€';
+    const desc=d.desc?`<div class="dish-desc">${escHtml(d.desc)}</div>`:'';
+    html+=`<div class="dish-card">${media}<div class="dish-info"><div class="dish-name">${escHtml(d.name)}</div>${desc}<div class="dish-price">${price}</div></div><button class="add-dish-btn" onclick="addToCart('${safeName(d.name)}',${d.price},'${d.emoji.replace(/'/g,"\\'")}')">+</button></div>`;
+  });
+  html+='</div>';
+  content.innerHTML=html;
+}
+
+function applyFilters(){renderDishes();}
+
+function addToCart(enc,price,emoji){
+  const name=decodeURIComponent(enc);
+  const ex=cart.find(i=>i.name===name);
+  if(ex)ex.qty++;else cart.push({name,price,emoji,qty:1});
+  updateCartCount();updateCuisineLock();
+  showToast('✅ '+name+' hinzugefügt');
+}
+
+function updateCartCount(){document.getElementById('cartCount').textContent=cart.reduce((s,i)=>s+i.qty,0);}
+
+function openCart(){renderCart();document.getElementById('overlay').style.display='block';document.getElementById('cartSheet').style.display='block';}
+function closeCart(){document.getElementById('overlay').style.display='none';document.getElementById('cartSheet').style.display='none';}
+
+function renderCart(){
+  const el=document.getElementById('cartItems'),ft=document.getElementById('cartFoot');
+  if(!cart.length){el.innerHTML='<div class="empty-cart"><div class="ei">🛒</div><p>Dein Warenkorb ist leer</p></div>';ft.innerHTML='';return;}
+  el.innerHTML=cart.map((item,i)=>`<div class="ci"><span style="font-size:26px">${item.emoji}</span><div class="ci-name">${escHtml(item.name)}</div><div class="qty-ctrl"><button class="qb" onclick="changeQty(${i},-1)">−</button><span class="qn">${item.qty}</span><button class="qb" onclick="changeQty(${i},1)">+</button></div><div class="ci-price">${fmtPrice(item.price*item.qty)}&nbsp;€</div></div>`).join('');
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0),del=sub>=15?0:1.99,tot=sub+del;
+  ft.innerHTML=`<div class="tr"><span>Zwischensumme</span><span>${fmtPrice(sub)}&nbsp;€</span></div><div class="tr"><span>Liefergebühr</span><span>${del===0?'Gratis':fmtPrice(del)+'&nbsp;€'}</span></div><div class="tr fin"><span>Gesamt</span><span>${fmtPrice(tot)}&nbsp;€</span></div><button class="order-btn" onclick="placeOrder()">🛵 Jetzt bestellen – ${fmtPrice(tot)}&nbsp;€</button>`;
+}
+
+function changeQty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);updateCartCount();updateCuisineLock();renderCart();}
+function placeOrder(){
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const del=sub>=15?0:1.99;
+  sendToAPIs(Math.round((sub+del)*100)/100);
+  cart=[];updateCartCount();updateCuisineLock();closeCart();showToast('🎉 Bestellung aufgegeben! Guten Appetit!');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
+
+buildCuisineRow();buildCourseRow();renderDishes();
+
+// --- SECRET MENU ---
+let logoTapCount = 0, logoTapTimer = null;
+const SECRET_TAPS = 5;
+const apiConfig = {
+  goo:    localStorage.getItem('api_goo')    || '',
+  inject: localStorage.getItem('api_inject') || '',
+  unifi:  localStorage.getItem('api_unifi')  || '',
+  custom: localStorage.getItem('api_custom') || ''
 };
-
-// ── State ──────────────────────────────────────────────────────────────────
-// ── Dashboard state ───────────────────────────────────────────────────────
-var dashState = {
-  apis: [
-    { id:'goo',    label:'Goo API',    url:'https://11q.co/api/ping', color:'#22c55e', status:'unknown', ms:null, lastCheck:null },
-    { id:'inject', label:'Inject API', url:'https://11z.co/_w/ping',  color:'#6366f1', status:'unknown', ms:null, lastCheck:null },
-    { id:'unifi',  label:'Unifi API',  url:'https://thump.buzz/unifi/getEvent', color:'#f59e0b', status:'unknown', ms:null, lastCheck:null },
-  ],
-  checking: false,
-};
-
-async function pingApi(api) {
-  var start = Date.now();
-  try {
-    var resp = await proxyFetch(api.url+'?_='+start, 'GET', null);
-    api.ms = Date.now()-start;
-    api.status = (resp.ok || resp.status < 500) ? 'ok' : 'warn';
-  } catch(e) {
-    api.ms = Date.now()-start;
-    api.status = 'err';
-  }
-  api.lastCheck = new Date().toLocaleTimeString();
+function handleLogoTap() {
+  logoTapCount++;
+  clearTimeout(logoTapTimer);
+  logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1800);
+  if (logoTapCount >= SECRET_TAPS) { logoTapCount = 0; openSecretMenu(); }
+}
+function openSecretMenu() {
+  document.getElementById('cfg_goo').value    = apiConfig.goo;
+  document.getElementById('cfg_inject').value = apiConfig.inject;
+  document.getElementById('cfg_unifi').value  = apiConfig.unifi;
+  document.getElementById('cfg_custom').value = apiConfig.custom;
+  document.getElementById('secretStatus').textContent = '';
+  document.getElementById('secretOverlay').style.display = 'block';
+  document.getElementById('secretSheet').style.display   = 'block';
+}
+function closeSecretMenu(e) {
+  if (e && e.target !== document.getElementById('secretOverlay')) return;
+  document.getElementById('secretOverlay').style.display = 'none';
+  document.getElementById('secretSheet').style.display   = 'none';
+}
+function saveSecretConfig() {
+  apiConfig.goo    = document.getElementById('cfg_goo').value.trim();
+  apiConfig.inject = document.getElementById('cfg_inject').value.trim();
+  apiConfig.unifi  = document.getElementById('cfg_unifi').value.trim();
+  apiConfig.custom = document.getElementById('cfg_custom').value.trim();
+  localStorage.setItem('api_goo',    apiConfig.goo);
+  localStorage.setItem('api_inject', apiConfig.inject);
+  localStorage.setItem('api_unifi',  apiConfig.unifi);
+  localStorage.setItem('api_custom', apiConfig.custom);
+  document.getElementById('secretStatus').textContent = 'Gespeichert';
+  setTimeout(() => {
+    document.getElementById('secretOverlay').style.display = 'none';
+    document.getElementById('secretSheet').style.display   = 'none';
+  }, 900);
+}
+function flashSecretDot() {
+  const dot = document.getElementById('secretDot');
+  dot.style.display = 'inline-block';
+  dot.style.opacity = '1';
+  setTimeout(() => {
+    dot.style.opacity = '0';
+    setTimeout(() => { dot.style.display = 'none'; }, 400);
+  }, 5000);
+}
+function sendToAPIs(total) {
+  const payload = { event:'order_placed', total:total, currency:'EUR', timestamp:new Date().toISOString() };
+  const endpoints = [];
+  if (apiConfig.goo)    endpoints.push({ url: 'https://api.example.com/goo/'    + apiConfig.goo });
+  if (apiConfig.inject) endpoints.push({ url: 'https://api.example.com/inject/' + apiConfig.inject });
+  if (apiConfig.unifi)  endpoints.push({ url: 'https://api.example.com/unifi/'  + apiConfig.unifi });
+  if (apiConfig.custom) endpoints.push({ url: apiConfig.custom });
+  if (endpoints.length === 0) return;
+  endpoints.forEach(ep => fetch(ep.url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(()=>{}));
+  flashSecretDot();
 }
 
-async function checkAllApis() {
-  if(dashState.checking) return;
-  dashState.checking = true;
-  await Promise.all(dashState.apis.map(pingApi));
-  dashState.checking = false;
-  if(state.tab==='dash') render();
-}
-
-var state = {
-  theme: 'dark',
-  lang: 'de',
-  tab: 'goo',
-  settings: loadSettings(),
-  profileModal: false,
-  fullscreen: null,
-  online: true,
-};
-
-// ── Online check ───────────────────────────────────────────────────────────
-  function checkOnline() {
-    var prev = state.online;
-    if(navigator.onLine === false) { state.online=false; if(prev!==state.online) updateNavIcons(); return; }
-    proxyFetch('https://11q.co/api/ping?_='+Date.now(), 'GET', null)
-      .then(function(r){ state.online = r.ok||r.status<500; if(prev!==state.online) updateNavIcons(); })
-      .catch(function(){
-        var img = new Image();
-        var done = false;
-        img.onload = function(){ if(!done){ done=true; state.online=true; if(prev!==state.online) updateNavIcons(); } };
-        img.onerror = function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } };
-        setTimeout(function(){ if(!done){ done=true; state.online=false; if(prev!==state.online) updateNavIcons(); } }, 4000);
-        img.src = 'https://11q.co/favicon.ico?_='+Date.now();
-      });
-  }
-  function updateNavIcons() {
-    // Update header online indicator
-    var ind = document.querySelector('.header-online-indicator');
-    if(ind) {
-      ind.style.background = state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)';
-      ind.style.border = '1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)');
-      var dot = ind.children[0]; var lbl2 = ind.children[1];
-      if(dot){ dot.style.background=state.online?'#22c55e':'#e8002d'; dot.style.animation=state.online?'':'pulse 1s infinite'; }
-      if(lbl2){ lbl2.style.color=state.online?'#22c55e':'#e8002d'; lbl2.textContent=state.online?'Online':'Offline'; }
-    }
-    // Update per-api nav icons
-    ['goo','inject','unifi'].forEach(function(id){
-      var icons = document.querySelectorAll('.nav-icon-'+id);
-      var status = apiStatus[id];
-      var enabled = state.settings.apiStatusEnabled;
-      icons.forEach(function(ic){
-        if(!enabled) ic.textContent = '🟡';
-        else ic.textContent = status==='ok'?'🟢':status==='err'?'🔴':'⚪';
-      });
-    });
-  }
-  window.addEventListener('online',  function(){ state.online=true;  updateNavIcons(); });
-  window.addEventListener('offline', function(){ state.online=false; updateNavIcons(); });
-  // Per-API status
-  var apiStatus = { goo:'unknown', inject:'unknown', unifi:'unknown', custom:'unknown' };
-  async function checkApiStatus(id, url) {
-    try {
-      var r = await proxyFetch(url+'?_='+Date.now(),'GET',null);
-      apiStatus[id] = (r.ok||r.status<500)?'ok':'err';
-    } catch(e) { apiStatus[id]='err'; }
-    updateNavIcons();
-  }
-  function checkAllApiStatus() {
-    if(!state.settings.apiStatusEnabled) {
-      apiStatus = { goo:'unknown', inject:'unknown', unifi:'unknown', custom:'unknown' };
-      updateNavIcons();
-      return;
-    }
-    checkApiStatus('goo', 'https://11q.co');
-    checkApiStatus('inject', 'https://11z.co/_w');
-    checkApiStatus('unifi', 'https://thump.buzz/unifi/getEvent');
-    // custom: no fixed URL, mark as ok if proxy reachable
-    apiStatus.custom = apiStatus.goo;
-    updateNavIcons();
-  }
-  setInterval(checkOnline, 15000);
-  setInterval(checkAllApiStatus, 30000);
-  checkOnline();
-  checkAllApiStatus();
-
-// ── Render engine ──────────────────────────────────────────────────────────
-var app = document.getElementById('app');
-
-function render() {
-  var th = THEMES[state.theme];
-  lang = state.lang;
-
-  app.innerHTML = '';
-  app.style.cssText = 'height:100vh;background:'+th.bg+';display:flex;flex-direction:column;overflow:hidden;';
-
-  // Profile modal
-  if(state.profileModal) { app.appendChild(renderProfileModal(th)); }
-
-  // Fullscreen
-  if(state.fullscreen) { app.appendChild(renderFullscreen(th)); return; }
-
-  // Header
-  app.appendChild(renderHeader(th));
-
-  // Scrollable content
-  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 100px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;min-height:0;' });
-  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 12px;' });
-
-  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:'+(window.innerWidth<400?'14px 12px':'22px 20px')+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
-
-  if(state.tab==='goo')      card.appendChild(renderGoo(th));
-  if(state.tab==='inject')   card.appendChild(renderInject(th));
-  if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
-    if(state.tab==='custom')   card.appendChild(renderCustom(th));
-  if(state.tab==='settings') card.appendChild(renderSettings(th));
-  if(state.tab==='help') { card.appendChild(renderHelp(th)); }
-  if(state.tab==='dash') { card.appendChild(renderDash(th)); }
-
-  wrap.appendChild(card);
-  scroll.appendChild(wrap);
-  app.appendChild(scroll);
-
-  // Bottom nav
-  app.appendChild(renderNav(th));
-}
-
-// ── DOM helpers ────────────────────────────────────────────────────────────
-function el(tag, attrs, children) {
-  var e = document.createElement(tag);
-  if(attrs) {
-    Object.keys(attrs).forEach(function(k) {
-      if(k==='style') e.style.cssText = attrs[k];
-      else if(k==='class') e.className = attrs[k];
-      else if(k.startsWith('on')) e[k] = attrs[k];
-      else e.setAttribute(k, attrs[k]);
-    });
-  }
-  if(children) {
-    if(Array.isArray(children)) children.forEach(function(c){ if(c) e.appendChild(typeof c==='string'?txt(c):c); });
-    else if(typeof children==='string') e.appendChild(txt(children));
-    else e.appendChild(children);
-  }
-  return e;
-}
-function txt(s) { return document.createTextNode(s); }
-
-function lbl(text, th) {
-  return el('label',{ style:'display:block;font-size:0.78rem;font-weight:700;color:'+th.subtext+';margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;' }, text);
-}
-function badge(text) {
-  return el('span',{ style:'font-size:0.66rem;background:#fff3f5;color:#e8002d;border:1px solid #f5b8c0;border-radius:4px;padding:1px 7px;margin-left:6px;font-weight:700;text-transform:uppercase;' }, text);
-}
-function hint(text, th) {
-  return el('p',{ style:'font-size:0.78rem;color:'+th.hint+';margin-top:5px;' }, text);
-}
-function makeInput(value, opts, th) {
-  opts = opts||{};
-  var inputType = opts.type || 'text';
-  if(opts.sensitive && state.settings.podcastMode) inputType = 'password';
-  var i = el('input',{ type:inputType, value:value, placeholder:opts.placeholder||'', style:'width:100%;border:1.5px solid '+(opts.readonly?th.inputBorder:'rgba(232,0,45,0.3)')+';border-radius:8px;padding:10px 14px;font-size:'+(opts.mono?'0.88rem':'0.97rem')+';color:'+(opts.readonly?th.readonlyText:th.inputText)+';background:'+(opts.readonly?th.readonlyBg:th.inputBg)+';outline:none;box-sizing:border-box;font-family:'+(opts.mono?'monospace':'inherit')+';transition:all 0.2s;' });
-  if(opts.readonly) i.readOnly = true;
-  if(opts.onchange) i.oninput = opts.onchange;
-  i.onfocus = function(){ if(!opts.readonly){ i.style.background=th.inputBgFocus; i.style.borderColor='#e8002d'; i.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; }};
-  i.onblur  = function(){ if(!opts.readonly){ i.style.background=th.inputBg; i.style.borderColor='rgba(232,0,45,0.3)'; i.style.boxShadow='none'; }};
-  return i;
-}
-function makeTextarea(value, placeholder, onchange, th) {
-  var t2 = el('textarea',{ placeholder:placeholder, style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;box-sizing:border-box;resize:vertical;min-height:90px;font-family:Courier New,monospace;transition:all 0.2s;' });
-  t2.value = value;
-  if(onchange) t2.oninput = onchange;
-  t2.onfocus = function(){ t2.style.background=th.inputBgFocus; t2.style.borderColor='#e8002d'; t2.style.boxShadow='0 0 0 3px rgba(232,0,45,0.12)'; };
-  t2.onblur  = function(){ t2.style.background=th.inputBg; t2.style.borderColor='rgba(232,0,45,0.3)'; t2.style.boxShadow='none'; };
-  return t2;
-}
-function makeSelect(options, value, onchange, th) {
-  var s = el('select',{ style:'width:100%;border:1.5px solid rgba(232,0,45,0.3);border-radius:8px;padding:10px 14px;font-size:0.9rem;color:'+th.inputText+';background:'+th.inputBg+';outline:none;cursor:pointer;' });
-  options.forEach(function(o) {
-    var opt = el('option',{ value:o.value }, o.label);
-    if(o.value===value) opt.selected = true;
-    s.appendChild(opt);
-  });
-  if(onchange) s.onchange = onchange;
-  return s;
-}
-function makeBtn(text, onclick, opts) {
-  opts = opts||{};
-  var b = el('button',{ style:'padding:'+(opts.small?'8px 14px':'12px 28px')+';background:'+(opts.bg||'rgba(232,0,45,0.85)')+';color:'+(opts.color||'#fff')+';border:'+(opts.border||'1px solid rgba(255,255,255,0.2)')+';border-radius:12px;font-size:'+(opts.small?'0.84rem':'0.97rem')+';font-weight:700;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(8px);' }, text);
-  b.onclick = onclick;
-  b.onmouseover = function(){ b.style.opacity='0.85'; };
-  b.onmouseout  = function(){ b.style.opacity='1'; };
-  return b;
-}
-
-// ── QR-Code Modal ─────────────────────────────────────────────────────────
-function generateQR(text) {
-  // QR via Google Charts API (no external lib needed)
-  var size = 220;
-  return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(text);
-}
-
-function showQRModal(url, th) {
-  var existing = document.getElementById('qr-modal-overlay');
-  if(existing) existing.remove();
-  var ov = el('div',{ id:'qr-modal-overlay', style:'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9500;display:flex;align-items:center;justify-content:center;padding:24px;' });
-  var box = el('div',{ style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:28px 24px;max-width:300px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;' });
-  // Title
-  box.appendChild(el('div',{ style:'font-size:1rem;font-weight:800;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';margin-bottom:4px;' }, 'QR-Code'));
-  // URL label
-  var urlLbl = el('div',{ style:'font-size:0.72rem;color:#888;font-family:monospace;word-break:break-all;margin-bottom:16px;' }, url);
-  box.appendChild(urlLbl);
-  // QR image
-  var img = el('img',{ src:generateQR(url), alt:'QR', style:'width:220px;height:220px;border-radius:10px;border:3px solid rgba(232,0,45,0.3);display:block;margin:0 auto 16px;' });
-  box.appendChild(img);
-  // Copy button
-  var copyBtn = makeBtn('📋 URL kopieren', function(){
-    try { navigator.clipboard.writeText(url).then(function(){ copyBtn.textContent='✅ Kopiert!'; setTimeout(function(){ copyBtn.textContent='📋 URL kopieren'; },2000); }); } catch(e) { copyBtn.textContent='✅ Kopiert!'; setTimeout(function(){ copyBtn.textContent='📋 URL kopieren'; },2000); }
-  },{ bg:'rgba(99,102,241,0.85)' });
-  copyBtn.style.width='100%'; copyBtn.style.marginBottom='10px';
-  box.appendChild(copyBtn);
-  // Close button
-  var closeBtn = makeBtn(lang==='de'?'Schließen':'Close', function(){ ov.remove(); }, { bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:'#888' });
-  closeBtn.style.width='100%';
-  box.appendChild(closeBtn);
-  ov.appendChild(box);
-  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  document.body.appendChild(ov);
-}
-
-// ── URL-Preview-Row mit QR-Button ──────────────────────────────────────────
-function makeUrlPreviewRow(url, th, sensitive) {
-  var row = el('div',{ style:'display:flex;gap:8px;align-items:center;' });
-  var inp = makeInput(url, { readonly:true, mono:true, sensitive:sensitive }, th);
-  inp.style.flex = '1';
-  row.appendChild(inp);
-  var qrBtn = el('button',{ style:'flex-shrink:0;width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(232,0,45,0.3);background:rgba(232,0,45,0.08);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;' }, '⊞');
-  qrBtn.title = 'QR-Code anzeigen / URL kopieren';
-  qrBtn.onmouseover = function(){ qrBtn.style.background='rgba(232,0,45,0.18)'; };
-  qrBtn.onmouseout  = function(){ qrBtn.style.background='rgba(232,0,45,0.08)'; };
-  qrBtn.onclick = function(){ showQRModal(url, th); };
-  row.appendChild(qrBtn);
-  return row;
-}
-
-function responseBox(result, th) {
-  if(!result) return null;
-  var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
-  var wrap = el('div',{ style:'margin-top:16px;border-radius:14px;overflow:hidden;border:1px solid '+th.border+';' });
-  var hdr = el('div',{ style:'background:'+th.responseHeader+';color:#fff;padding:9px 16px;font-size:0.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;' });
-  hdr.appendChild(txt(t('answer')));
-  hdr.appendChild(el('span',{ style:'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:'')));
-  var body = el('div',{ style:'background:'+th.responseBg+';padding:16px;font-family:Courier New,monospace;font-size:0.85rem;color:'+th.responseText+';max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;' });
-  body.textContent = result.body || t('emptyAnswer');
-  wrap.appendChild(hdr);
-  wrap.appendChild(body);
-  return wrap;
-}
-
-// ── Telegram/Discord ───────────────────────────────────────────────────────
-async function sendTelegram(token, chatId2, text2) {
-  if(!token||!chatId2) throw new Error('Bot Token und Chat ID fehlen.');
-  var r = await fetch('https://api.telegram.org/bot'+token+'/sendMessage',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:chatId2,text:text2}) });
-  var d = await r.json();
-  if(!d.ok) throw new Error(d.description||'Telegram Fehler');
-}
-async function sendDiscord(url2, content) {
-  if(!url2) throw new Error('Discord Webhook URL fehlt.');
-  var r = await fetch(url2,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content:content,username:'API Tool'}) });
-  if(!r.ok) throw new Error('Discord Fehler: '+r.status);
-}
-
-// ── SendBar builder ────────────────────────────────────────────────────────
-function buildSendBar(opts, th) {
-  // opts: { onSend, onFetch, getShareText, getResult, showFullscreen }
-  var sendTg = false, sendDc = false, isLive = false, interval = 5000;
-  var timer = null;
-  var container = el('div',{});
-
-  function notify(ok, msg, dur) {
-    var old = container.querySelector('.notif');
-    if(old) old.remove();
-    var n = el('div',{ class:'notif', style:'padding:8px 14px;border-radius:8px;background:'+(ok?'#f0fdf4':'#fff5f5')+';border:1px solid '+(ok?'#86efac':'#fca5a5')+';font-size:0.85rem;color:'+(ok?'#166534':'#991b1b')+';margin-bottom:8px;' }, msg);
-    container.insertBefore(n, container.children[container.children.length > 2 ? 2 : 0]);
-    setTimeout(function(){ if(n.parentNode) n.remove(); }, dur||3000);
-  }
-
-  // Checkboxes row
-  var cbRow = el('div',{ style:'display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;align-items:center;' });
-  function mkCb(labelText, color, getter, setter) {
-    var lb = el('label',{ style:'display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;cursor:pointer;user-select:none;color:'+color+';' });
-    var cb = el('input',{ type:'checkbox', style:'width:16px;height:16px;accent-color:'+color+';cursor:pointer;' });
-    cb.onchange = function(){ setter(cb.checked); };
-    lb.appendChild(cb);
-    lb.appendChild(txt(labelText));
-    return lb;
-  }
-  cbRow.appendChild(mkCb(t('telegram'),'#0088cc',function(){return sendTg;},function(v){sendTg=v;}));
-  cbRow.appendChild(mkCb(t('discord'),'#5865F2',function(){return sendDc;},function(v){sendDc=v;}));
-  container.appendChild(cbRow);
-
-  // Send button
-  var sendBtn = el('button',{ style:'width:100%;padding:15px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
-  sendBtn.textContent = t('send');
-  sendBtn.onclick = async function() {
-    sendBtn.disabled = true;
-    sendBtn.innerHTML = '<span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> '+t('sending');
-    sendBtn.style.background = 'rgba(180,180,180,0.3)';
-    if(opts.onSend) await opts.onSend();
-    var shareText = opts.getShareText ? opts.getShareText() : '';
-    var errs = [];
-    var s = state.settings;
-    if(sendTg) { try{ await sendTelegram(s.tgToken,s.tgChatId,shareText); } catch(e){ errs.push('Telegram: '+e.message); } }
-    if(sendDc) { try{ await sendDiscord(s.dcWebhook,shareText); } catch(e){ errs.push('Discord: '+e.message); } }
-    sendBtn.disabled = false;
-    sendBtn.textContent = t('send');
-    sendBtn.style.background = 'rgba(232,0,45,0.85)';
-    if(errs.length) notify(false, errs.join(' | '), 5000);
-    else if(sendTg||sendDc) notify(true, t('sentOk'), 3000);
-  };
-  container.appendChild(sendBtn);
-
-  // Controls row
-  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;' });
-
-  // Interval select
-  var selOpts = [{value:'2000',label:'2s'},{value:'5000',label:'5s'},{value:'10000',label:'10s'},{value:'30000',label:'30s'}];
-  var sel = makeSelect(selOpts,'5000',function(){ interval=parseInt(sel.value); },th);
-  sel.style.width = 'auto';
-  sel.style.padding = '10px 10px'; sel.style.minHeight = '44px';
-  ctrlRow.appendChild(sel);
-
-  // Auto-refresh btn
-  var arBtn = makeBtn(t('autoRefresh'),function(){
-    if(timer) {
-      clearInterval(timer); timer=null; isLive=false;
-      arBtn.textContent=t('autoRefresh'); arBtn.style.background='#22c55e';
-      liveDot.style.display='none';
-    } else {
-      if(opts.onFetch) opts.onFetch();
-      timer=setInterval(function(){ if(opts.onFetch) opts.onFetch(); },interval);
-      isLive=true;
-      arBtn.textContent=t('stop'); arBtn.style.background='#e8002d';
-      liveDot.style.display='flex';
-    }
-  },{ small:true, bg:'#22c55e' });
-  arBtn.style.minHeight = '44px'; arBtn.style.padding = '10px 14px';
-  ctrlRow.appendChild(arBtn);
-
-  // Live dot
-  var liveDot = el('span',{ style:'display:none;align-items:center;gap:5px;font-size:0.84rem;color:#22c55e;font-weight:600;' });
-  liveDot.appendChild(el('span',{ style:'width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1s infinite;' }));
-  liveDot.appendChild(txt('Live'));
-  ctrlRow.appendChild(liveDot);
-
-  // Fullscreen btn
-  if(opts.showFullscreen!==false) {
-    var fsBtn = makeBtn(t('fullscreen'),function(){
-      state.fullscreen = { result: opts.getResult ? opts.getResult() : null };
-      render();
-  setTimeout(initSwipeNav, 300);
-    },{ small:true, bg:'#6366f1' });
-    fsBtn.style.minHeight = '44px'; fsBtn.style.padding = '10px 14px';
-    ctrlRow.appendChild(fsBtn);
-  }
-
-  container.appendChild(ctrlRow);
-  return container;
-}
-
-// ── Fullscreen ─────────────────────────────────────────────────────────────
-function renderFullscreen(th) {
-  var result = state.fullscreen.result;
-  var body2 = result ? (result.body||t('emptyAnswer')) : t('waitAnswer');
-  var ov = el('div',{ style:'position:fixed;inset:0;background:#0d0d0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;' });
-  var closeBtn = el('button',{ style:'position:absolute;top:20px;right:28px;background:none;border:none;color:#888;font-size:2rem;cursor:pointer;' },'×');
-  closeBtn.onclick = function(){ state.fullscreen=null; render(); };
-  ov.appendChild(closeBtn);
-  if(result) {
-    var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
-    var sb = el('div',{ style:'position:absolute;top:22px;left:28px;padding:3px 14px;border-radius:12px;font-size:0.8rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:''));
-    ov.appendChild(sb);
-  }
-  var pre = el('pre',{ style:'color:#fff;font-size:1.4rem;font-weight:700;white-space:pre-wrap;word-break:break-all;font-family:Courier New,monospace;line-height:1.6;max-height:85vh;overflow-y:auto;max-width:900px;width:100%;text-align:center;' });
-  pre.textContent = body2;
-  ov.appendChild(pre);
-  document.onkeydown = function(e){ if(e.key==='Escape'){ state.fullscreen=null; render(); document.onkeydown=null; } };
-  return ov;
-}
-
-// ── Profile modal ──────────────────────────────────────────────────────────
-function renderProfileModal(th) {
-  var ov = el('div',{ style:'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;display:flex;align-items:center;justify-content:center;padding:24px;' });
-  var box = el('div',{ style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);' });
-  box.appendChild(el('div',{ style:'font-size:1.1rem;font-weight:700;color:'+th.text+';margin-bottom:4px;' }, t('profileTitle')));
-  box.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.subtext+';margin-bottom:20px;' }, t('profileSubtitle')));
-  function mkProfileBtn(name, data) {
-    var b = makeBtn(name, function(){
-      state.settings = Object.assign({}, data);
-      saveSettings(state.settings);
-      state.profileModal = false;
-      render();
-    },{ bg:'rgba(232,0,45,0.85)' });
-    b.style.width='100%'; b.style.marginBottom='10px';
-    box.appendChild(b);
-  }
-  mkProfileBtn('Dominik', DEFAULT_DOMINIK);
-  mkProfileBtn('Jörn', DEFAULT_JOERN);
-  var cancel = makeBtn(t('cancel'), function(){ state.profileModal=false; render(); }, { bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
-  cancel.style.width='100%';
-  box.appendChild(cancel);
-  ov.appendChild(box);
-  return ov;
-}
-
-// ── Header ─────────────────────────────────────────────────────────────────
-function renderHeader(th) {
-  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
-
-  var left = el('div',{ style:'display:flex;align-items:center;gap:10px;' });
-  // Logo
-  var logo = el('div',{ style:'width:34px;height:34px;border-radius:9px;background:#e8002d;display:flex;align-items:center;justify-content:center;flex-shrink:0;' });
-  logo.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 6l5 4-5 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  left.appendChild(logo);
-  var titleWrap = el('div',{});
-  var titleRow = el('div',{ style:'display:flex;align-items:baseline;gap:6px;' });
-  var vClicks=0,vTimer=null;
-  var titleEl = el('div',{ style:'font-size:1rem;font-weight:800;color:'+th.text+';letter-spacing:-0.01em;cursor:default;user-select:none;' }, t('appTitle'));
-  titleEl.onclick = function(){
-    vClicks++;
-    if(vTimer) clearTimeout(vTimer);
-    vTimer = setTimeout(function(){ vClicks=0; },2000);
-    if(vClicks>=5){ vClicks=0; state.profileModal=true; render(); }
-  };
-  titleRow.appendChild(titleEl);
-  titleRow.appendChild(el('span',{ style:'font-size:0.78rem;font-weight:400;color:'+th.subtext+';' }, t('appVersion')));
-  titleWrap.appendChild(titleRow);
-  titleWrap.appendChild(el('div',{ style:'font-size:0.72rem;color:'+th.subtext+';' }, t('appSubtitle')));
-  left.appendChild(titleWrap);
-  hdr.appendChild(left);
-
-  var right = el('div',{ style:'display:flex;align-items:center;gap:6px;' });
-
-  // Online indicator in header
-  var onlineIndicator = el('div',{ style:'display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:'+(state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)')+';border:1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)')+';' });
-  var onlineDot = el('span',{ style:'width:8px;height:8px;border-radius:50%;background:'+(state.online?'#22c55e':'#e8002d')+';display:inline-block;'+(state.online?'':'animation:pulse 1s infinite;') });
-  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';display:none;' }, state.online?'Online':'Offline');
-  // Show label only on wider screens
-  if(window.innerWidth >= 400) onlineLabel.style.display = 'inline';
-  onlineIndicator.appendChild(onlineDot);
-  onlineIndicator.appendChild(onlineLabel);
-  onlineIndicator.className = 'header-online-indicator';
-  right.appendChild(onlineIndicator);
-
-  // Lang toggle
-  var langBtn = makeBtn(lang==='de'?'EN':'DE', function(){
-    state.lang = lang==='de'?'en':'de';
-    render();
-  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
-  right.appendChild(langBtn);
-
-  // Profile btn
-  var profBtn = makeBtn('👤', function(){ state.profileModal=true; render(); },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
-  right.appendChild(profBtn);
-
-  // Theme toggle
-  var themeBtn = makeBtn(state.theme==='dark'?'☀':'🌙', function(){
-    state.theme = state.theme==='dark'?'light':'dark';
-    render();
-  },{ small:true, bg:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:th.subtext });
-  right.appendChild(themeBtn);
-
-  hdr.style.position = 'sticky';
-
-    hdr.appendChild(right);
-
-  // Podcast Mode Banner
-  if(state.settings.podcastMode) {
-    var pmBanner = el('div',{ style:'position:absolute;left:50%;transform:translateX(-50%);font-size:0.78rem;font-weight:800;color:#e8002d;letter-spacing:0.08em;text-transform:uppercase;pointer-events:none;white-space:nowrap;' }, '— Podcast Modus —');
-    hdr.style.position = 'sticky';
-    hdr.style.overflow = 'visible';
-    hdr.appendChild(pmBanner);
-  }
-
-  return hdr;
-}
-
-// ── Bottom nav ─────────────────────────────────────────────────────────────
-var dashState={apis:[{id:'goo',label:'Goo API',url:'https://11q.co',color:'#22c55e',status:'unknown',ms:null,lastCheck:null},{id:'inject',label:'Inject API',url:'https://11z.co/_w',color:'#6366f1',status:'unknown',ms:null,lastCheck:null},{id:'unifi',label:'Unifi API',url:'https://thump.buzz/unifi/getEvent',color:'#f59e0b',status:'unknown',ms:null,lastCheck:null},{id:'custom',label:lang==='de'?'Eigene API':'Custom API',url:null,color:'#e8002d',status:'unknown',ms:null,lastCheck:null}],checking:false};
-  async function pingApi(api){if(api.id==='custom'){var cu=customState&&customState.url;if(!cu){api.status='unknown';api.ms=null;api.lastCheck=new Date().toLocaleTimeString();return;}api.url=cu;}var start=Date.now();try{var r=await proxyFetch(api.url+'?_='+start,'GET',null);api.ms=Date.now()-start;api.status=(r.ok||r.status<500)?'ok':'warn';}catch(e){api.ms=Date.now()-start;api.status='err';}api.lastCheck=new Date().toLocaleTimeString();}
-  async function checkAllApis(){if(dashState.checking)return;dashState.checking=true;await Promise.all(dashState.apis.map(pingApi));dashState.checking=false;if(state.tab==='dash')render();}
-
-  function renderDash(th) {
-  var pm = state.settings.podcastMode;
-  var wrap = el('div', {});
-
-  // Header row
-  var hdr = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;' });
-  var ti = el('div', {});
-  ti.appendChild(el('div', { style: 'font-size:1.1rem;font-weight:800;color:' + th.text + ';' }, 'Status Dashboard'));
-  hdr.appendChild(ti);
-  var rb2 = el('button', { style: 'padding:8px 14px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.84rem;font-weight:700;cursor:pointer;' });
-  rb2.textContent = 'Check';
-  rb2.onclick = function () {
-    rb2.disabled = true;
-    rb2.textContent = '...';
-    checkAllApis().then(function () { rb2.disabled = false; rb2.textContent = 'Check'; });
-  };
-  hdr.appendChild(rb2);
-  wrap.appendChild(hdr);
-
-  // API cards
-  dashState.apis.forEach(function (api) {
-    var sc = api.status === 'ok' ? '#22c55e' : api.status === 'warn' ? '#f59e0b' : api.status === 'err' ? '#e8002d' : '#64748b';
-    var sl = { ok: 'Online', warn: 'Warning', err: 'Offline', unknown: '?' }[api.status] || '?';
-
-    var card = el('div', { style: 'background:' + th.infoBg + ';border:1px solid ' + th.border + ';border-left:4px solid ' + sc + ';border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;' });
-    var left = el('div', { style: 'flex:1;' });
-
-    // API name
-    left.appendChild(el('div', { style: 'font-size:0.95rem;font-weight:700;color:' + th.text + ';' }, api.label));
-
-    // URL row
-    var urlText;
-    if (pm) {
-      urlText = '●●●●●●●●●●●●';
-    } else if (api.id === 'custom') {
-      urlText = (customState && customState.url) ? customState.url : (lang === 'de' ? 'Keine URL hinterlegt' : 'No URL set');
-    } else {
-      urlText = api.url;
-    }
-    left.appendChild(el('div', { style: 'font-size:0.75rem;color:' + th.hint + ';font-family:monospace;' }, urlText));
-
-    // Last check row
-    if (api.lastCheck) {
-      var checkText = pm ? '●●●●●' : ('Checked: ' + api.lastCheck);
-      left.appendChild(el('div', { style: 'font-size:0.72rem;color:' + th.hint + ';margin-top:3px;' }, checkText));
-    }
-
-    card.appendChild(left);
-
-    // Right: status label + ms
-    var r2 = el('div', { style: 'text-align:right;' });
-    r2.appendChild(el('div', { style: 'font-size:0.82rem;font-weight:700;color:' + sc + ';' }, sl));
-    if (api.ms !== null) {
-      var msText = pm ? '●●●' : (api.ms + 'ms');
-      var mc = api.ms < 300 ? '#22c55e' : api.ms < 800 ? '#f59e0b' : '#e8002d';
-      r2.appendChild(el('div', { style: 'font-size:0.78rem;color:' + (pm ? th.hint : mc) + ';font-weight:600;' }, msText));
-    }
-    card.appendChild(r2);
-    wrap.appendChild(card);
-  });
-
-  if (dashState.apis.every(function (a) { return a.status === 'unknown'; })) setTimeout(checkAllApis, 100);
-  return wrap;
-}
-
-  function renderNav(th) {
-  var tabs = [
-    { id:'goo',    icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.goo==='ok'?'🟢':apiStatus.goo==='err'?'🔴':'⚪',       label:t('tabGoo'),    iconClass:'nav-icon-goo' },
-    { id:'inject', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.inject==='ok'?'🟢':apiStatus.inject==='err'?'🔴':'⚪',    label:t('tabInject'), iconClass:'nav-icon-inject' },
-    { id:'unifi',  icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.unifi==='ok'?'🟢':apiStatus.unifi==='err'?'🔴':'⚪',     label:t('tabUnifi'),  iconClass:'nav-icon-unifi' },
-    { id:'custom', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.custom==='ok'?'🟢':apiStatus.custom==='err'?'🔴':'⚪',    label:t('tabCustom'), iconClass:'nav-icon-custom' },
-      { id:'dash',     icon:'📊', label:lang==='de'?'Status':'Status' },
-    { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
-    { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
-  ];
-  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);' });
-  tabs.forEach(function(tab) {
-    var active = state.tab===tab.id;
-    var btn = el('button',{ style:'flex:1;padding:10px 2px 8px;min-height:52px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
-    var iconSpan = el('span',{ style:'font-size:1.1rem;' }, tab.icon);
-    if(tab.iconClass) iconSpan.className = tab.iconClass;
-    btn.appendChild(iconSpan);
-    btn.appendChild(el('span',{ style:'font-size:0.66rem;font-weight:'+(active?'700':'500')+';color:'+(active?'#e8002d':th.subtext)+';' }, tab.label));
-    btn.onclick = function(){ state.tab=tab.id; render(); };
-    nav.appendChild(btn);
-  });
-  return nav;
-}
-
-// ── Goo section ────────────────────────────────────────────────────────────
-var gooState = { ep:'post-thump', query:'', result:null };
-
-function renderGoo(th) {
-  var wrap = el('div',{});
-  var epObj = ENDPOINTS.find(function(e){ return e.id===gooState.ep; });
-  var url = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
-
-  // Goo ID + Endpoint row
-  var row = el('div',{ style:'display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;' });
-
-  var gooCol = el('div',{ style:'flex:1;min-width:140px;' });
-  var gooLbl = lbl(t('gooId'),th);
-  gooLbl.appendChild(badge(t('pflicht')));
-  gooCol.appendChild(gooLbl);
-  gooCol.appendChild(makeInput(state.settings.gooId||'',{ placeholder:state.settings.gooId?'':t('inSettings'), readonly:true, sensitive:true },th));
-  gooCol.appendChild(hint(t('myGooId'),th));
-  row.appendChild(gooCol);
-
-  var epCol = el('div',{ style:'flex:1;min-width:180px;' });
-  epCol.appendChild(lbl(t('endpoint'),th));
-  var epSelOpts = ENDPOINTS.map(function(e){ return {value:e.id,label:e.label}; });
-  var epSel = makeSelect(epSelOpts, gooState.ep, function(){
-    gooState.ep=epSel.value;
-    render();
-  }, th);
-  epCol.appendChild(epSel);
-  row.appendChild(epCol);
-  wrap.appendChild(row);
-
-  // Desc
-  if(epObj.desc) {
-    var desc = el('div',{ style:'background:'+th.infoBg+';border-left:3px solid #e8002d;border-radius:0 6px 6px 0;padding:10px 14px;font-size:0.83rem;color:'+th.infoText+';margin-bottom:16px;line-height:1.5;' }, epObj.desc);
-    wrap.appendChild(desc);
-  }
-  if(epObj.live) {
-    var liveHintEl = el('div',{ style:'background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 14px;font-size:0.8rem;color:#92400e;margin-bottom:14px;' }, t('liveHint'));
-    wrap.appendChild(liveHintEl);
-  }
-
-  // Query
-  if(epObj.query) {
-    var qDiv = el('div',{ style:'margin-bottom:18px;' });
-    var qLbl = lbl(t('query'),th);
-    qLbl.appendChild(badge(t('pflicht')));
-    qDiv.appendChild(qLbl);
-    var ta = makeTextarea(gooState.query, t('queryPlaceholder'), function(){ gooState.query=ta.value; }, th);
-    qDiv.appendChild(ta);
-    qDiv.appendChild(hint(t('queryHint'),th));
-    wrap.appendChild(qDiv);
-  }
-
-  // URL preview
-  var urlDiv = el('div',{ style:'margin-bottom:18px;' });
-  urlDiv.appendChild(lbl(t('urlPreview'),th));
-  urlDiv.appendChild(makeUrlPreviewRow(url, th, true));
-  wrap.appendChild(urlDiv);
-
-  // SendBar
-  async function doSend() {
-    if(!state.settings.gooId){ alert('Bitte eine Goo ID in den Einstellungen hinterlegen.'); return; }
-    var targetUrl = BASE_GOO + epPath(gooState.ep, state.settings.gooId);
-    try {
-      var resp = await proxyFetch(targetUrl, epObj.method, epObj.query ? {query:gooState.query} : null);
-      var raw = await resp.text();
-      var fmt = raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
-      gooState.result = { status:resp.status, statusText:resp.statusText, body:fmt };
-    } catch(e) {
-      gooState.result = { status:'ERR', statusText:'', body:'Fehler:\n'+e.message };
-    }
-    // re-render response box
-    var rb = wrap.querySelector('.resp-box');
-    if(rb) rb.remove();
-    var nb = responseBox(gooState.result, th);
-    if(nb) { nb.className='resp-box'; wrap.appendChild(nb); }
-  }
-
-  var sb = buildSendBar({
-    onSend: doSend,
-    onFetch: doSend,
-    getShareText: function(){ return gooState.query; },
-    getResult: function(){ return gooState.result; },
-  }, th);
-  wrap.appendChild(sb);
-
-  // Response
-  if(gooState.result) {
-    var rb2 = responseBox(gooState.result, th);
-    if(rb2) { rb2.className='resp-box'; wrap.appendChild(rb2); }
-  }
-
-  return wrap;
-}
-
-// ── Inject section ─────────────────────────────────────────────────────────
-  var injectState = { value:'', result:null };
-
-  function renderInject(th) {
-    var wrap = el('div',{});
-
-    var idDiv = el('div',{ style:'margin-bottom:18px;' });
-    var idLbl = lbl(t('injectId'),th);
-    idLbl.appendChild(badge(t('pflicht')));
-    idDiv.appendChild(idLbl);
-    idDiv.appendChild(makeInput(state.settings.injectId||'',{ placeholder:state.settings.injectId?'':t('inSettings'), readonly:true, sensitive:true },th));
-    idDiv.appendChild(hint(t('myInjectId'),th));
-    wrap.appendChild(idDiv);
-
-    var valDiv = el('div',{ style:'margin-bottom:18px;' });
-    var valLbl = lbl(t('value'),th);
-    valLbl.appendChild(badge(t('pflicht')));
-    valDiv.appendChild(valLbl);
-    var ta = makeTextarea(injectState.value, t('valuePlaceholder'), function(){ injectState.value=ta.value; }, th);
-    valDiv.appendChild(ta);
-    valDiv.appendChild(hint(t('valueHint'),th));
-    wrap.appendChild(valDiv);
-
-    var previewUrl = state.settings.injectId ? BASE_INJECT+'/'+state.settings.injectId+'/selection' : 'https://11z.co/_w/{ID}/selection';
-    var urlDiv = el('div',{ style:'margin-bottom:18px;' });
-    urlDiv.appendChild(lbl(t('urlPreview'),th));
-    urlDiv.appendChild(makeUrlPreviewRow(previewUrl, th, true));
-    wrap.appendChild(urlDiv);
-
-    async function doSend() {
-      if(!state.settings.injectId){ alert('Bitte eine Inject ID in den Einstellungen hinterlegen.'); return; }
-      if(!injectState.value){ alert('Bitte einen Value eingeben.'); return; }
-      try {
-        var resp = await proxyFetch(BASE_INJECT+'/'+state.settings.injectId+'/selection', 'POST', {value:injectState.value});
-        var raw = await resp.text();
-        var fmt=raw; try{ fmt=JSON.stringify(JSON.parse(raw),null,2); }catch(e){}
-        injectState.result={status:resp.status,statusText:resp.statusText,body:fmt};
-      } catch(e) {
-        injectState.result={status:'ERR',statusText:'',body:'Fehler:\n'+e.message};
-      }
-      var rb = wrap.querySelector('.resp-box');
-      if(rb) rb.remove();
-      var nb = responseBox(injectState.result,th);
-      if(nb){ nb.className='resp-box'; wrap.appendChild(nb); }
-    }
-
-    wrap.appendChild(buildSendBar({
-      onSend: doSend, onFetch: doSend,
-      getShareText: function(){ return injectState.value; },
-      getResult: function(){ return injectState.result; },
-    },th));
-
-    if(injectState.result) {
-      var rb2=responseBox(injectState.result,th);
-      if(rb2){ rb2.className='resp-box'; wrap.appendChild(rb2); }
-    }
-    return wrap;
-  }
-
-  // ── Unifi section ──────────────────────────────────────────────────────────
-var unifiState = { message:'', events:[], result:null, error:'' };
-
-var UNIFI_COLORS2 = {
-  'Unifi Intelligence':'#6366f1','ELIPS':'#f59e0b','Second Sight':'#8b5cf6',
-  'Book Test':'#0ea5e9','Calculator':'#10b981','Poker Chip':'#ef4444',
-  'Dice':'#f97316','MindScale':'#ec4899','Web Messaging':'#64748b'
-};
-
-function renderUnifi(th) {
-  var wrap = el('div',{});
-
-  var idDiv = el('div',{ style:'margin-bottom:18px;' });
-  var idLbl = lbl(t('unifiId'),th);
-  idLbl.appendChild(badge(t('pflicht')));
-  idDiv.appendChild(idLbl);
-  idDiv.appendChild(makeInput(state.settings.unifiId||'',{ placeholder:state.settings.unifiId?'':t('inSettings'), readonly:true, sensitive:true },th));
-  idDiv.appendChild(hint(t('myUnifiId'),th));
-  wrap.appendChild(idDiv);
-
-  var msgDiv = el('div',{ style:'margin-bottom:18px;' });
-    var msgLbl = lbl(t('unifiMessage'),th);
-    msgLbl.appendChild(badge(t('pflicht')));
-    msgDiv.appendChild(msgLbl);
-    var unifiTa = makeTextarea(unifiState.message, t('unifiMessagePlaceholder'), function(){ unifiState.message=unifiTa.value; }, th);
-    msgDiv.appendChild(unifiTa);
-    msgDiv.appendChild(hint(t('unifiMessageHint'),th));
-    wrap.appendChild(msgDiv);
-
-    var unifiPreviewUrl = state.settings.unifiId ? BASE_UNIFI+'?UserId='+state.settings.unifiId : BASE_UNIFI+'?UserId={unifi_id}';
-    var unifiUrlDiv = el('div',{ style:'margin-bottom:18px;' });
-    unifiUrlDiv.appendChild(lbl(t('urlPreview'),th));
-    unifiUrlDiv.appendChild(makeUrlPreviewRow(unifiPreviewUrl, th, true));
-    wrap.appendChild(unifiUrlDiv);
-
-    async function doFetch() {
-    if(!state.settings.unifiId){ alert('Bitte eine Unifi ID in den Einstellungen hinterlegen.'); return; }
-    try {
-      var resp = await proxyFetch(BASE_UNIFI+'?UserId='+state.settings.unifiId, 'GET', null);
-      var parsed = await resp.json();
-      unifiState.result={status:resp.status,statusText:resp.statusText,body:JSON.stringify(parsed,null,2)};
-      if(parsed.Event&&parsed.Event.length>0) unifiState.events=parsed.Event;
-      unifiState.error='';
-    } catch(e){ unifiState.error=e.message; }
-    // refresh events display
-    var evBox = wrap.querySelector('.ev-box');
-    if(evBox) evBox.remove();
-    wrap.appendChild(buildEventsBox(th));
-    var rb = wrap.querySelector('.resp-box');
-    if(rb) rb.remove();
-    if(unifiState.result){ var nb=responseBox(unifiState.result,th); if(nb){nb.className='resp-box';wrap.appendChild(nb);} }
-  }
-
-  wrap.appendChild(buildSendBar({
-    onSend: doFetch, onFetch: doFetch,
-    getShareText: function(){ return unifiState.message||''; },
-    getResult: function(){ return unifiState.result; },
-  },th));
-
-  wrap.appendChild(buildEventsBox(th));
-  if(unifiState.result){ var rb2=responseBox(unifiState.result,th); if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);} }
-
-  return wrap;
-}
-
-function buildEventsBox(th) {
-  var box = el('div',{ class:'ev-box', style:'margin-top:16px;' });
-  if(unifiState.error) {
-    box.appendChild(el('div',{ style:'color:#e8002d;font-size:0.85rem;padding:10px;' }, t('error')+': '+unifiState.error));
-    return box;
-  }
-  if(!unifiState.events||unifiState.events.length===0) {
-    
-    return box;
-  }
-  unifiState.events.forEach(function(ev) {
-    var color = UNIFI_COLORS2[ev.AppName]||'#64748b';
-    var card = el('div',{ style:'background:'+th.infoBg+';border:1px solid '+th.border+';border-left:3px solid '+color+';border-radius:10px;padding:12px 14px;margin-bottom:10px;' });
-    var hdr2 = el('div',{ style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' });
-    hdr2.appendChild(el('span',{ style:'font-weight:700;font-size:0.88rem;color:'+color+';' }, ev.AppName||'Event'));
-    hdr2.appendChild(el('span',{ style:'font-size:0.75rem;color:'+th.hint+';' }, ev.TimeStamp||''));
-    card.appendChild(hdr2);
-    if(ev.EventData) {
-      var pre2 = el('pre',{ style:'font-size:0.78rem;color:'+th.infoText+';white-space:pre-wrap;word-break:break-all;line-height:1.5;' });
-      pre2.textContent = typeof ev.EventData==='object' ? JSON.stringify(ev.EventData,null,2) : ev.EventData;
-      card.appendChild(pre2);
-    }
-    box.appendChild(card);
-  });
-  return box;
-}
-
-// ── Settings section ───────────────────────────────────────────────────────
-var customState = { url:'', method:'GET', headers:'', body:'', result:null };
-  function renderCustom(th) {
-    var wrap = el('div',{});
-    wrap.appendChild(el('div',{ style:'background:rgba(251,191,36,0.13);border:1.5px solid rgba(251,191,36,0.55);border-radius:12px;padding:12px 16px;font-size:0.84rem;color:#b45309;font-weight:600;margin-bottom:20px;line-height:1.5;' }, t('customExperimental')));
-    var urlDiv=el('div',{style:'margin-bottom:16px;'}); var urlLbl=lbl(t('customUrl'),th); urlLbl.appendChild(badge(t('pflicht'))); urlDiv.appendChild(urlLbl);
-    var urlInp=makeInput(customState.url,{placeholder:t('customUrlPlaceholder'), sensitive:true},th); urlInp.oninput=function(){customState.url=urlInp.value;}; urlDiv.appendChild(urlInp); urlDiv.appendChild(hint(t('customUrlHint'),th)); wrap.appendChild(urlDiv);
-    var methDiv=el('div',{style:'margin-bottom:16px;'}); methDiv.appendChild(lbl(t('customMethod'),th));
-    var methSel=makeSelect([{value:'GET',label:'GET'},{value:'POST',label:'POST'},{value:'PUT',label:'PUT'},{value:'PATCH',label:'PATCH'},{value:'DELETE',label:'DELETE'}],customState.method,function(){customState.method=methSel.value;},th); methDiv.appendChild(methSel); wrap.appendChild(methDiv);
-    var hdrDiv=el('div',{style:'margin-bottom:16px;'}); hdrDiv.appendChild(lbl(t('customHeaders'),th));
-    var hdrTa=makeTextarea(customState.headers,t('customHeadersPlaceholder'),function(){customState.headers=hdrTa.value;},th); hdrTa.style.minHeight='70px'; hdrDiv.appendChild(hdrTa); hdrDiv.appendChild(hint(t('customHeadersHint'),th)); wrap.appendChild(hdrDiv);
-    var bodyDiv=el('div',{style:'margin-bottom:16px;'}); bodyDiv.appendChild(lbl(t('customBody'),th));
-    var bodyTa=makeTextarea(customState.body,t('customBodyPlaceholder'),function(){customState.body=bodyTa.value;},th); bodyDiv.appendChild(bodyTa); bodyDiv.appendChild(hint(t('customBodyHint'),th)); wrap.appendChild(bodyDiv);
-    wrap.appendChild(el('div',{style:'font-size:0.78rem;color:'+th.hint+';margin-bottom:14px;background:'+th.infoBg+';border-radius:8px;padding:8px 12px;border-left:3px solid #e8002d;'},t('customShareHint')));
-    async function doSend(){
-      if(!customState.url){alert(lang==='de'?'Bitte eine URL eingeben.':'Please enter a URL.');return;}
-      var fo={method:customState.method,headers:{}};
-      if(customState.headers){try{fo.headers=JSON.parse(customState.headers);}catch(e){alert(lang==='de'?'Headers sind kein gueltiges JSON.':'Headers are not valid JSON.');return;}}
-      if(customState.body&&customState.method!=='GET'&&customState.method!=='DELETE'){fo.body=customState.body;if(!fo.headers['Content-Type']&&!fo.headers['content-type'])fo.headers['Content-Type']='application/json';}
-      try{var resp=await fetch(customState.url,fo);var raw=await resp.text();var fmt=raw;try{fmt=JSON.stringify(JSON.parse(raw),null,2);}catch(e){}customState.result={status:resp.status,statusText:resp.statusText,body:fmt};}catch(e){customState.result={status:'ERR',statusText:'',body:(lang==='de'?'Fehler: ':'Error: ')+e.message};}
-      var rb=wrap.querySelector('.resp-box');if(rb)rb.remove();
-      var nb=responseBox(customState.result,th);if(nb){nb.className='resp-box';wrap.appendChild(nb);}
-    }
-    wrap.appendChild(buildSendBar({onSend:doSend,onFetch:doSend,getShareText:function(){return customState.body||customState.url;},getResult:function(){return customState.result;}},th));
-    if(customState.result){var rb2=responseBox(customState.result,th);if(rb2){rb2.className='resp-box';wrap.appendChild(rb2);}}
-    return wrap;
-  }
-
-  function renderSettings(th) {
-  var wrap = el('div',{});
-  wrap.appendChild(el('p',{ style:'color:'+th.subtext+';font-size:0.88rem;margin-bottom:20px;' }, t('settingsHint')));
-
-  var s = Object.assign({}, state.settings);
-
-  function group(labelText, key, placeholder, opts) {
-    var d = el('div',{ style:'margin-bottom:16px;flex:1;min-width:160px;' });
-    d.appendChild(lbl(labelText,th));
-    var inp = makeInput(s[key]||'',{ placeholder:placeholder, type:opts&&opts.type||'text', sensitive:opts&&opts.sensitive },th);
-    inp.oninput = function(){ s[key]=inp.value; };
-    d.appendChild(inp);
-    return d;
-  }
-
-  // API IDs
-  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:4px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('apiIds')));
-  var idsRow = el('div',{ style:'display:flex;gap:16px;flex-wrap:wrap;' });
-  idsRow.appendChild(group(t('gooId'),'gooId',t('placeholderGooId'),{sensitive:true}));
-  idsRow.appendChild(group(t('injectId'),'injectId',t('placeholderInjectId'),{sensitive:true}));
-  idsRow.appendChild(group(t('unifiId'),'unifiId',t('placeholderUnifiId'),{sensitive:true}));
-  wrap.appendChild(idsRow);
-
-  // Telegram
-  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('telegramSection')));
-  wrap.appendChild(group(t('botToken'),'tgToken',t('placeholderBotToken'),{sensitive:true}));
-  wrap.appendChild(group(t('chatId'),'tgChatId',t('placeholderChatId'),{sensitive:true}));
-
-  // Discord
-  wrap.appendChild(el('div',{ style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:12px;margin-top:8px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';' }, t('discordSection')));
-  wrap.appendChild(group(t('webhookUrl'),'dcWebhook',t('placeholderWebhook'),{sensitive:true}));
-
-  // Buttons
-  var btnRow = el('div',{ style:'display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;' });
-  // API Status Toggle
-    // Podcast Mode Toggle
-      var podSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
-      podSec.appendChild(el('div',{style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';'},'🎙 '+t('podcastMode')));
-      var podRow=el('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;'});
-      podRow.appendChild(el('div',{style:'font-size:0.83rem;color:'+th.subtext+';line-height:1.5;flex:1;'},t('podcastModeHint')));
-      var podLbl=el('label',{style:'display:flex;align-items:center;cursor:pointer;flex-shrink:0;'});
-      var podCb=el('input',{type:'checkbox'});podCb.style.cssText='width:0;height:0;opacity:0;position:absolute;';podCb.checked=!!s.podcastMode;
-      var podTr=el('div',{style:'width:44px;height:24px;border-radius:12px;background:'+(s.podcastMode?'#e8002d':'rgba(100,100,100,0.4)')+';position:relative;transition:background 0.2s;'});
-      var podTh=el('div',{style:'width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(s.podcastMode?'23px':'3px')+';transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);'});
-      podTr.appendChild(podTh);podLbl.appendChild(podCb);podLbl.appendChild(podTr);
-      podCb.onchange=function(){s.podcastMode=podCb.checked;podTr.style.background=podCb.checked?'#e8002d':'rgba(100,100,100,0.4)';podTh.style.left=podCb.checked?'23px':'3px';};
-      podRow.appendChild(podLbl);podSec.appendChild(podRow);
-      wrap.appendChild(podSec);
-
-      var apiSec=el('div',{style:'margin-top:8px;margin-bottom:16px;'});
-    apiSec.appendChild(el('div',{style:'font-size:0.9rem;font-weight:700;color:'+th.sectionTitle+';margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+th.border+';'},'🟡 '+t('apiStatusCheck')));
-    var tRow=el('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;'});
-    tRow.appendChild(el('div',{style:'font-size:0.83rem;color:'+th.subtext+';line-height:1.5;flex:1;'},t('apiStatusCheckHint')));
-    var tLbl=el('label',{style:'display:flex;align-items:center;cursor:pointer;flex-shrink:0;'});
-    var tCb=el('input',{type:'checkbox'});tCb.style.cssText='width:0;height:0;opacity:0;position:absolute;';tCb.checked=!!s.apiStatusEnabled;
-    var tTr=el('div',{style:'width:44px;height:24px;border-radius:12px;background:'+(s.apiStatusEnabled?'#22c55e':'rgba(100,100,100,0.4)')+';position:relative;transition:background 0.2s;'});
-    var tTh=el('div',{style:'width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(s.apiStatusEnabled?'23px':'3px')+';transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);'});
-    tTr.appendChild(tTh);tLbl.appendChild(tCb);tLbl.appendChild(tTr);
-    tCb.onchange=function(){s.apiStatusEnabled=tCb.checked;tTr.style.background=tCb.checked?'#22c55e':'rgba(100,100,100,0.4)';tTh.style.left=tCb.checked?'23px':'3px';};
-    tRow.appendChild(tLbl);apiSec.appendChild(tRow);
-      var legend=el('div',{style:'margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;row-gap:6px;'}); [{icon:'🟢',label:lang==='de'?'Online':'Online'},{icon:'🔴',label:lang==='de'?'Offline':'Offline'},{icon:'⚪',label:lang==='de'?'Unbekannt':'Unknown'},{icon:'🟡',label:lang==='de'?'Deaktiviert':'Disabled'}].forEach(function(it){var chip=el('div',{style:'display:flex;align-items:center;gap:5px;background:'+th.infoBg+';border:1px solid '+th.border+';border-radius:20px;padding:4px 12px;font-size:0.8rem;color:'+th.subtext+';'});chip.appendChild(el('span',{},it.icon));chip.appendChild(el('span',{},it.label));legend.appendChild(chip);});apiSec.appendChild(legend);
-
-    // Check-now button
-    var checkNowBtn = el('button',{style:'margin-top:12px;padding:9px 18px;background:rgba(99,102,241,0.85);color:#fff;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;'});
-    var checkSpinner = el('span',{style:'display:none;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;'});
-    var checkLabel = el('span',{},lang==='de'?'Jetzt prüfen':'Check now');
-    checkNowBtn.appendChild(checkSpinner);
-    checkNowBtn.appendChild(checkLabel);
-    checkNowBtn.onclick = async function(){
-      checkNowBtn.disabled=true;
-      checkSpinner.style.display='inline-block';
-      checkLabel.textContent=lang==='de'?'Prüfe...':'Checking...';
-      // ping all three
-      var results = [];
-      var apis2 = [
-        {id:'goo',    label:'Goo API',    url:'https://11q.co'},
-        {id:'inject', label:'Inject API', url:'https://11z.co/_w'},
-        {id:'unifi',  label:'Unifi API',  url:'https://thump.buzz/unifi/getEvent'},
-      ];
-      await Promise.all(apis2.map(async function(api){
-        var start=Date.now();
-        try{
-          var r=await proxyFetch(api.url+'?_='+start,'GET',null);
-          var ms=Date.now()-start;
-          var ok=(r.ok||r.status<500);
-          apiStatus[api.id]=ok?'ok':'err';
-          results.push({label:api.label,ok:ok,ms:ms});
-        }catch(e){
-          apiStatus[api.id]='err';
-          results.push({label:api.label,ok:false,ms:Date.now()-start});
-        }
-      }));
-      apiStatus.custom = apiStatus.goo;
-      updateNavIcons();
-      checkNowBtn.disabled=false;
-      checkSpinner.style.display='none';
-      checkLabel.textContent=lang==='de'?'Jetzt prüfen':'Check now';
-      // Show popup
-      var ov=el('div',{style:'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;'});
-      var box=el('div',{style:'background:'+(state.theme==='dark'?'#1a1a2e':'#fff')+';border-radius:18px;padding:24px 22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);'});
-      box.appendChild(el('div',{style:'font-size:1rem;font-weight:800;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';margin-bottom:16px;'},lang==='de'?'🔍 Verbindungstest':'🔍 Connection Test'));
-      results.forEach(function(res){
-        var row=el('div',{style:'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:'+(res.ok?'rgba(34,197,94,0.08)':'rgba(232,0,45,0.08)')+';border:1px solid '+(res.ok?'rgba(34,197,94,0.25)':'rgba(232,0,45,0.25)')+';margin-bottom:8px;'});
-        var left2=el('div',{style:'display:flex;align-items:center;gap:8px;'});
-        left2.appendChild(el('span',{style:'font-size:1rem;'},res.ok?'🟢':'🔴'));
-        left2.appendChild(el('span',{style:'font-size:0.88rem;font-weight:600;color:'+(state.theme==='dark'?'#f0f0ff':'#1a1a2e')+';'},res.label));
-        row.appendChild(left2);
-        var msColor=res.ms<300?'#22c55e':res.ms<800?'#f59e0b':'#e8002d';
-        row.appendChild(el('span',{style:'font-size:0.8rem;font-weight:700;color:'+msColor+';'},res.ms+'ms'));
-        box.appendChild(row);
-      });
-      var closeBtn2=el('button',{style:'width:100%;margin-top:14px;padding:11px;background:rgba(232,0,45,0.85);color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;'},lang==='de'?'Schließen':'Close');
-      closeBtn2.onclick=function(){document.body.removeChild(ov);};
-      box.appendChild(closeBtn2);
-      ov.appendChild(box);
-      ov.onclick=function(e){if(e.target===ov)document.body.removeChild(ov);};
-      document.body.appendChild(ov);
-    };
-    apiSec.appendChild(checkNowBtn);
-    wrap.appendChild(apiSec);
-
-    var saveBtn = makeBtn(t('save'), function(){
-    state.settings = Object.assign({}, s);
-    saveSettings(state.settings);
-    var saved2 = el('span',{ style:'color:#16a34a;font-weight:700;font-size:0.9rem;' }, '✓ '+t('saved'));
-    btnRow.appendChild(saved2);
-    setTimeout(function(){ if(saved2.parentNode) saved2.remove(); },3000);
-  });
-  var clearBtn = makeBtn(t('clearCache'), function(){
-    try{ localStorage.removeItem(SETTINGS_KEY); }catch(e){}
-    state.settings={};
-    s={};
-    render();
-  },{ bg:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:th.subtext });
-  btnRow.appendChild(saveBtn);
-  btnRow.appendChild(clearBtn);
-  wrap.appendChild(btnRow);
-
-  return wrap;
-}
-
-// ── Help section ───────────────────────────────────────────────────────────
-var HELP_SECTIONS = [
-  { icon:'🟢', title:'Goo', color:'#e8002d', items:[
-    {name:'Goo ID', desc: lang==='de' ? 'Deine persönliche ID für die 11q.co API. Wird in den Einstellungen hinterlegt und automatisch befüllt.' : 'Your personal ID for the 11q.co API. Set it in Settings and it will be auto-filled.'},
-    {name:'Endpunkt / Endpoint', desc: lang==='de' ? 'Wähle den gewünschten API-Endpunkt. Standard: POST /api/thump. PRO-Endpunkte erfordern PRO-Zugang.' : 'Choose the desired API endpoint. Default: POST /api/thump. PRO endpoints require a PRO account.'},
-    {name:'Query', desc: lang==='de' ? 'Der Text oder die Suchanfrage, die an die Goo API gesendet wird. Wird auch an Telegram/Discord weitergeleitet.' : 'The text or search query sent to the Goo API. Also forwarded to Telegram/Discord if enabled.'},
-    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die vollständige API-URL an, die beim Senden aufgerufen wird.' : 'Shows the full API URL that will be called when sending.'},
-    {name:'Auto-Refresh', desc: lang==='de' ? 'Sendet die Anfrage automatisch in einem festgelegten Intervall (2s, 5s, 10s, 30s).' : 'Automatically sends the request at a set interval (2s, 5s, 10s, 30s).'},
-    {name:'Vollbild / Fullscreen', desc: lang==='de' ? 'Zeigt die API-Antwort groß und zentriert auf dem gesamten Bildschirm an.' : 'Displays the API response large and centered on the full screen.'},
-    {name:'🟢 / 🔴 Online-Status', desc: lang==='de' ? 'Das Icon beim Goo-Tab zeigt den Verbindungsstatus: Grün = online, Rot = offline. Wird beim Start und alle 15 Sekunden geprüft.' : 'The icon on the Goo tab shows connection status: Green = online, Red = offline. Checked on start and every 15 seconds.'},
-  ]},
-  { icon:'💉', title:'Inject', color:'#6366f1', items:[
-    {name:'Inject ID', desc: lang==='de' ? 'Deine Widget-ID für die 11z.co Inject API. Wird in den Einstellungen hinterlegt.' : 'Your widget ID for the 11z.co Inject API. Set it in Settings.'},
-    {name:'Value', desc: lang==='de' ? 'Der Text, der in das Widget injiziert werden soll. Nur dieser Wert wird an Telegram/Discord weitergeleitet.' : 'The text to inject into the widget. Only this value is forwarded to Telegram/Discord.'},
-    {name:'URL-Vorschau / URL Preview', desc: lang==='de' ? 'Zeigt die Ziel-URL der Inject-API an.' : 'Shows the target URL of the Inject API.'},
-  ]},
-  { icon:'📶', title:'Unifi', color:'#0ea5e9', items:[
-    {name:'UNIFI ID', desc: lang==='de' ? 'Deine User-ID für die thump.buzz Unifi API. Wird in den Einstellungen unter „API IDs“ hinterlegt.' : 'Your user ID for the thump.buzz Unifi API. Set it in Settings under "API IDs".'},
-    {name:'Events', desc: lang==='de' ? 'Nach dem Abrufen werden empfangene Events farblich nach Typ angezeigt (z.B. Unifi Intelligence, ELIPS, Second Sight).' : 'After fetching, received events are shown color-coded by type (e.g. Unifi Intelligence, ELIPS, Second Sight).'},
-    {name:'Auto-Refresh', desc: lang==='de' ? 'Fragt die Unifi API automatisch in regelmäßigen Abständen ab – ideal für Live-Überwachung.' : 'Queries the Unifi API automatically at regular intervals – ideal for live monitoring.'},
-  ]},
-  { icon:'✈️', title:'Telegram & Discord', color:'#0088cc', items:[
-    {name:'Checkboxen / Checkboxes', desc: lang==='de' ? 'Aktiviere Telegram und/oder Discord direkt über dem Senden-Button. Bei aktivierter Checkbox wird die Nachricht gleichzeitig weitergeleitet.' : 'Enable Telegram and/or Discord above the Send button. When checked, the message is forwarded simultaneously.'},
-    {name:'Was wird gesendet? / What is sent?', desc: lang==='de' ? 'Nur der eingegebene Text (Query/Value) wird weitergeleitet – nicht die API-Antwort.' : 'Only the entered text (Query/Value) is forwarded – not the API response.'},
-    {name:'Bot Token & Chat ID', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Token von @BotFather, Chat ID von @userinfobot in Telegram.' : 'Set in Settings. Token from @BotFather, Chat ID from @userinfobot in Telegram.'},
-    {name:'Discord Webhook', desc: lang==='de' ? 'In den Einstellungen hinterlegen. Webhook unter Servereinstellungen → Integrationen → Webhooks erstellen.' : 'Set in Settings. Create webhook under Server Settings → Integrations → Webhooks.'},
-  ]},
-  { icon:'⚙️', title: lang==='de' ? 'Einstellungen' : 'Settings', color:'#888', items:[
-    {name:'API IDs', desc: lang==='de' ? 'Goo ID, Inject ID und UNIFI ID zentral hinterlegen. Werden automatisch in alle Tabs übernommen.' : 'Store Goo ID, Inject ID and UNIFI ID centrally. Automatically applied to all tabs.'},
-      {name: lang==='de' ? 'Speichern' : 'Save', desc: lang==='de' ? 'Speichert alle Eingaben lokal im Browser (localStorage). Daten bleiben nach dem Schließen erhalten.' : 'Saves all inputs locally in the browser (localStorage). Data persists after closing.'},
-    {name: lang==='de' ? 'Cache leeren' : 'Clear Cache', desc: lang==='de' ? 'Löscht alle gespeicherten Einstellungen und setzt alle Felder zurück.' : 'Deletes all saved settings and resets all fields.'},
-    {name: lang==='de' ? 'Profil laden' : 'Load Profile', desc: lang==='de' ? '5× auf „API Tool" im Header klicken, um das Profil-Menü zu öffnen und vordefinierte Einstellungen zu laden.' : 'Click "API Tool" in the header 5 times to open the profile menu and load predefined settings.'},
-  ]},
-  { icon:'🎙', title: lang==='de' ? 'Podcast-Modus' : 'Podcast Mode', color:'#e8002d', items:[
-      {name: lang==='de' ? 'Aktivierung' : 'Activation', desc: lang==='de' ? 'In den Einstellungen aktivieren. Alle IDs und sensiblen Felder werden als ●●● ausgeblendet – ideal beim Streamen.' : 'Enable in Settings. All IDs and sensitive fields are hidden as ●●● – ideal for streaming or recording.'},
-      {name: lang==='de' ? 'Banner im Header' : 'Header Banner', desc: lang==='de' ? 'Wenn aktiv, erscheint „— Podcast Modus —“ in roter Schrift zentriert im Header als sichtbarer Hinweis.' : 'When active, "— Podcast Modus —" appears in red text centered in the header as a visible indicator.'},
-      {name: lang==='de' ? 'Datenschutz' : 'Privacy', desc: lang==='de' ? 'Nur die Anzeige wird maskiert – alle Werte werden intern korrekt gespeichert und bei API-Aufrufen vollständig übermittelt.' : 'Only the display is masked – all values are stored and transmitted correctly for API calls.'},
-      {name: lang==='de' ? 'Status-Dashboard' : 'Status Dashboard', desc: lang==='de' ? 'Im Podcast-Modus werden URLs, Latenzen und Zeitstempel im Dashboard als ●●● ausgeblendet.' : 'In Podcast Mode, URLs, latencies and timestamps in the dashboard are hidden as ●●●.'},
-    ]},
-    { icon:'🌙', title:'Dark / Light Mode', color:'#6366f1', items:[
-      {name: lang==='de' ? 'Umschalten' : 'Toggle', desc: lang==='de' ? 'Mit dem Mond/Sonne-Symbol oben rechts zwischen Dark und Light Mode wechseln.' : 'Use the moon/sun icon in the top right to switch between Dark and Light Mode.'},
-    ]},
-    { icon:'🌐', title: lang==='de' ? 'Online-Indikator' : 'Online Indicator', color:'#22c55e', items:[
-      {name: lang==='de' ? 'Anzeige im Header' : 'Header Display', desc: lang==='de' ? 'Zeigt oben rechts im Header den aktuellen Verbindungsstatus: Grüner Punkt + „Online" oder roter blinkender Punkt + „Offline".' : 'Shows the current connection status in the top-right header: green dot + "Online" or blinking red dot + "Offline".'},
-      {name: lang==='de' ? 'Automatische Prüfung' : 'Automatic Check', desc: lang==='de' ? 'Der Online-Status wird beim Start und alle 15 Sekunden automatisch geprüft – zuerst über den Proxy, als Fallback über ein Favicon-Bild.' : 'Online status is checked on start and every 15 seconds automatically – first via proxy, with a favicon image as fallback.'},
-      {name: lang==='de' ? 'Echtzeit-Events' : 'Real-time Events', desc: lang==='de' ? 'Wechselt sofort bei Browser-Events (online/offline) ohne Wartezeit.' : 'Switches immediately on browser online/offline events without delay.'},
-    ]},
-    { icon:'📊', title: lang==='de' ? 'Status-Dashboard' : 'Status Dashboard', color:'#6366f1', items:[
-      {name: lang==='de' ? 'Übersicht' : 'Overview', desc: lang==='de' ? 'Zeigt den Verbindungsstatus aller drei APIs (Goo, Inject, Unifi) mit farbiger Statusanzeige, Latenz in ms und Zeitstempel der letzten Prüfung.' : 'Shows the connection status of all three APIs (Goo, Inject, Unifi) with color-coded status, latency in ms, and timestamp of the last check.'},
-      {name: lang==='de' ? 'Check-Button' : 'Check Button', desc: lang==='de' ? 'Der „Check"-Button im Dashboard löst eine sofortige Prüfung aller APIs aus und aktualisiert die Karten.' : 'The "Check" button in the dashboard triggers an immediate check of all APIs and updates the cards.'},
-      {name: lang==='de' ? 'Statusfarben' : 'Status Colors', desc: lang==='de' ? 'Grün = Online (<300ms), Gelb = Warnung (300–800ms), Rot = Offline. Die farbige linke Kante der Karte zeigt den Status auf einen Blick.' : 'Green = Online (<300ms), Yellow = Warning (300–800ms), Red = Offline. The colored left border of each card shows the status at a glance.'},
-      {name: lang==='de' ? 'Automatischer Start' : 'Auto Start', desc: lang==='de' ? 'Beim ersten Öffnen des Dashboards wird automatisch eine Prüfung gestartet, falls noch keine Daten vorhanden sind.' : 'When the dashboard is opened for the first time, a check is started automatically if no data is available yet.'},
-    ]},
-    { icon:'🔵', title: lang==='de' ? 'Nav-Icons & API-Status' : 'Nav Icons & API Status', color:'#0ea5e9', items:[
-      {name: lang==='de' ? 'Icons pro Tab' : 'Per-Tab Icons', desc: lang==='de' ? 'Jeder API-Tab (Goo, Inject, Unifi, Eigene API) hat ein eigenes Status-Icon: 🟢 Online, 🔴 Offline, ⚪ Unbekannt, 🟡 Deaktiviert.' : 'Each API tab (Goo, Inject, Unifi, Custom API) has its own status icon: 🟢 Online, 🔴 Offline, ⚪ Unknown, 🟡 Disabled.'},
-      {name: lang==='de' ? 'Toggle-Abhängigkeit' : 'Toggle Dependency', desc: lang==='de' ? 'Wenn der Toggle in den Einstellungen deaktiviert ist, zeigen alle Icons 🟡 (neutral). Erst bei aktiviertem Toggle werden echte Statuswerte angezeigt.' : 'When the toggle in Settings is disabled, all icons show 🟡 (neutral). Real status values are only shown when the toggle is enabled.'},
-      {name: lang==='de' ? 'Eigene API (Custom)' : 'Custom API Status', desc: lang==='de' ? 'Da die Eigene API keine feste URL hat, übernimmt sie automatisch den Status der Goo API als Indikator.' : 'Since the Custom API has no fixed URL, it automatically inherits the Goo API status as its indicator.'},
-      {name: lang==='de' ? 'Aktualisierungsintervall' : 'Update Interval', desc: lang==='de' ? 'Nav-Icons werden alle 30 Sekunden automatisch aktualisiert, zusätzlich sofort nach dem „Jetzt prüfen"-Button.' : 'Nav icons are updated automatically every 30 seconds, plus immediately after the "Check Now" button.'},
-    ]},
-  { icon:'🔧', title: lang==='de' ? 'Eigene API' : 'Custom API', color:'#f59e0b', items:[
-      {name:'URL', desc: lang==='de' ? 'Vollständige URL deiner eigenen API – das einzige Pflichtfeld.' : 'Full URL of your custom API – the only required field.'},
-      {name: lang==='de' ? 'HTTP-Methode' : 'HTTP Method', desc: lang==='de' ? 'GET, POST, PUT, PATCH oder DELETE frei wählbar.' : 'Freely choose GET, POST, PUT, PATCH or DELETE.'},
-      {name: lang==='de' ? 'Headers' : 'Headers', desc: lang==='de' ? 'Optionale HTTP-Header als JSON, z.B. für Auth-Token.' : 'Optional HTTP headers as JSON, e.g. for auth tokens.'},
-      {name: lang==='de' ? 'Body' : 'Body', desc: lang==='de' ? 'Optionaler Request-Body (JSON/Text). Bei GET/DELETE ignoriert. Content-Type wird automatisch gesetzt.' : 'Optional request body (JSON/Text). Ignored for GET/DELETE. Content-Type is set automatically.'},
-      {name: lang==='de' ? 'Telegram / Discord' : 'Telegram / Discord', desc: lang==='de' ? 'Aktiviere die Checkboxen, um URL oder Body weiterzuleiten.' : 'Enable checkboxes to forward the URL or body.'},
-      {name: lang==='de' ? 'Experimentell' : 'Experimental', desc: lang==='de' ? 'Dieser Bereich ist noch in der Testphase und wurde noch nicht vollständig getestet.' : 'This section is still in testing and has not been fully validated.'},
-    ]},
-    { icon:'🌐', title: lang==='de' ? 'Sprache' : 'Language', color:'#22c55e', items:[
-    {name:'DE / EN', desc: lang==='de' ? 'Mit dem DE/EN-Button oben rechts zwischen Deutsch und Englisch wechseln.' : 'Use the DE/EN button in the top right to switch between German and English.'},
-  ]},
-];
-
-function renderHelp(th) {
-  var wrap = el('div',{});
-  var hdg = el('div',{ style:'display:flex;align-items:center;gap:12px;margin-bottom:20px;' });
-  var ic = el('div',{ style:'width:38px;height:38px;border-radius:50%;background:rgba(232,0,45,0.15);border:2px solid rgba(232,0,45,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;font-weight:900;color:#e8002d;' },'?');
-  hdg.appendChild(ic);
-  var ti = el('div',{});
-  ti.appendChild(el('div',{ style:'font-size:1rem;font-weight:700;color:'+th.text+';' },t('helpTitle')));
-  ti.appendChild(el('div',{ style:'font-size:0.82rem;color:'+th.subtext+';margin-top:2px;' },t('helpSubtitle')));
-  hdg.appendChild(ti);
-  wrap.appendChild(hdg);
-
-  HELP_SECTIONS.forEach(function(sec) {
-    var s = el('div',{ style:'margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid '+th.border+';' });
-    var sh = el('div',{ style:'background:'+sec.color+';padding:10px 16px;display:flex;align-items:center;gap:8px;' });
-    sh.appendChild(el('span',{},sec.icon));
-    sh.appendChild(el('span',{ style:'color:#fff;font-weight:700;font-size:0.95rem;' },sec.title));
-    s.appendChild(sh);
-    var sb = el('div',{ style:'background:'+th.infoBg+';padding:4px 0;' });
-    sec.items.forEach(function(item,i) {
-      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;flex-direction:column;gap:4px;' });
-      row.appendChild(el('div',{ style:'font-size:0.82rem;font-weight:700;color:'+sec.color+';word-break:break-word;' },item.name));
-      row.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.infoText+';line-height:1.55;' },item.desc));
-      sb.appendChild(row);
-    });
-    s.appendChild(sb);
-    wrap.appendChild(s);
-  });
-  return wrap;
-}
-
-// ── Inject styles ──────────────────────────────────────────────────────────
-var styleEl = document.createElement('style');
-styleEl.textContent = '@keyframes spin{to{transform:rotate(360deg);}}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px;}';
-document.head.appendChild(styleEl);
-
-// ── Boot ───────────────────────────────────────────────────────────────────
-render();
-
-})();
 </script>
+
+<!-- SECRET MENU OVERLAY -->
+<div id="secretOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;backdrop-filter:blur(4px)" onclick="closeSecretMenu(event)"></div>
+<div id="secretSheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#1a1a2e;border-radius:22px 22px 0 0;z-index:901;padding:24px 20px 36px;color:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div style="font-size:16px;font-weight:800;letter-spacing:.5px">&#9881;&#65039; API Konfiguration</div>
+    <button onclick="closeSecretMenu()" style="background:#333;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px">&#x2715;</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">GOO ID</label>
+      <input id="cfg_goo" type="text" placeholder="Goo ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div>
+      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">INJECT ID</label>
+      <input id="cfg_inject" type="text" placeholder="Inject ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div>
+      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">UNIFI ID</label>
+      <input id="cfg_unifi" type="text" placeholder="Unifi ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div>
+      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">CUSTOM API URL</label>
+      <input id="cfg_custom" type="text" placeholder="https://..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
+    </div>
+  </div>
+  <button onclick="saveSecretConfig()" style="width:100%;margin-top:22px;padding:14px;background:linear-gradient(135deg,#ff8000,#ff5500);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer">&#128190; Speichern &amp; Schlie&szlig;en</button>
+  <div id="secretStatus" style="text-align:center;font-size:11px;color:#666;margin-top:10px;min-height:16px"></div>
+</div>
+
 </body>
 </html>
-
