@@ -1,423 +1,145 @@
-<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lieferandi.de</title>
+<title>API Tool v2.5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1e">
+<title>API Tool v2.6</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f5f5f5; max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:72px; }
-.header { background:#ff8000; padding:14px 16px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.15); }
-.header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-.logo { color:#fff; font-size:21px; font-weight:900; }
-.logo span { color:#ffe066; }
-.cart-pill { background:#fff; color:#ff8000; border:none; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; }
-.cart-pill .badge { background:#ff8000; color:#fff; border-radius:50%; width:19px; height:19px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
-.addr-bar { background:#fff; border-radius:10px; padding:9px 13px; display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:9px; }
-.addr-bar .txt { flex:1; font-weight:600; }
-.addr-bar .chg { color:#ff8000; font-weight:700; font-size:12px; cursor:pointer; }
-.search-wrap { background:#fff; border-radius:10px; padding:9px 13px; display:flex; align-items:center; gap:8px; }
-.search-wrap input { border:none; outline:none; flex:1; font-size:14px; }
-.cuisine-row { background:#fff; padding:14px 16px 10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-.cuisine-row h3 { font-size:16px; font-weight:800; margin-bottom:11px; color:#111; }
-.cuisine-scroll { display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; }
-.cuisine-scroll::-webkit-scrollbar { display:none; }
-.cuisine-btn { display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px; cursor:pointer; flex-shrink:0; }
-.cuisine-icon { width:54px; height:54px; border-radius:15px; background:#fff4e6; display:flex; align-items:center; justify-content:center; font-size:24px; border:2.5px solid transparent; transition:all .2s; }
-.cuisine-icon.active { border-color:#ff8000; background:#ffe8cc; }
-.cuisine-btn.locked { opacity:0.35; pointer-events:none; filter:grayscale(1); }
-.cuisine-lbl { font-size:10px; font-weight:700; color:#666; text-align:center; }
-.course-row { display:flex; gap:8px; padding:11px 16px; overflow-x:auto; scrollbar-width:none; background:#fafafa; border-bottom:1px solid #eee; }
-.course-row::-webkit-scrollbar { display:none; }
-.course-chip { padding:7px 16px; border-radius:20px; border:1.5px solid #ddd; background:#fff; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; color:#555; transition:all .2s; }
-.course-chip.active { background:#ff8000; border-color:#ff8000; color:#fff; }
-.dish-section { padding:14px 16px 6px; }
-.dish-section h4 { font-size:15px; font-weight:800; color:#111; margin-bottom:10px; }
-.dish-card { background:#fff; border-radius:14px; margin-bottom:10px; display:flex; align-items:center; padding:13px; gap:12px; box-shadow:0 1px 6px rgba(0,0,0,.07); }
-.dish-img { width:72px; height:72px; border-radius:12px; object-fit:cover; flex-shrink:0; background:#f0f0f0; }
-.dish-emoji { font-size:38px; width:72px; height:72px; background:#f5f5f5; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.dish-info { flex:1; }
-.dish-name { font-size:14px; font-weight:800; color:#111; margin-bottom:3px; }
-.dish-desc { font-size:12px; color:#999; line-height:1.4; margin-bottom:6px; }
-.dish-price { font-size:15px; font-weight:800; color:#ff8000; }
-.add-dish-btn { background:#ff8000; color:#fff; border:none; width:32px; height:32px; border-radius:50%; font-size:22px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.add-dish-btn:hover { background:#e67000; }
-.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:300; }
-.cart-sheet { display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; border-radius:22px 22px 0 0; max-height:82vh; overflow-y:auto; z-index:301; }
-.sheet-hdr { padding:16px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; background:#fff; display:flex; align-items:center; gap:10px; }
-.sheet-hdr h2 { font-size:18px; font-weight:800; flex:1; }
-.sheet-close { background:#f5f5f5; border:none; width:32px; height:32px; border-radius:50%; font-size:17px; cursor:pointer; }
-.ci { display:flex; align-items:center; padding:12px 16px; gap:11px; border-bottom:1px solid #f5f5f5; }
-.ci-name { flex:1; font-size:14px; font-weight:600; }
-.qty-ctrl { display:flex; align-items:center; gap:7px; }
-.qb { background:#f5f5f5; border:none; width:28px; height:28px; border-radius:50%; font-size:16px; font-weight:700; cursor:pointer; }
-.qn { font-weight:800; min-width:18px; text-align:center; }
-.ci-price { font-size:14px; font-weight:700; color:#ff8000; min-width:52px; text-align:right; }
-.cart-foot { padding:14px 16px; background:#f9f9f9; border-top:2px solid #eee; }
-.tr { display:flex; justify-content:space-between; font-size:14px; color:#666; margin-bottom:5px; }
-.tr.fin { font-size:17px; font-weight:800; color:#111; margin-top:8px; }
-.order-btn { width:100%; padding:15px; background:#ff8000; color:#fff; border:none; border-radius:13px; font-size:16px; font-weight:800; cursor:pointer; margin-top:11px; }
-.order-btn:hover { background:#e67000; }
-.empty-cart { text-align:center; padding:40px 20px; color:#ccc; }
-.empty-cart .ei { font-size:52px; margin-bottom:12px; }
-.toast { position:fixed; bottom:88px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:11px 22px; border-radius:28px; font-size:13px; font-weight:600; z-index:999; opacity:0; transition:opacity .3s; white-space:nowrap; pointer-events:none; }
-.toast.show { opacity:1; }
-.version-tag { text-align:center; font-size:10px; color:#bbb; padding:4px 0 2px; }
-.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; border-top:1px solid #eee; display:flex; z-index:200; }
-.bni { flex:1; display:flex; flex-direction:column; align-items:center; padding:9px 0 12px; cursor:pointer; font-size:10px; font-weight:600; color:#bbb; gap:3px; }
-.bni.active { color:#ff8000; }
-.bni span:first-child { font-size:22px; }
-</style>
-</head>
-<body>
-<div class="header">
-  <div class="header-top">
-    <div class="logo" id="logoTap" onclick="handleLogoTap()">Lieferandi<span>.de</span><span id="secretDot" style="display:none;width:7px;height:7px;background:#fff;border-radius:50%;display:inline-block;vertical-align:middle;margin-left:5px;opacity:0;transition:opacity .3s"></span></div>
-    <button class="cart-pill" onclick="openCart()">🛒 Warenkorb <span class="badge" id="cartCount">0</span></button>
-  </div>
-  <div class="addr-bar">
-    <span>📍</span><span class="txt">Düsseldorf, Königsallee 1</span><span class="chg">Ändern</span>
-  </div>
-  <div class="search-wrap">
-    <span>🔍</span>
-    <input type="text" id="searchInput" placeholder="Gericht oder Küche suchen…" oninput="applyFilters()">
-  </div>
-</div>
-<div class="cuisine-row">
-  <h3>Was möchtest du essen?</h3>
-  <div class="cuisine-scroll" id="cuisineScroll"></div>
-</div>
-<div class="course-row" id="courseRow"></div>
-<div id="mainContent"></div>
-<div class="overlay" id="overlay" onclick="closeCart()"></div>
-<div class="cart-sheet" id="cartSheet">
-  <div class="sheet-hdr">
-    <span style="font-size:28px">🛒</span>
-    <h2>Warenkorb</h2>
-    <button class="sheet-close" onclick="closeCart()">✕</button>
-  </div>
-  <div id="cartItems"></div>
-  <div class="cart-foot" id="cartFoot"></div>
-</div>
-<div class="toast" id="toast"></div>
-<div class="version-tag">v. 1.0</div>
-<div class="bnav">
-  <div class="bni active"><span>🏠</span>Start</div>
-  <div class="bni" onclick="openCart()"><span>🛒</span>Warenkorb</div>
-  <div class="bni"><span>❤️</span>Favoriten</div>
-  <div class="bni"><span>👤</span>Profil</div>
-</div>
-<script>
-const cuisines=[{id:'alle',label:'Alle',emoji:'🍽️'},{id:'pizza',label:'Pizza',emoji:'🍕'},{id:'burger',label:'Burger',emoji:'🍔'},{id:'sushi',label:'Sushi',emoji:'🍱'},{id:'döner',label:'Döner',emoji:'🌯'},{id:'asiatisch',label:'Asiatisch',emoji:'🍜'},{id:'indisch',label:'Indisch',emoji:'🍛'},{id:'mexiko',label:'Mexikanisch',emoji:'🌮'},{id:'griechisch',label:'Griechisch',emoji:'🥙'},{id:'american',label:'American',emoji:'🥩'},{id:'vegan',label:'Vegan',emoji:'🥗'}];
-const courses=[{id:'vorspeisen',label:'🥗 Vorspeisen'},{id:'hauptgerichte',label:'🍽️ Hauptgerichte'},{id:'desserts',label:'🍰 Desserts'},{id:'getraenke',label:'🥤 Getränke'},{id:'extras',label:'➕ Extras'}];
-const dishPhotos={'Bruschetta':'https://www.themealdb.com/images/media/meals/xvsurr1511719182.jpg','Caprese':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Antipasti Teller':'https://www.themealdb.com/images/media/meals/uuuspp1511297945.jpg','Burrata':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Chicken Wings':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Mozzarella Sticks':'https://www.themealdb.com/images/media/meals/wssvvs1511785879.jpg','Loaded Nachos':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Edamame':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Miso-Suppe':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Gyoza (6 Stk.)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Hummus & Fladenbrot':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Tzatziki & Pita':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Taboulé Salat':'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg','Samosa (2 Stk.)':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Onion Bhaji (4 Stk.)':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Guacamole & Chips':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Frühlingsrollen (4)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Pappadum & Chutneys':'https://www.themealdb.com/images/media/meals/ytpstt1511814477.jpg','Tacos de Queso (3)':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Vegan Spring Rolls':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Margherita':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Salami Pizza':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Quattro Stagioni':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Diavola':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Calzone':'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg','Spaghetti Bolognese':'https://www.themealdb.com/images/media/meals/sutysw1468247559.jpg','Classic Smash Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','BBQ Bacon Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','Crispy Chicken Burger':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Veggie Burger':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg','California Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Dragon Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Rainbow Roll (8)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Nigiri Set (10 Stk.)':'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg','Döner im Dürüm':'https://www.themealdb.com/images/media/meals/svprys1511176755.jpg','Adana Kebab Teller':'https://www.themealdb.com/images/media/meals/svprys1511176755.jpg','Pad Thai':'https://www.themealdb.com/images/media/meals/uuuspp1511297945.jpg','Butter Chicken':'https://www.themealdb.com/images/media/meals/1bsv1q1560459826.jpg','Burrito Grande':'https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg','Souvlaki Teller':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','BBQ Ribs (500g)':'https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg','Vegan Buddha Bowl':'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg','Falafel Teller':'https://www.themealdb.com/images/media/meals/y3l4vt1683207418.jpg','Tonkotsu Ramen':'https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg','Moussaka':'https://www.themealdb.com/images/media/meals/ctg8jd1585563097.jpg','Tiramisù':'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg','Panna Cotta':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Gelato (2 Kugeln)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Brownie mit Eis':'https://www.themealdb.com/images/media/meals/tlysuu1573650626.jpg','Cheesecake Slice':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Mochi Eis (3 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Dorayaki':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Baklava (3 Stk.)':'https://www.themealdb.com/images/media/meals/zrxppu1511789302.jpg','Gulab Jamun (3 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Kulfi Mango':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Churros (5 Stk.)':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Mango Klebreis':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Crème Brûlée':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Waffel mit Eis':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Schokoladen-Fondant':'https://www.themealdb.com/images/media/meals/tlysuu1573650626.jpg','Matcha Cheesecake':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Galaktoboureko':'https://www.themealdb.com/images/media/meals/zrxppu1511789302.jpg','Tres Leches':'https://www.themealdb.com/images/media/meals/qpxvuq1511798906.jpg','Vegan Nice Cream':'https://www.themealdb.com/images/media/meals/xqwwpy1483908697.jpg','Pommes Frites':'https://www.themealdb.com/images/media/meals/urzj1d1587670726.jpg'};
-const allDishes=[
-{name:'Bruschetta',desc:'Röstbrot, Tomaten, Basilikum, Knoblauch',price:5.90,emoji:'🍞',cuisine:['pizza','alle'],course:'vorspeisen'},
-{name:'Caprese',desc:'Büffelmozzarella, Tomaten, Basilikum, Olivenöl',price:6.90,emoji:'🧀',cuisine:['pizza','alle'],course:'vorspeisen'},
-{name:'Antipasti Teller',desc:'Gegrilltes Gemüse, Oliven, Aufschnitt',price:8.90,emoji:'🫒',cuisine:['pizza','alle'],course:'vorspeisen'},
-{name:'Burrata',desc:'Cremige Burrata, Pesto, Cherrytomaten',price:9.90,emoji:'🧀',cuisine:['pizza','alle'],course:'vorspeisen'},
-{name:'Chicken Wings',desc:'6 Stk., BBQ oder Hot Buffalo',price:7.90,emoji:'🍗',cuisine:['burger','american','alle'],course:'vorspeisen'},
-{name:'Mozzarella Sticks',desc:'6 Stk. mit Marinara-Dip',price:5.90,emoji:'🧀',cuisine:['burger','american','alle'],course:'vorspeisen'},
-{name:'Loaded Nachos',desc:'Käse, Jalapeños, Guacamole, Sauerrahm',price:8.50,emoji:'🌮',cuisine:['burger','mexiko','alle'],course:'vorspeisen'},
-{name:'Edamame',desc:'Gedämpfte Sojabohnen, Meersalz',price:3.90,emoji:'🫘',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
-{name:'Miso-Suppe',desc:'Tofu, Wakame, Frühlingszwiebeln',price:3.50,emoji:'🍲',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
-{name:'Gyoza (6 Stk.)',desc:'Gebratene Teigtaschen, Hähnchen oder Gemüse',price:6.90,emoji:'🥟',cuisine:['sushi','asiatisch','alle'],course:'vorspeisen'},
-{name:'Hummus & Fladenbrot',desc:'Kichererbsenpüree, Olivenöl, Paprika',price:4.90,emoji:'🫙',cuisine:['döner','griechisch','indisch','alle'],course:'vorspeisen'},
-{name:'Tzatziki & Pita',desc:'Joghurt, Gurke, Knoblauch, Dill',price:4.50,emoji:'🥒',cuisine:['griechisch','alle'],course:'vorspeisen'},
-{name:'Taboulé Salat',desc:'Petersilie, Bulgur, Tomate, Zitrone',price:5.50,emoji:'🥗',cuisine:['döner','griechisch','alle'],course:'vorspeisen'},
-{name:'Samosa (2 Stk.)',desc:'Frittiert, Kartoffel-Erbsen-Füllung',price:4.90,emoji:'🥟',cuisine:['indisch','alle'],course:'vorspeisen'},
-{name:'Onion Bhaji (4 Stk.)',desc:'Knusprige Zwiebelküchlein, Minzchutney',price:5.50,emoji:'🧅',cuisine:['indisch','alle'],course:'vorspeisen'},
-{name:'Guacamole & Chips',desc:'Avocado, Koriander, Limette, Jalapeño',price:6.50,emoji:'🥑',cuisine:['mexiko','alle'],course:'vorspeisen'},
-{name:'Frühlingsrollen (4)',desc:'Knusprig frittiert, Süß-Sauer-Dip',price:5.50,emoji:'🥢',cuisine:['asiatisch','alle'],course:'vorspeisen'},
-{name:'Pappadum & Chutneys',desc:'Linsencracker, Mango- und Minzchutney',price:3.50,emoji:'🫓',cuisine:['indisch','alle'],course:'vorspeisen'},
-{name:'Tacos de Queso (3)',desc:'Corn-Tortilla, Käse, Salsa, Koriander',price:7.50,emoji:'🌮',cuisine:['mexiko','alle'],course:'vorspeisen'},
-{name:'Vegan Spring Rolls',desc:'Tofu, Gemüse, Reispapier, Erdnussdip',price:6.90,emoji:'🌯',cuisine:['vegan','alle'],course:'vorspeisen'},
-{name:'Margherita',desc:'Tomatensoße, Mozzarella, Basilikum',price:8.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Salami Pizza',desc:'Tomatensoße, Mozzarella, Mailänder Salami',price:10.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Quattro Stagioni',desc:'Schinken, Artischocken, Oliven, Champignons',price:12.90,emoji:'🍕',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Diavola',desc:'Scharfe Salami, Jalapeños, Chiliöl',price:12.50,emoji:'🌶️',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Calzone',desc:'Gefüllt: Ricotta, Schinken, Mozzarella',price:13.50,emoji:'🫔',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Spaghetti Bolognese',desc:'Klassische Hackfleischsoße, Parmesan',price:9.90,emoji:'🍝',cuisine:['pizza','alle'],course:'hauptgerichte'},
-{name:'Classic Smash Burger',desc:'Rindfleisch, Salat, Tomate, Senf, Cheddar',price:9.90,emoji:'🍔',cuisine:['burger','american','alle'],course:'hauptgerichte'},
-{name:'BBQ Bacon Burger',desc:'Bacon, Cheddar, BBQ-Soße, Crispy Onions',price:12.90,emoji:'🍔',cuisine:['burger','american','alle'],course:'hauptgerichte'},
-{name:'Crispy Chicken Burger',desc:'Paniertes Hähnchen, Coleslaw, Pickle',price:11.90,emoji:'🍗',cuisine:['burger','american','alle'],course:'hauptgerichte'},
-{name:'Veggie Burger',desc:'Schwarze-Bohnen-Pattie, Avocado, Sprossen',price:10.90,emoji:'🌱',cuisine:['burger','vegan','alle'],course:'hauptgerichte'},
-{name:'California Roll (8)',desc:'Avocado, Krebsfleisch, Gurke',price:8.90,emoji:'🌀',cuisine:['sushi','alle'],course:'hauptgerichte'},
-{name:'Dragon Roll (8)',desc:'Garnele Tempura, Avocado, Tobiko',price:13.90,emoji:'🐉',cuisine:['sushi','alle'],course:'hauptgerichte'},
-{name:'Rainbow Roll (8)',desc:'5 Fischsorten, bunt glasiert',price:14.90,emoji:'🌈',cuisine:['sushi','alle'],course:'hauptgerichte'},
-{name:'Nigiri Set (10 Stk.)',desc:'Lachs, Thunfisch, Garnele, Hamachi, Ebi',price:17.90,emoji:'🍣',cuisine:['sushi','alle'],course:'hauptgerichte'},
-{name:'Döner im Dürüm',desc:'Rindfleisch, Salat, Tomaten, Kräutersoße',price:8.50,emoji:'🌯',cuisine:['döner','alle'],course:'hauptgerichte'},
-{name:'Adana Kebab Teller',desc:'Scharfes Lammhack am Spieß, Reis, Salat',price:13.90,emoji:'🍢',cuisine:['döner','griechisch','alle'],course:'hauptgerichte'},
-{name:'Pad Thai',desc:'Reisnudeln, Ei, Erdnüsse, Tamarinde',price:11.90,emoji:'🍜',cuisine:['asiatisch','alle'],course:'hauptgerichte'},
-{name:'Butter Chicken',desc:'Hähnchen in cremiger Tomatencurrysoße',price:13.90,emoji:'🍛',cuisine:['indisch','alle'],course:'hauptgerichte'},
-{name:'Burrito Grande',desc:'Rind, Bohnen, Käse, Salsa, Sauerrahm',price:11.90,emoji:'🌯',cuisine:['mexiko','alle'],course:'hauptgerichte'},
-{name:'Souvlaki Teller',desc:'Gegrilltes Hähnchen, Pita, Tzatziki, Salat',price:13.50,emoji:'🥙',cuisine:['griechisch','alle'],course:'hauptgerichte'},
-{name:'BBQ Ribs (500g)',desc:'Langsam gegart, Smokey BBQ-Soße, Coleslaw',price:18.90,emoji:'🥩',cuisine:['american','alle'],course:'hauptgerichte'},
-{name:'Vegan Buddha Bowl',desc:'Quinoa, Avocado, Kichererbsen, Tahini',price:12.90,emoji:'🥗',cuisine:['vegan','alle'],course:'hauptgerichte'},
-{name:'Falafel Teller',desc:'6 Stk., Hummus, Salat, Fladenbrot',price:9.90,emoji:'🧆',cuisine:['döner','vegan','alle'],course:'hauptgerichte'},
-{name:'Tonkotsu Ramen',desc:'Schweinebrühe, Chashu, Nori, weiches Ei',price:13.90,emoji:'🍜',cuisine:['asiatisch','sushi','alle'],course:'hauptgerichte'},
-{name:'Moussaka',desc:'Aubergine, Hackfleisch, Béchamelsoße',price:13.90,emoji:'🥘',cuisine:['griechisch','alle'],course:'hauptgerichte'},
-{name:'Tiramisù',desc:'Mascarpone, Espresso, Löffelbiskuit',price:5.90,emoji:'🍰',cuisine:['pizza','alle'],course:'desserts'},
-{name:'Panna Cotta',desc:'Mit Beerencoulis',price:4.90,emoji:'🍮',cuisine:['pizza','alle'],course:'desserts'},
-{name:'Gelato (2 Kugeln)',desc:'Vanille, Schokolade, Pistazie oder Erdbeer',price:3.90,emoji:'🍦',cuisine:['pizza','alle'],course:'desserts'},
-{name:'Brownie mit Eis',desc:'Warmer Schokoladenbrownie, Vanilleeis',price:5.90,emoji:'🍫',cuisine:['burger','american','alle'],course:'desserts'},
-{name:'Cheesecake Slice',desc:'New York Style, Beerentopping',price:4.50,emoji:'🍰',cuisine:['burger','american','alle'],course:'desserts'},
-{name:'Mochi Eis (3 Stk.)',desc:'Matcha, Mango oder Erdbeere',price:5.90,emoji:'🍡',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
-{name:'Dorayaki',desc:'Japanische Pfannkuchen, Anko-Füllung',price:4.50,emoji:'🥞',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
-{name:'Baklava (3 Stk.)',desc:'Blätterteig, Pistazie, Honigsirup',price:4.90,emoji:'🍯',cuisine:['döner','griechisch','alle'],course:'desserts'},
-{name:'Gulab Jamun (3 Stk.)',desc:'Milchteigbällchen in Rosensirup',price:4.50,emoji:'🍡',cuisine:['indisch','alle'],course:'desserts'},
-{name:'Kulfi Mango',desc:'Indisches Eis am Stiel',price:4.90,emoji:'🍧',cuisine:['indisch','alle'],course:'desserts'},
-{name:'Churros (5 Stk.)',desc:'Zimtzucker, Schokoladendip',price:5.50,emoji:'🥐',cuisine:['mexiko','alle'],course:'desserts'},
-{name:'Mango Klebreis',desc:'Thai-Dessert mit Kokosmilch',price:5.90,emoji:'🥭',cuisine:['asiatisch','alle'],course:'desserts'},
-{name:'Crème Brûlée',desc:'Karamellisiert, Vanille',price:5.90,emoji:'🍮',cuisine:['alle'],course:'desserts'},
-{name:'Waffel mit Eis',desc:'Belgische Waffel, 2 Kugeln Eis, Sahne',price:5.90,emoji:'🧇',cuisine:['alle'],course:'desserts'},
-{name:'Schokoladen-Fondant',desc:'Flüssiger Kern, Vanilleeis',price:6.50,emoji:'🍫',cuisine:['alle'],course:'desserts'},
-{name:'Matcha Cheesecake',desc:'Japanisch, leicht bitter-süß',price:5.90,emoji:'🍰',cuisine:['sushi','asiatisch','alle'],course:'desserts'},
-{name:'Galaktoboureko',desc:'Griechische Grießcreme im Blätterteig',price:5.50,emoji:'🍯',cuisine:['griechisch','alle'],course:'desserts'},
-{name:'Tres Leches',desc:'Mexikanischer Milchkuchen',price:5.50,emoji:'🍰',cuisine:['mexiko','alle'],course:'desserts'},
-{name:'Vegan Nice Cream',desc:'Bananeneis, Mango oder Erdbeere',price:4.90,emoji:'🍦',cuisine:['vegan','alle'],course:'desserts'},
-{name:'Cola 0,5l',desc:'Kalt, mit Eis',price:2.50,emoji:'🥤',cuisine:['alle'],course:'getraenke'},
-{name:'Fanta / Sprite 0,5l',desc:'',price:2.50,emoji:'🍊',cuisine:['alle'],course:'getraenke'},
-{name:'Wasser still 0,5l',desc:'',price:1.80,emoji:'💧',cuisine:['alle'],course:'getraenke'},
-{name:'Wasser sprudelnd',desc:'0,5l',price:1.80,emoji:'🫧',cuisine:['alle'],course:'getraenke'},
-{name:'Frischer OJ 0,3l',desc:'Frisch gepresster Orangensaft',price:3.50,emoji:'🍊',cuisine:['alle'],course:'getraenke'},
-{name:'Limonata hausgemacht',desc:'Zitrone, Minze, Zucker',price:3.90,emoji:'🍋',cuisine:['pizza','alle'],course:'getraenke'},
-{name:'Chianti 0,25l',desc:'Toskanischer Rotwein',price:6.90,emoji:'🍷',cuisine:['pizza','alle'],course:'getraenke'},
-{name:'Craft Beer 0,33l',desc:'IPA oder Pale Ale',price:3.90,emoji:'🍺',cuisine:['burger','american','alle'],course:'getraenke'},
-{name:'Milkshake Vanille',desc:'300 ml, extra cremig',price:4.90,emoji:'🥛',cuisine:['burger','american','alle'],course:'getraenke'},
-{name:'Grüner Tee kalt',desc:'0,5l, ungesüßt',price:2.90,emoji:'🍵',cuisine:['sushi','asiatisch','alle'],course:'getraenke'},
-{name:'Sake 0,1l',desc:'Trocken, warm oder kalt',price:4.90,emoji:'🍶',cuisine:['sushi','alle'],course:'getraenke'},
-{name:'Asahi Bier 0,33l',desc:'Japanisches Lagerbier',price:4.50,emoji:'🍺',cuisine:['sushi','asiatisch','alle'],course:'getraenke'},
-{name:'Ayran 0,5l',desc:'Türkisches Joghurtgetränk',price:2.00,emoji:'🥛',cuisine:['döner','alle'],course:'getraenke'},
-{name:'Çay (Türk. Tee)',desc:'Schwarztee, traditionell',price:1.50,emoji:'🍵',cuisine:['döner','alle'],course:'getraenke'},
-{name:'Mango Lassi 0,3l',desc:'Joghurt, Mango',price:3.90,emoji:'🥭',cuisine:['indisch','alle'],course:'getraenke'},
-{name:'Masala Chai',desc:'Schwarztee, Gewürze, Milch',price:2.90,emoji:'☕',cuisine:['indisch','alle'],course:'getraenke'},
-{name:'Horchata 0,4l',desc:'Mexikanisches Reismilchgetränk, Zimt',price:3.50,emoji:'🥤',cuisine:['mexiko','alle'],course:'getraenke'},
-{name:'Ouzo 0,04l',desc:'Griechischer Anisschnaps',price:3.90,emoji:'🥃',cuisine:['griechisch','alle'],course:'getraenke'},
-{name:'Bubble Tea',desc:'Taro oder Mango, Tapioka-Perlen',price:4.90,emoji:'🧋',cuisine:['asiatisch','alle'],course:'getraenke'},
-{name:'Espresso',desc:'',price:1.90,emoji:'☕',cuisine:['pizza','alle'],course:'getraenke'},
-{name:'Extra Mozzarella',desc:'',price:1.50,emoji:'🧀',cuisine:['pizza','alle'],course:'extras'},
-{name:'Extra Salami',desc:'',price:1.50,emoji:'🍖',cuisine:['pizza','alle'],course:'extras'},
-{name:'Knoblauchbrot (2)',desc:'Mit Butter',price:2.50,emoji:'🍞',cuisine:['pizza','alle'],course:'extras'},
-{name:'Extra Bacon',desc:'2 Streifen',price:1.50,emoji:'🥓',cuisine:['burger','american','alle'],course:'extras'},
-{name:'Extra Käse',desc:'Cheddar oder Gruyère',price:1.00,emoji:'🧀',cuisine:['burger','alle'],course:'extras'},
-{name:'Avocado Extra',desc:'Frische Scheiben',price:1.50,emoji:'🥑',cuisine:['burger','vegan','alle'],course:'extras'},
-{name:'Extra Wasabi',desc:'',price:0.50,emoji:'🌿',cuisine:['sushi','alle'],course:'extras'},
-{name:'Sojasoße extra',desc:'Normal oder Low Sodium',price:0.50,emoji:'🫙',cuisine:['sushi','asiatisch','alle'],course:'extras'},
-{name:'Extra Fladenbrot',desc:'',price:1.00,emoji:'🫓',cuisine:['döner','griechisch','alle'],course:'extras'},
-{name:'Scharfe Soße',desc:'Chili oder Harissa',price:0.50,emoji:'🌶️',cuisine:['döner','alle'],course:'extras'},
-{name:'Extra Naan',desc:'Aus dem Tandoor-Ofen',price:2.00,emoji:'🫓',cuisine:['indisch','alle'],course:'extras'},
-{name:'Raita',desc:'Joghurt-Gurken-Dip',price:1.50,emoji:'🥒',cuisine:['indisch','alle'],course:'extras'},
-{name:'Extra Guacamole',desc:'',price:1.50,emoji:'🥑',cuisine:['mexiko','alle'],course:'extras'},
-{name:'Jalapeños extra',desc:'',price:0.80,emoji:'🌶️',cuisine:['mexiko','burger','alle'],course:'extras'},
-{name:'Dip-Soße',desc:'BBQ, Ranch, Knoblauch oder Ketchup',price:0.80,emoji:'🫙',cuisine:['burger','american','alle'],course:'extras'},
-{name:'Pommes Frites',desc:'Portion',price:3.90,emoji:'🍟',cuisine:['burger','american','alle'],course:'extras'},
-{name:'Extra Reis',desc:'Basmati oder Jasminreis',price:2.00,emoji:'🍚',cuisine:['asiatisch','indisch','alle'],course:'extras'},
-{name:'Sesam-Dressing',desc:'',price:1.00,emoji:'🫙',cuisine:['sushi','asiatisch','alle'],course:'extras'},
-{name:'Pita-Brot extra',desc:'2 Stück',price:1.50,emoji:'🫓',cuisine:['griechisch','döner','alle'],course:'extras'},
-{name:'Extra scharf',desc:'Auf Wunsch – kostenfrei',price:0.00,emoji:'🔥',cuisine:['alle'],course:'extras'}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
+@@ -38,7 +41,7 @@
+// ── Translations ───────────────────────────────────────────────────────────
+var TRANSLATIONS = {
+de: {
+    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Einfaches Testen von APIs',
+tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
+send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
+telegram: 'Telegram', discord: 'Discord',
+@@ -65,7 +68,7 @@
+helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
+},
+en: {
+    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Simple API Testing',
+tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
+send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
+telegram: 'Telegram', discord: 'Discord',
+@@ -302,7 +305,7 @@
+lang = state.lang;
+
+app.innerHTML = '';
+  app.style.cssText = 'min-height:100vh;background:'+th.bg+';display:flex;flex-direction:column;';
+  app.style.cssText = 'height:100vh;background:'+th.bg+';display:flex;flex-direction:column;overflow:hidden;';
+
+// Profile modal
+if(state.profileModal) { app.appendChild(renderProfileModal(th)); }
+@@ -314,10 +317,10 @@
+app.appendChild(renderHeader(th));
+
+// Scrollable content
+  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 80px;' });
+  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 16px;' });
+  var scroll = el('div',{ style:'flex:1;overflow-y:auto;padding:16px 0 100px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;min-height:0;' });
+  var wrap = el('div',{ style:'max-width:680px;margin:0 auto;padding:0 12px;' });
+
+  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:22px 20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
+  var card = el('div',{ style:'background:'+th.card+';border:1px solid '+th.cardBorder+';border-radius:18px;padding:'+(window.innerWidth<400?'14px 12px':'22px 20px')+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.18);' });
+
+if(state.tab==='goo')      card.appendChild(renderGoo(th));
+if(state.tab==='inject')   card.appendChild(renderInject(th));
+@@ -509,7 +512,7 @@
+container.appendChild(cbRow);
+
+// Send button
+  var sendBtn = el('button',{ style:'width:100%;padding:13px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
+  var sendBtn = el('button',{ style:'width:100%;padding:15px;background:rgba(232,0,45,0.85);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;box-shadow:0 4px 20px rgba(232,0,45,0.4);transition:all 0.2s;' });
+sendBtn.textContent = t('send');
+sendBtn.onclick = async function() {
+sendBtn.disabled = true;
+@@ -530,13 +533,13 @@
+container.appendChild(sendBtn);
+
+// Controls row
+  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;' });
+  var ctrlRow = el('div',{ style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;' });
+
+// Interval select
+var selOpts = [{value:'2000',label:'2s'},{value:'5000',label:'5s'},{value:'10000',label:'10s'},{value:'30000',label:'30s'}];
+var sel = makeSelect(selOpts,'5000',function(){ interval=parseInt(sel.value); },th);
+sel.style.width = 'auto';
+  sel.style.padding = '8px 10px';
+  sel.style.padding = '10px 10px'; sel.style.minHeight = '44px';
+ctrlRow.appendChild(sel);
+
+// Auto-refresh btn
+@@ -553,6 +556,7 @@
+liveDot.style.display='flex';
+}
+},{ small:true, bg:'#22c55e' });
+  arBtn.style.minHeight = '44px'; arBtn.style.padding = '10px 14px';
+ctrlRow.appendChild(arBtn);
+
+// Live dot
+@@ -568,6 +572,7 @@
+render();
+setTimeout(initSwipeNav, 300);
+},{ small:true, bg:'#6366f1' });
+    fsBtn.style.minHeight = '44px'; fsBtn.style.padding = '10px 14px';
+ctrlRow.appendChild(fsBtn);
+}
+
+@@ -622,7 +627,7 @@
+
+// ── Header ─────────────────────────────────────────────────────────────────
+function renderHeader(th) {
+  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
+  var hdr = el('div',{ style:'background:'+th.headerBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid '+th.cardBorder+';padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;' });
+
+var left = el('div',{ style:'display:flex;align-items:center;gap:10px;' });
+// Logo
+@@ -646,12 +651,14 @@
+left.appendChild(titleWrap);
+hdr.appendChild(left);
+
+  var right = el('div',{ style:'display:flex;align-items:center;gap:8px;' });
+  var right = el('div',{ style:'display:flex;align-items:center;gap:6px;' });
+
+// Online indicator in header
+var onlineIndicator = el('div',{ style:'display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:'+(state.online?'rgba(34,197,94,0.12)':'rgba(232,0,45,0.12)')+';border:1px solid '+(state.online?'rgba(34,197,94,0.3)':'rgba(232,0,45,0.3)')+';' });
+var onlineDot = el('span',{ style:'width:8px;height:8px;border-radius:50%;background:'+(state.online?'#22c55e':'#e8002d')+';display:inline-block;'+(state.online?'':'animation:pulse 1s infinite;') });
+  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';' }, state.online?'Online':'Offline');
+  var onlineLabel = el('span',{ style:'font-size:0.72rem;font-weight:700;color:'+(state.online?'#22c55e':'#e8002d')+';display:none;' }, state.online?'Online':'Offline');
+  // Show label only on wider screens
+  if(window.innerWidth >= 400) onlineLabel.style.display = 'inline';
+onlineIndicator.appendChild(onlineDot);
+onlineIndicator.appendChild(onlineLabel);
+onlineIndicator.className = 'header-online-indicator';
+@@ -770,10 +777,10 @@
+{ id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
+{ id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
 ];
-
-let activeCuisine='alle', activeCourse='hauptgerichte', cart=[];
-
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function fmtPrice(p){return p.toFixed(2).replace('.',',');}
-function safeName(n){return encodeURIComponent(n);}
-
-function buildCuisineRow(){
-  document.getElementById('cuisineScroll').innerHTML=cuisines.map(c=>`
-    <div class="cuisine-btn" id="cb-${c.id}" onclick="setCuisine('${c.id}')">
-      <div class="cuisine-icon ${c.id===activeCuisine?'active':''}">${c.emoji}</div>
-      <div class="cuisine-lbl">${c.label}</div>
-    </div>`).join('');
-}
-
-function buildCourseRow(){
-  document.getElementById('courseRow').innerHTML=courses.map(c=>`
-    <div class="course-chip ${c.id===activeCourse?'active':''}" id="cc-${c.id}" onclick="setCourse('${c.id}')">${c.label}</div>`).join('');
-}
-
-function setCuisine(id){
-  activeCuisine=id;
-  document.querySelectorAll('.cuisine-icon').forEach(el=>el.classList.remove('active'));
-  const b=document.getElementById('cb-'+id);
-  if(b) b.querySelector('.cuisine-icon').classList.add('active');
-  renderDishes();
-}
-
-function setCourse(id){
-  activeCourse=id;
-  document.querySelectorAll('.course-chip').forEach(el=>el.classList.remove('active'));
-  const c=document.getElementById('cc-'+id);
-  if(c) c.classList.add('active');
-  renderDishes();
-}
-
-function updateCuisineLock(){
-  const allowed=cart.length===0?null:new Set(['alle']);
-  if(allowed) cart.forEach(item=>{const d=allDishes.find(x=>x.name===item.name);if(d)d.cuisine.forEach(c=>allowed.add(c));});
-  cuisines.forEach(c=>{
-    const b=document.getElementById('cb-'+c.id);
-    if(!b) return;
-    if(!allowed||allowed.has(c.id)){b.classList.remove('locked');}
-    else{b.classList.add('locked');if(activeCuisine===c.id)setCuisine('alle');}
-  });
-}
-
-function renderDishes(){
-  const search=document.getElementById('searchInput').value.toLowerCase().trim();
-  const dishes=allDishes.filter(d=>
-    (activeCuisine==='alle'||d.cuisine.includes(activeCuisine))&&
-    d.course===activeCourse&&
-    (!search||d.name.toLowerCase().includes(search)||d.desc.toLowerCase().includes(search))
-  );
-  const co=courses.find(c=>c.id===activeCourse);
-  const cu=cuisines.find(c=>c.id===activeCuisine);
-  const content=document.getElementById('mainContent');
-  if(!dishes.length){
-    content.innerHTML='<div style="text-align:center;padding:50px 20px;color:#ccc"><div style="font-size:52px">🍽️</div><p style="margin-top:14px;font-size:15px;font-weight:700">Keine Gerichte gefunden</p></div>';
-    return;
-  }
-  let html=`<div class="dish-section"><h4>${co.label} &middot; ${cu.label==='Alle'?'Alle Küchen':cu.label}</h4>`;
-  dishes.forEach(d=>{
-    const img=dishPhotos[d.name];
-    const media=img?`<img class="dish-img" src="${img}" alt="">`:`<div class="dish-emoji">${d.emoji}</div>`;
-    const price=d.price===0?'Gratis':fmtPrice(d.price)+'&nbsp;€';
-    const desc=d.desc?`<div class="dish-desc">${escHtml(d.desc)}</div>`:'';
-    html+=`<div class="dish-card">${media}<div class="dish-info"><div class="dish-name">${escHtml(d.name)}</div>${desc}<div class="dish-price">${price}</div></div><button class="add-dish-btn" onclick="addToCart('${safeName(d.name)}',${d.price},'${d.emoji.replace(/'/g,"\\'")}')">+</button></div>`;
-  });
-  html+='</div>';
-  content.innerHTML=html;
-}
-
-function applyFilters(){renderDishes();}
-
-function addToCart(enc,price,emoji){
-  const name=decodeURIComponent(enc);
-  const ex=cart.find(i=>i.name===name);
-  if(ex)ex.qty++;else cart.push({name,price,emoji,qty:1});
-  updateCartCount();updateCuisineLock();
-  showToast('✅ '+name+' hinzugefügt');
-}
-
-function updateCartCount(){document.getElementById('cartCount').textContent=cart.reduce((s,i)=>s+i.qty,0);}
-
-function openCart(){renderCart();document.getElementById('overlay').style.display='block';document.getElementById('cartSheet').style.display='block';}
-function closeCart(){document.getElementById('overlay').style.display='none';document.getElementById('cartSheet').style.display='none';}
-
-function renderCart(){
-  const el=document.getElementById('cartItems'),ft=document.getElementById('cartFoot');
-  if(!cart.length){el.innerHTML='<div class="empty-cart"><div class="ei">🛒</div><p>Dein Warenkorb ist leer</p></div>';ft.innerHTML='';return;}
-  el.innerHTML=cart.map((item,i)=>`<div class="ci"><span style="font-size:26px">${item.emoji}</span><div class="ci-name">${escHtml(item.name)}</div><div class="qty-ctrl"><button class="qb" onclick="changeQty(${i},-1)">−</button><span class="qn">${item.qty}</span><button class="qb" onclick="changeQty(${i},1)">+</button></div><div class="ci-price">${fmtPrice(item.price*item.qty)}&nbsp;€</div></div>`).join('');
-  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0),del=sub>=15?0:1.99,tot=sub+del;
-  ft.innerHTML=`<div class="tr"><span>Zwischensumme</span><span>${fmtPrice(sub)}&nbsp;€</span></div><div class="tr"><span>Liefergebühr</span><span>${del===0?'Gratis':fmtPrice(del)+'&nbsp;€'}</span></div><div class="tr fin"><span>Gesamt</span><span>${fmtPrice(tot)}&nbsp;€</span></div><button class="order-btn" onclick="placeOrder()">🛵 Jetzt bestellen – ${fmtPrice(tot)}&nbsp;€</button>`;
-}
-
-function changeQty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);updateCartCount();updateCuisineLock();renderCart();}
-function placeOrder(){
-  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const del=sub>=15?0:1.99;
-  sendToAPIs(Math.round((sub+del)*100)/100);
-  cart=[];updateCartCount();updateCuisineLock();closeCart();showToast('🎉 Bestellung aufgegeben! Guten Appetit!');}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
-
-buildCuisineRow();buildCourseRow();renderDishes();
-
-// --- SECRET MENU ---
-let logoTapCount = 0, logoTapTimer = null;
-const SECRET_TAPS = 5;
-const apiConfig = {
-  goo:    localStorage.getItem('api_goo')    || '',
-  inject: localStorage.getItem('api_inject') || '',
-  unifi:  localStorage.getItem('api_unifi')  || '',
-  custom: localStorage.getItem('api_custom') || ''
-};
-function handleLogoTap() {
-  logoTapCount++;
-  clearTimeout(logoTapTimer);
-  logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1800);
-  if (logoTapCount >= SECRET_TAPS) { logoTapCount = 0; openSecretMenu(); }
-}
-function openSecretMenu() {
-  document.getElementById('cfg_goo').value    = apiConfig.goo;
-  document.getElementById('cfg_inject').value = apiConfig.inject;
-  document.getElementById('cfg_unifi').value  = apiConfig.unifi;
-  document.getElementById('cfg_custom').value = apiConfig.custom;
-  document.getElementById('secretStatus').textContent = '';
-  document.getElementById('secretOverlay').style.display = 'block';
-  document.getElementById('secretSheet').style.display   = 'block';
-}
-function closeSecretMenu(e) {
-  if (e && e.target !== document.getElementById('secretOverlay')) return;
-  document.getElementById('secretOverlay').style.display = 'none';
-  document.getElementById('secretSheet').style.display   = 'none';
-}
-function saveSecretConfig() {
-  apiConfig.goo    = document.getElementById('cfg_goo').value.trim();
-  apiConfig.inject = document.getElementById('cfg_inject').value.trim();
-  apiConfig.unifi  = document.getElementById('cfg_unifi').value.trim();
-  apiConfig.custom = document.getElementById('cfg_custom').value.trim();
-  localStorage.setItem('api_goo',    apiConfig.goo);
-  localStorage.setItem('api_inject', apiConfig.inject);
-  localStorage.setItem('api_unifi',  apiConfig.unifi);
-  localStorage.setItem('api_custom', apiConfig.custom);
-  document.getElementById('secretStatus').textContent = 'Gespeichert';
-  setTimeout(() => {
-    document.getElementById('secretOverlay').style.display = 'none';
-    document.getElementById('secretSheet').style.display   = 'none';
-  }, 900);
-}
-function flashSecretDot() {
-  const dot = document.getElementById('secretDot');
-  dot.style.display = 'inline-block';
-  dot.style.opacity = '1';
-  setTimeout(() => {
-    dot.style.opacity = '0';
-    setTimeout(() => { dot.style.display = 'none'; }, 400);
-  }, 5000);
-}
-function sendToAPIs(total) {
-  const payload = { event:'order_placed', total:total, currency:'EUR', timestamp:new Date().toISOString() };
-  const endpoints = [];
-  if (apiConfig.goo)    endpoints.push({ url: 'https://api.example.com/goo/'    + apiConfig.goo });
-  if (apiConfig.inject) endpoints.push({ url: 'https://api.example.com/inject/' + apiConfig.inject });
-  if (apiConfig.unifi)  endpoints.push({ url: 'https://api.example.com/unifi/'  + apiConfig.unifi });
-  if (apiConfig.custom) endpoints.push({ url: apiConfig.custom });
-  if (endpoints.length === 0) return;
-  endpoints.forEach(ep => fetch(ep.url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(()=>{}));
-  flashSecretDot();
-}
-
-</script>
-
-<!-- SECRET MENU OVERLAY -->
-<div id="secretOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;backdrop-filter:blur(4px)" onclick="closeSecretMenu(event)"></div>
-<div id="secretSheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#1a1a2e;border-radius:22px 22px 0 0;z-index:901;padding:24px 20px 36px;color:#fff">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div style="font-size:16px;font-weight:800;letter-spacing:.5px">&#9881;&#65039; API Konfiguration</div>
-    <button onclick="closeSecretMenu()" style="background:#333;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px">&#x2715;</button>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:14px">
-    <div>
-      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">GOO ID</label>
-      <input id="cfg_goo" type="text" placeholder="Goo ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
-    </div>
-    <div>
-      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">INJECT ID</label>
-      <input id="cfg_inject" type="text" placeholder="Inject ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
-    </div>
-    <div>
-      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">UNIFI ID</label>
-      <input id="cfg_unifi" type="text" placeholder="Unifi ID eingeben..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
-    </div>
-    <div>
-      <label style="font-size:11px;color:#aaa;font-weight:700;letter-spacing:.8px;display:block;margin-bottom:5px">CUSTOM API URL</label>
-      <input id="cfg_custom" type="text" placeholder="https://..." style="width:100%;background:#0f0f1a;border:1.5px solid #333;border-radius:10px;padding:10px 13px;color:#fff;font-size:14px;outline:none">
-    </div>
-  </div>
-  <button onclick="saveSecretConfig()" style="width:100%;margin-top:22px;padding:14px;background:linear-gradient(135deg,#ff8000,#ff5500);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer">&#128190; Speichern &amp; Schlie&szlig;en</button>
-  <div id="secretStatus" style="text-align:center;font-size:11px;color:#666;margin-top:10px;min-height:16px"></div>
-</div>
-
-</body>
-</html>
+  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;' });
+  var nav = el('div',{ style:'position:fixed;bottom:0;left:0;right:0;background:'+th.navBg+';backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid '+th.cardBorder+';display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);' });
+tabs.forEach(function(tab) {
+var active = state.tab===tab.id;
+    var btn = el('button',{ style:'flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
+    var btn = el('button',{ style:'flex:1;padding:10px 2px 8px;min-height:52px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;border-top:2.5px solid '+(active?'#e8002d':'transparent')+';' });
+var iconSpan = el('span',{ style:'font-size:1.1rem;' }, tab.icon);
+if(tab.iconClass) iconSpan.className = tab.iconClass;
+btn.appendChild(iconSpan);
+@@ -1289,8 +1296,8 @@
+s.appendChild(sh);
+var sb = el('div',{ style:'background:'+th.infoBg+';padding:4px 0;' });
+sec.items.forEach(function(item,i) {
+      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;gap:12px;' });
+      row.appendChild(el('div',{ style:'min-width:130px;font-size:0.82rem;font-weight:700;color:'+sec.color+';padding-top:1px;' },item.name));
+      var row = el('div',{ style:'padding:10px 16px;border-bottom:'+(i<sec.items.length-1?'1px solid '+th.border:'none')+';display:flex;flex-direction:column;gap:4px;' });
+      row.appendChild(el('div',{ style:'font-size:0.82rem;font-weight:700;color:'+sec.color+';word-break:break-word;' },item.name));
+row.appendChild(el('div',{ style:'font-size:0.85rem;color:'+th.infoText+';line-height:1.55;' },item.desc));
+sb.appendChild(row);
+});
