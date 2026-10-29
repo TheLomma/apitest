@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Tool v2.5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f0f1e">
-<title>API Tool v2.6</title>
+<title>API Tool v2.7</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0f0f1e; color: #fff; }
@@ -43,8 +42,8 @@ var SETTINGS_KEY = 'apitool_settings_v1';
 // ── Translations ───────────────────────────────────────────────────────────
 var TRANSLATIONS = {
 de: {
-    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Einfaches Testen von APIs',
-    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.7', appSubtitle: 'Einfaches Testen von APIs',
+    appTitle: 'API Tool', appVersion: 'v2.7', appSubtitle: 'Einfaches Testen von APIs',
 tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Eigene API', tabDash: '📊 Status', tabSettings: '⚙ Einstellungen', tabHelp: '? Hilfe', customExperimental: '⚠️ Experimentell – Dieser Bereich wurde noch nicht vollständig getestet. Nutzung auf eigene Verantwortung.', customUrl: 'URL', customMethod: 'HTTP-Methode', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Vollständige URL deiner API. Pflichtfeld.', customHeadersHint: 'Optional: HTTP-Header als JSON-Objekt.', customBodyHint: 'Optional: Request-Body. Wird bei GET ignoriert.', customShareHint: 'Telegram/Discord: Es wird die URL oder – falls vorhanden – der Body weitergeleitet.',
 send: 'Senden', sending: 'Wird gesendet...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Vollbild', live: 'Live',
 telegram: 'Telegram', discord: 'Discord',
@@ -71,8 +70,8 @@ darkMode: 'Dark Mode', lightMode: 'Light Mode',
 helpTitle: 'Anleitung & Funktionsübersicht', helpSubtitle: 'Alle Bereiche und ihre Funktionen auf einen Blick', helpOnlineTitle: 'Online-Indikator', helpDashTitle: 'Status-Dashboard', helpNavTitle: 'Nav-Icons & API-Status', helpSettingsCheckTitle: 'Einstellungen – API-Prüfung',
 },
 en: {
-    appTitle: 'API Tool', appVersion: 'v2.5', appSubtitle: 'Simple API Testing',
-    appTitle: 'API Tool', appVersion: 'v2.6', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.7', appSubtitle: 'Simple API Testing',
+    appTitle: 'API Tool', appVersion: 'v2.7', appSubtitle: 'Simple API Testing',
 tabGoo: 'Goo', tabInject: 'Inject', tabUnifi: 'Unifi', tabCustom: 'Custom API', tabDash: '📊 Status', tabSettings: '⚙ Settings', tabHelp: '? Help', customExperimental: '⚠️ Experimental – This section has not been fully tested yet. Use at your own risk.', customUrl: 'URL', customMethod: 'HTTP Method', customHeaders: 'Headers (JSON)', customBody: 'Body (JSON / Text)', customUrlPlaceholder: 'https://api.example.com/endpoint', customHeadersPlaceholder: '{"Authorization": "Bearer TOKEN"}', customBodyPlaceholder: '{"key": "value"}', customUrlHint: 'Full URL of your API. Required.', customHeadersHint: 'Optional: HTTP headers as JSON object.', customBodyHint: 'Optional: Request body. Ignored for GET.', customShareHint: 'Telegram/Discord: The URL or – if present – the body will be forwarded.',
 send: 'Send', sending: 'Sending...', autoRefresh: 'Auto-Refresh', stop: 'Stop', fullscreen: 'Fullscreen', live: 'Live',
 telegram: 'Telegram', discord: 'Discord',
@@ -301,6 +300,398 @@ setInterval(checkAllApiStatus, 30000);
 checkOnline();
 checkAllApiStatus();
 
+// ── Display (Unifi Notifier / Thumper V2 per Bluetooth) ────────────────────
+var DISPLAY_KEY = 'apitool_display_v1';
+var DISP_UUID = {
+  NOTIFIER_SVC: 'c4b0a4d7-f320-5597-0347-281ab31e0383',
+  THUMPER_SVC:  'c4b0a4c7-f320-5597-0347-281ab31e0383',
+  SERIAL_SVC:   '3f461400-00b0-4240-ba50-05ca45bf8abc',
+  SEND_MSG:     'c4b0ab41-f320-5597-0347-281ab31e0383',
+  QUEUE_MSG:    'c4b0ab45-f320-5597-0347-281ab31e0383'
+};
+var DISP_QUEUE_CTRL = { replace: 0x00, back: 0x02 };
+var DISP_MSG_CTRL   = { button: 0x01, event: 0x02, timer: 0x08 };
+var DISP_UMLAUT = {'ä':'ae','ö':'oe','ü':'ue','Ä':'Ae','Ö':'Oe','Ü':'Ue','ß':'ss','€':'EUR','–':'-','—':'-','„':'"','“':'"','’':"'"};
+
+var DISP_PROFILES = {
+  notifier: {
+    label: 'Unifi Notifier', ready: true,
+    filters: [DISP_UUID.NOTIFIER_SVC], services: [DISP_UUID.NOTIFIER_SVC, DISP_UUID.THUMPER_SVC]
+  },
+  thumper2: {
+    label: 'Unifi Thumper V2 (Befehle ungeprüft)', ready: true,
+    filters: [DISP_UUID.THUMPER_SVC], services: [DISP_UUID.THUMPER_SVC, DISP_UUID.NOTIFIER_SVC]
+  },
+  peeksmith3: {
+    label: 'Peeksmith 3 (nur Diagnose, Protokoll fehlt)', ready: false,
+    filters: [], services: []
+  }
+};
+
+var dispSettings = (function () {
+  var d = { profile: 'notifier', queueMode: 'replace', msgControl: 'timer', defaultSec: 5, chunkSize: 20,
+            translit: true, acceptAll: false, extra: '',
+            watch: { on: false, source: 'unifi', interval: 15, template: '{name}\n{value}' } };
+  try {
+    var r = JSON.parse(localStorage.getItem(DISPLAY_KEY) || '{}');
+    for (var k in r) { if (k !== 'watch') d[k] = r[k]; }
+    if (r.watch) { for (var w in r.watch) { d.watch[w] = r.watch[w]; } }
+  } catch (e) {}
+  return d;
+})();
+function saveDisp() { try { localStorage.setItem(DISPLAY_KEY, JSON.stringify(dispSettings)); } catch (e) {} }
+
+var dispState = { chars: null, device: null, profile: null, queue: [], busy: false, log: [],
+                  status: 'Nicht verbunden (nur Vorschau)', statusOk: false, lastPayload: '',
+                  watchTimer: null, watchLast: undefined, btnC: null, btnD: null };
+
+function dispEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function dispSleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function dispHex(b) { return Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(' '); }
+function dispParseUuids(s) { return String(s || '').split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(function (x) { return /^[0-9a-f-]{4,36}$/.test(x); }); }
+
+function dispLog(type, msg) {
+  var t = new Date().toLocaleTimeString('de-DE');
+  dispState.log.unshift({ type: type, t: t, msg: msg });
+  dispState.log = dispState.log.slice(0, 80);
+  dispRenderLog(document.getElementById('disp-log'));
+}
+function dispRenderLog(box) {
+  if (box) box.innerHTML = dispState.log.map(function (e) {
+    var c = e.type === 'err' ? '#e8002d' : e.type === 'ok' ? '#22c55e' : 'inherit';
+    return '<div style="padding:3px 0;border-bottom:1px dotted rgba(128,128,128,0.25);color:' + c + ';">' + dispEsc(e.t) + ' ' + dispEsc(e.msg) + '</div>';
+  }).join('');
+}
+
+function dispSetStatus(text, ok) {
+  dispState.status = text; dispState.statusOk = !!ok;
+  var el2 = document.getElementById('disp-status');
+  if (el2) { el2.textContent = text; el2.style.color = ok ? '#22c55e' : ''; }
+  dispRefreshButtons();
+}
+function dispRefreshButtons() {
+  var c = dispState.btnC, d = dispState.btnD;
+  if (c) c.disabled = !!dispState.chars;
+  if (d) d.disabled = !dispState.chars;
+}
+
+function dispPreview(payload) {
+  dispState.lastPayload = payload;
+  var parts = payload.split('\r');
+  var a = document.getElementById('disp-l1'), b = document.getElementById('disp-l2');
+  if (a) a.textContent = parts[0] || '';
+  if (b) b.textContent = parts[1] || '';
+}
+
+function dispPrepare(text) {
+  var t = String(text).replace(/\r\n?/g, '\n');
+  if (dispSettings.translit) t = t.replace(/[äöüÄÖÜß€–—„“’]/g, function (c) { return DISP_UMLAUT[c] || ''; });
+  t = t.replace(/[^\x20-\x7E\n]/g, '');
+  var lines = t.split('\n').map(function (s) { return s.trim(); }).filter(function (s) { return s.length; });
+  if (!lines.length) lines = [''];
+  if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+  var joined = lines.join('\r');
+  if (joined.length > 160) joined = joined.slice(0, 160);
+  return joined;
+}
+
+// Ergebnis-Text kompakt machen: JSON wird als Einzeiler dargestellt
+function dispCompact(body) {
+  var s = String(body == null ? '' : body).trim();
+  try { var p = JSON.parse(s); return typeof p === 'string' ? p : JSON.stringify(p); } catch (e) { return s.replace(/\s+/g, ' '); }
+}
+
+// ── Verbindung ─────────────────────────────────────────────────────────────
+async function dispConnect() {
+  if (!navigator.bluetooth) {
+    alert('Web Bluetooth ist in diesem Browser nicht verfügbar. Chrome oder Edge auf Android bzw. Bluefy auf dem iPhone verwenden.');
+    return;
+  }
+  var key = dispSettings.profile;
+  var p = DISP_PROFILES[key];
+  var optional = p.services.concat(dispParseUuids(dispSettings.extra), [DISP_UUID.SERIAL_SVC]);
+  var useAll = dispSettings.acceptAll || !p.filters.length;
+  var opts = useAll
+    ? { acceptAllDevices: true, optionalServices: optional }
+    : { filters: p.filters.map(function (u) { return { services: [u] }; }), optionalServices: optional };
+  dispSetStatus('Suche Gerät …', false);
+  try {
+    var device = await navigator.bluetooth.requestDevice(opts);
+    device.addEventListener('gattserverdisconnected', dispOnDisconnect);
+    var server = await device.gatt.connect();
+    if (!p.ready) { await dispDiagnose(device, server); return; }
+    var svc = null;
+    for (var i = 0; i < p.services.length; i++) {
+      try { svc = await server.getPrimaryService(p.services[i]); break; } catch (e) {}
+    }
+    if (!svc) throw new Error('Kein passender Dienst auf dem Gerät gefunden.');
+    var attr = await svc.getCharacteristic(DISP_UUID.TEXT_ATTR).catch(function () { return null; });
+    dispState.chars = {
+      send: await svc.getCharacteristic(DISP_UUID.SEND_MSG),
+      queue: await svc.getCharacteristic(DISP_UUID.QUEUE_MSG)
+    };
+    dispState.device = device;
+    dispState.profile = key;
+    dispSetStatus('Verbunden: ' + (device.name || p.label), true);
+    dispLog('ok', p.label + ' verbunden');
+  } catch (e) {
+    dispState.chars = null;
+    dispSetStatus('Nicht verbunden (nur Vorschau)', false);
+    dispLog('err', e.message || String(e));
+  }
+  dispRefreshButtons();
+}
+
+async function dispDiagnose(device, server) {
+  dispLog('info', 'Diagnose gestartet. Das Protokoll für dieses Gerät ist noch nicht hinterlegt.');
+  var services = [];
+  try { services = await server.getPrimaryServices(); } catch (e) { dispLog('err', 'Dienste nicht lesbar: ' + e.message); }
+  if (!services.length) dispLog('err', 'Keine Dienste sichtbar. Dienst-UUIDs unter Display-Einstellungen eintragen.');
+  for (var i = 0; i < services.length; i++) {
+    dispLog('info', 'Dienst ' + services[i].uuid);
+    try {
+      var chs = await services[i].getCharacteristics();
+      chs.forEach(function (c) {
+        var props = Object.keys(c.properties).filter(function (k) { return c.properties[k]; }).join(', ');
+        dispLog('info', '   Merkmal ' + c.uuid + ' [' + props + ']');
+      });
+    } catch (e) { dispLog('err', '   Merkmale nicht lesbar: ' + e.message); }
+  }
+  if (device.gatt.connected) device.gatt.disconnect();
+  dispSetStatus('Diagnose fertig (Protokoll fehlt noch)', false);
+}
+
+function dispOnDisconnect() {
+  dispState.chars = null;
+  dispSetStatus('Getrennt (nur Vorschau)', false);
+  dispLog('err', 'Verbindung getrennt');
+}
+
+function dispDisconnect() {
+  if (dispState.device && dispState.device.gatt && dispState.device.gatt.connected) dispState.device.gatt.disconnect();
+  dispOnDisconnect();
+}
+
+// ── Senden ─────────────────────────────────────────────────────────────────
+async function dispWrite(ch, bytes) {
+  if (ch.properties && ch.properties.writeWithoutResponse) await ch.writeValueWithoutResponse(bytes);
+  else await ch.writeValue(bytes);
+}
+
+async function dispShowNotifier(chars, payload, seconds) {
+  var s = dispSettings;
+  var bytes = new TextEncoder().encode(payload);
+  for (var i = 0; i < bytes.length; i += s.chunkSize) {
+    await dispWrite(chars.send, bytes.slice(i, i + s.chunkSize));
+  }
+  var q = Uint8Array.of(DISP_QUEUE_CTRL[s.queueMode], DISP_MSG_CTRL[s.msgControl], seconds);
+  await dispWrite(chars.queue, q);
+  return bytes.length + ' Byte · Queue ' + dispHex(q);
+}
+
+function dispEnqueue(item, front) {
+  if (front) dispState.queue.unshift(item); else dispState.queue.push(item);
+  dispPump();
+}
+
+async function dispPump() {
+  if (dispState.busy) return;
+  dispState.busy = true;
+  try {
+    while (dispState.queue.length) {
+      var item = dispState.queue.shift();
+      await dispShow(item);
+      await dispSleep(item.seconds * 1000 + 300);
+    }
+  } finally { dispState.busy = false; }
+}
+
+async function dispShow(item) {
+  var payload = dispPrepare(item.text);
+  dispPreview(payload);
+  var seconds = Math.min(255, Math.max(1, parseInt(item.seconds, 10) || dispSettings.defaultSec));
+  if (!dispState.chars) {
+    dispLog('info', 'Vorschau: ' + payload.replace(/\r/g, ' | ') + ' (' + seconds + ' s)');
+    return;
+  }
+  try {
+    var info = await dispShowNotifier(dispState.chars, payload, seconds);
+    dispLog('ok', 'Gesendet: ' + payload.replace(/\r/g, ' | ') + ' · ' + info);
+  } catch (e) {
+    dispLog('err', 'Sendefehler: ' + (e.message || e));
+  }
+}
+
+function dispRender(label, value) {
+  return String(dispSettings.watch.template || '{name}\n{value}')
+    .replace(/\\n/g, '\n').replace(/\{name\}/g, label).replace(/\{value\}/g, value);
+}
+
+// Aufruf aus Ergebnisansicht / Vollbild
+function sendResultToDisplay(src, result) {
+  if (!result || result.body == null) { alert('Noch kein Ergebnis vorhanden.'); return; }
+  var names = { goo: 'Goo', inject: 'Inject', unifi: 'Unifi', custom: 'Eigene API' };
+  var label = names[src] || src;
+  dispEnqueue({ text: dispRender(label, dispCompact(result.body)), seconds: dispSettings.defaultSec }, true);
+  dispLog('info', label + ': Ergebnis in die Warteschlange gelegt');
+}
+
+// ── Auto-Abruf bei Änderung ────────────────────────────────────────────────
+function dispWatchSource() {
+  var s = dispSettings.watch.source;
+  if (s === 'unifi') {
+    if (!state.settings.unifiId) return { error: 'Unifi ID fehlt (Einstellungen)' };
+    return { url: BASE_UNIFI + '?UserId=' + state.settings.unifiId, label: 'Unifi' };
+  }
+  if (s === 'goo') {
+    if (!state.settings.gooId) return { error: 'Goo ID fehlt (Einstellungen)' };
+    return { url: BASE_GOO + epPath('get-last', state.settings.gooId), label: 'Goo' };
+  }
+  if (!customState.url) return { error: 'Eigene URL fehlt (Tab Eigene API)' };
+  return { url: customState.url, label: 'Eigene API' };
+}
+
+async function dispWatchTick() {
+  var src = dispWatchSource();
+  if (src.error) { dispLog('err', src.error); return; }
+  try {
+    var sep = src.url.indexOf('?') >= 0 ? '&' : '?';
+    var r = await proxyFetch(src.url + sep + '_=' + Date.now(), 'GET', null);
+    var text = await r.text();
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var value = dispCompact(text);
+    if (value !== dispState.watchLast) {
+      var first = dispState.watchLast === undefined;
+      dispState.watchLast = value;
+      dispEnqueue({ text: dispRender(src.label, value), seconds: dispSettings.defaultSec }, true);
+      dispLog('info', src.label + (first ? ': Startwert' : ': Änderung erkannt'));
+    }
+  } catch (e) {
+    dispLog('err', src.label + ': ' + (e.message || 'Abruf fehlgeschlagen'));
+  }
+}
+
+function dispWatchSet(on) {
+  dispSettings.watch.on = !!on;
+  saveDisp();
+  clearInterval(dispState.watchTimer);
+  dispState.watchTimer = null;
+  if (on) {
+    dispState.watchLast = undefined;
+    dispWatchTick();
+    dispState.watchTimer = setInterval(dispWatchTick, Math.max(5, dispSettings.watch.interval) * 1000);
+    dispLog('info', 'Auto-Abruf gestartet, alle ' + dispSettings.watch.interval + ' s');
+  } else {
+    dispLog('info', 'Auto-Abruf gestoppt');
+  }
+}
+
+// ── Oberfläche Display-Tab ─────────────────────────────────────────────────
+function renderDisplay(th) {
+  var wrap = el('div', {});
+  wrap.appendChild(el('h2', { style: 'font-size:1.1rem;margin-bottom:6px;color:' + th.sectionTitle + ';' }, 'Display senden'));
+  wrap.appendChild(el('p', { style: 'color:' + th.subtext + ';font-size:0.85rem;line-height:1.5;margin-bottom:16px;' },
+    'Verbindet sich per Bluetooth mit dem Gerät. Ergebnisse aus den anderen Tabs kannst du mit „📺 Display“ senden. Ohne Verbindung läuft nur die Vorschau.'));
+
+  var scr = el('div', { style: 'background:#000;border:2px solid ' + th.cardBorder + ';border-radius:12px;padding:18px 12px;min-height:130px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-family:Courier New,monospace;color:#fff;overflow:hidden;margin-bottom:10px;' });
+  var parts = dispState.lastPayload.split('\r');
+  scr.appendChild(el('div', { id: 'disp-l1', style: 'font-size:1.4rem;font-weight:700;word-break:break-word;' }, parts[0] || ''));
+  scr.appendChild(el('div', { id: 'disp-l2', style: 'font-size:1rem;margin-top:6px;word-break:break-word;' }, parts[1] || ''));
+  wrap.appendChild(scr);
+  wrap.appendChild(el('div', { id: 'disp-status', style: 'font-size:0.85rem;margin-bottom:12px;color:' + (dispState.statusOk ? '#22c55e' : th.subtext) + ';' }, dispState.status));
+
+  var pRow = el('div', { style: 'margin-bottom:12px;' });
+  pRow.appendChild(lbl('Gerät', th));
+  pRow.appendChild(makeSelect([
+    { value: 'notifier', label: DISP_PROFILES.notifier.label },
+    { value: 'thumper2', label: DISP_PROFILES.thumper2.label },
+    { value: 'peeksmith3', label: DISP_PROFILES.peeksmith3.label }
+  ], dispSettings.profile, function (e) { dispSettings.profile = e.target.value; saveDisp(); }, th));
+  wrap.appendChild(pRow);
+
+  var btnRow = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;' });
+  var bC = makeBtn('Display verbinden', function () { dispConnect(); }, { small: true, bg: '#22c55e' });
+  var bD = makeBtn('Trennen', function () { dispDisconnect(); }, { small: true, bg: 'rgba(100,100,100,0.6)' });
+  dispState.btnC = bC; dispState.btnD = bD;
+  btnRow.appendChild(bC); btnRow.appendChild(bD);
+  wrap.appendChild(btnRow);
+  dispRefreshButtons();
+
+  // Auto-Abruf
+  var wBox = el('div', { style: 'border:1px solid ' + th.cardBorder + ';border-radius:14px;padding:14px;margin-bottom:18px;' });
+  wBox.appendChild(el('div', { style: 'font-weight:700;color:' + th.sectionTitle + ';margin-bottom:8px;' }, 'Auto-Abruf: bei Änderung senden'));
+  wBox.appendChild(lbl('Quelle', th));
+  wBox.appendChild(makeSelect([
+    { value: 'unifi', label: 'Unifi API' },
+    { value: 'goo', label: 'Goo (letzter Query)' },
+    { value: 'custom', label: 'Eigene API (Tab Eigene API)' }
+  ], dispSettings.watch.source, function (e) { dispSettings.watch.source = e.target.value; saveDisp(); }, th));
+  wBox.appendChild(lbl('Abruf alle (Sekunden, min. 5)', th));
+  var iv = makeInput(String(dispSettings.watch.interval), { type: 'number', placeholder: '15' }, th);
+  iv.min = '5';
+  iv.oninput = function () { dispSettings.watch.interval = Math.max(5, parseInt(iv.value, 10) || 15); saveDisp(); };
+  wBox.appendChild(iv);
+  wBox.appendChild(lbl('Vorlage ({name}, {value})', th));
+  wBox.appendChild(makeTextarea(dispSettings.watch.template, '{name}\n{value}', function (e) { dispSettings.watch.template = e.target.value; saveDisp(); }, th));
+  var wBtn = makeBtn(dispSettings.watch.on ? 'Auto-Abruf stoppen' : 'Auto-Abruf starten', function () {
+    dispWatchSet(!dispSettings.watch.on);
+    wBtn.textContent = dispSettings.watch.on ? 'Auto-Abruf stoppen' : 'Auto-Abruf starten';
+    wBtn.style.background = dispSettings.watch.on ? '#e8002d' : '#22c55e';
+  }, { small: true, bg: dispSettings.watch.on ? '#e8002d' : '#22c55e' });
+  wBtn.style.marginTop = '10px';
+  wBox.appendChild(wBtn);
+  wrap.appendChild(wBox);
+
+  // Manuelle Nachricht
+  var mBox = el('div', { style: 'margin-bottom:18px;' });
+  mBox.appendChild(lbl('Manuelle Nachricht', th));
+  var mTa = makeTextarea('', 'Zeile 1\nZeile 2', null, th);
+  mBox.appendChild(mTa);
+  var mBtn = makeBtn('Anzeigen', function () {
+    if (!mTa.value.trim()) return;
+    dispEnqueue({ text: mTa.value, seconds: dispSettings.defaultSec }, true);
+  }, { small: true, bg: '#6366f1' });
+  mBtn.style.marginTop = '8px';
+  mBox.appendChild(mBtn);
+  wrap.appendChild(mBox);
+
+  // Einstellungen
+  var sBox = el('div', { style: 'border:1px solid ' + th.cardBorder + ';border-radius:14px;padding:14px;margin-bottom:18px;' });
+  sBox.appendChild(el('div', { style: 'font-weight:700;color:' + th.sectionTitle + ';margin-bottom:8px;' }, 'Display-Einstellungen'));
+  sBox.appendChild(lbl('Anzeigedauer (Sekunden)', th));
+  var dIn = makeInput(String(dispSettings.defaultSec), { type: 'number', placeholder: '5' }, th);
+  dIn.oninput = function () { dispSettings.defaultSec = Math.min(255, Math.max(1, parseInt(dIn.value, 10) || 5)); saveDisp(); };
+  sBox.appendChild(dIn);
+  sBox.appendChild(lbl('Warteschlange', th));
+  sBox.appendChild(makeSelect([{ value: 'replace', label: 'Neu anzeigen, Queue leeren' }, { value: 'back', label: 'Hinten anhängen' }],
+    dispSettings.queueMode, function (e) { dispSettings.queueMode = e.target.value; saveDisp(); }, th));
+  sBox.appendChild(lbl('Anzeigeverhalten', th));
+  sBox.appendChild(makeSelect([{ value: 'timer', label: 'Feste Dauer' }, { value: 'button', label: 'Bis Tastendruck' }, { value: 'event', label: 'Bis nächstem Ereignis' }],
+    dispSettings.msgControl, function (e) { dispSettings.msgControl = e.target.value; saveDisp(); }, th));
+  sBox.appendChild(lbl('Zusätzliche Dienst-UUIDs (optional, kommagetrennt)', th));
+  var xIn = makeInput(dispSettings.extra, { placeholder: 'z. B. aus nRF Connect abgelesen' }, th);
+  xIn.oninput = function () { dispSettings.extra = xIn.value.trim(); saveDisp(); };
+  sBox.appendChild(xIn);
+  var trRow = el('label', { style: 'display:flex;align-items:center;gap:8px;margin-top:10px;font-size:0.88rem;' });
+  var trCb = el('input', { type: 'checkbox' }); trCb.checked = !!dispSettings.translit;
+  trCb.onchange = function () { dispSettings.translit = trCb.checked; saveDisp(); };
+  trRow.appendChild(trCb); trRow.appendChild(txt('Umlaute ersetzen (ä zu ae, € zu EUR)'));
+  sBox.appendChild(trRow);
+  var acRow = el('label', { style: 'display:flex;align-items:center;gap:8px;margin-top:8px;font-size:0.88rem;' });
+  var acCb = el('input', { type: 'checkbox' }); acCb.checked = !!dispSettings.acceptAll;
+  acCb.onchange = function () { dispSettings.acceptAll = acCb.checked; saveDisp(); };
+  acRow.appendChild(acCb); acRow.appendChild(txt('Alle Geräte anzeigen (falls das Display nicht gefunden wird)'));
+  sBox.appendChild(acRow);
+  wrap.appendChild(sBox);
+
+  // Protokoll
+  wrap.appendChild(lbl('Protokoll', th));
+  var logBox = el('div', { id: 'disp-log', style: 'font-family:Courier New,monospace;font-size:0.78rem;max-height:240px;overflow:auto;background:rgba(0,0,0,0.25);border-radius:10px;padding:8px;' });
+  wrap.appendChild(logBox);
+  dispRenderLog(logBox);
+  return wrap;
+}
+
 // ── Render engine ──────────────────────────────────────────────────────────
 var app = document.getElementById('app');
 
@@ -336,6 +727,7 @@ if(state.tab==='unifi')    card.appendChild(renderUnifi(th));
 if(state.tab==='custom')   card.appendChild(renderCustom(th));
 if(state.tab==='settings') card.appendChild(renderSettings(th));
 if(state.tab==='help') { card.appendChild(renderHelp(th)); }
+if(state.tab==='display') { card.appendChild(renderDisplay(th)); }
 if(state.tab==='dash') { card.appendChild(renderDash(th)); }
 
 wrap.appendChild(card);
@@ -576,6 +968,12 @@ liveDot.appendChild(el('span',{ style:'width:9px;height:9px;border-radius:50%;ba
 liveDot.appendChild(txt('Live'));
 ctrlRow.appendChild(liveDot);
 
+// Display button
+if(opts.getResult) {
+var dispBtn = makeBtn('📺 Display', function(){ sendResultToDisplay(state.tab, opts.getResult()); }, { small:true, bg:'#f59e0b' });
+dispBtn.style.minHeight = '44px'; dispBtn.style.padding = '10px 14px';
+ctrlRow.appendChild(dispBtn);
+}
 // Fullscreen btn
 if(opts.showFullscreen!==false) {
 var fsBtn = makeBtn(t('fullscreen'),function(){
@@ -603,6 +1001,11 @@ if(result) {
 var ok = (typeof result.status==='number') ? result.status<400 : result.status!=='ERR';
 var sb = el('div',{ style:'position:absolute;top:22px;left:28px;padding:3px 14px;border-radius:12px;font-size:0.8rem;font-weight:700;background:'+(ok?'#22c55e':'#e8002d')+';color:#fff;' }, result.status+(result.statusText?' '+result.statusText:''));
 ov.appendChild(sb);
+}
+if(result) {
+var fsDisp = makeBtn('📺 An Display senden', function(){ sendResultToDisplay(state.tab, result); }, { small:true, bg:'#f59e0b' });
+fsDisp.style.marginTop = '20px';
+ov.appendChild(fsDisp);
 }
 var pre = el('pre',{ style:'color:#fff;font-size:1.4rem;font-weight:700;white-space:pre-wrap;word-break:break-all;font-family:Courier New,monospace;line-height:1.6;max-height:85vh;overflow-y:auto;max-width:900px;width:100%;text-align:center;' });
 pre.textContent = body2;
@@ -787,6 +1190,7 @@ var tabs = [
 { id:'inject', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.inject==='ok'?'🟢':apiStatus.inject==='err'?'🔴':'⚪',    label:t('tabInject'), iconClass:'nav-icon-inject' },
 { id:'unifi',  icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.unifi==='ok'?'🟢':apiStatus.unifi==='err'?'🔴':'⚪',     label:t('tabUnifi'),  iconClass:'nav-icon-unifi' },
 { id:'custom', icon: !state.settings.apiStatusEnabled?'🟡':apiStatus.custom==='ok'?'🟢':apiStatus.custom==='err'?'🔴':'⚪',    label:t('tabCustom'), iconClass:'nav-icon-custom' },
+{ id:'display', icon:'📺', label:'Display' },
 { id:'dash',     icon:'📊', label:lang==='de'?'Status':'Status' },
 { id:'settings', icon:'⚙️', label:lang==='de'?'Einstellungen':'Settings' },
 { id:'help',     icon:'❓', label:lang==='de'?'Hilfe':'Help' },
